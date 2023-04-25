@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Larvend.Gameplay;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -100,7 +102,7 @@ namespace Larvend
                     throw new Exception("Invalid bpm setting!");
                 }
 
-                Global.Chart.bpm = targetBpm;
+                EditorManager.Instance.InitializeBPM(targetBpm);
                 notes.Add(new Note(Note.Type.SpeedAdjust, time, targetBpm, endTime));
                 return;
             }
@@ -339,10 +341,10 @@ namespace Larvend
                 clip = DownloadHandlerAudioClip.GetContent(uwr);
             }
 
-            Global.song = clip;
+            // Global.song = clip;
             Global.IsAudioLoaded = true;
-            UIController.InitAudioLabel();
-            GameManager.InitAudio();
+            EditorManager.InitAudio(clip);
+            UIController.InitAudioLabel(clip.length);
         }
     }
 }
