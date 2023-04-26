@@ -27,9 +27,9 @@ namespace Larvend
 
         public Chart()
         {
-            this.title = "Song Name";
-            this.composer = "Composer";
-            this.arranger = "Arranger";
+            this.title = "Sample Song";
+            this.composer = "Sample Artist";
+            this.arranger = "Sample Arranger";
             this.bpm = 120;
             this.offset = 0;
             this.count = 0;

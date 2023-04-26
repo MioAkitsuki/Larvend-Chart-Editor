@@ -335,6 +335,7 @@ namespace Larvend
                 uwr.result == UnityWebRequest.Result.DataProcessingError)
             {
                 Debug.Log(uwr.error);
+                yield break;
             }
             else
             {
@@ -345,6 +346,33 @@ namespace Larvend
             Global.IsAudioLoaded = true;
             EditorManager.InitAudio(clip);
             UIController.InitAudioLabel(clip.length);
+        }
+    }
+
+    public class ImageManager
+    {
+        public static IEnumerator LoadImg()
+        {
+            Texture2D texture = null;
+            string path = Path.Combine(Global.FolderPath, "base.jpg");
+
+            UnityWebRequest uwr = UnityWebRequestTexture.GetTexture(path);
+            yield return uwr.SendWebRequest();
+
+            if (uwr.result == UnityWebRequest.Result.ConnectionError ||
+                uwr.result == UnityWebRequest.Result.DataProcessingError)
+            {
+                Debug.Log(uwr.error);
+                yield break;
+            }
+            else
+            {
+                texture = DownloadHandlerTexture.GetContent(uwr);
+            }
+
+            Sprite tempSp = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0, 0));
+            
+            UIController.InitAlbumCover(tempSp);
         }
     }
 }

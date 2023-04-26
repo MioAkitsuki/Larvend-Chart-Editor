@@ -2,19 +2,21 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using JetBrains.Annotations;
 using Larvend;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.EventSystems;
 
 namespace Larvend.Gameplay
 {
     public class UIController : MonoBehaviour
     {
         public static UIController Instance { get; private set; }
+        public float vel;
 
-        private Button selectFolder;
         private Button openInfoMenu;
         private TMP_Dropdown difficultySelector;
 
@@ -29,6 +31,12 @@ namespace Larvend.Gameplay
         private Toggle showGridToggle;
         private Toggle enableAdsorptionToggle;
 
+        private RectTransform songPanel;
+        private Image albumCover;
+        private Button selectFolder;
+        private TMP_Text songName;
+        private TMP_Text artistName;
+
         private TMP_InputField songNameInputField;
         private TMP_InputField composerInputField;
         private TMP_InputField arrangerInputField;
@@ -39,9 +47,8 @@ namespace Larvend.Gameplay
         {
             Instance = this;
 
-            selectFolder = this.gameObject.transform.Find("SelectFolderButton").GetComponent<Button>();
             openInfoMenu = this.gameObject.transform.Find("OpenInfoButton").GetComponent<Button>();
-            difficultySelector = this.gameObject.transform.Find("DifficultySelector").GetComponent<TMP_Dropdown>();
+            
 
             infoPanel = this.gameObject.transform.Find("InfoPanel").gameObject;
             gridPanel = this.gameObject.transform.Find("GridPanel").gameObject;
@@ -53,6 +60,14 @@ namespace Larvend.Gameplay
             cancelButton = infoPanel.transform.Find("CancelInfo").GetComponent<Button>();
             showGridToggle = this.gameObject.transform.Find("ShowGrid").GetComponent<Toggle>();
             enableAdsorptionToggle = this.gameObject.transform.Find("EnableAdsorption").GetComponent<Toggle>();
+
+            // UI under SongPanel
+            songPanel = this.gameObject.transform.Find("SongPanel").GetComponent<RectTransform>();
+            albumCover = this.gameObject.transform.Find("SongPanel").Find("AlbumCover").GetComponent<Image>();
+            selectFolder = this.gameObject.transform.Find("SongPanel").Find("AlbumCover").GetComponent<Button>();
+            songName = this.gameObject.transform.Find("SongPanel").Find("SongName").GetComponent<TMP_Text>();
+            artistName = this.gameObject.transform.Find("SongPanel").Find("ArtistName").GetComponent<TMP_Text>();
+            difficultySelector = this.gameObject.transform.Find("SongPanel").Find("DifficultySelector").GetComponent<TMP_Dropdown>();
 
             songNameInputField = infoPanel.transform.Find("SongNameInfo").Find("SongNameInput").GetComponent<TMP_InputField>();
             composerInputField = infoPanel.transform.Find("ComposerInfo").Find("ComposerInput").GetComponent<TMP_InputField>();
@@ -94,6 +109,45 @@ namespace Larvend.Gameplay
             Instance.audioTime.SetText(EditorManager.GetAudioPCMTime().ToString());
 
             Instance.slider.value = EditorManager.GetAudioTime() / EditorManager.GetAudioLength();
+        }
+
+        public void DropSongPanel()
+        {
+            StopCoroutine("floatSongPanelEnumerator");
+            StartCoroutine("dropSongPanelEnumerator");
+        }
+
+        IEnumerator dropSongPanelEnumerator()
+        {
+            Vector2 endPos = new Vector2(750f, 449.5f);
+
+            float y = Mathf.SmoothDamp(songPanel.localPosition.y, 449.5f, ref vel, 0.1f, 1000f);
+            Vector3 updatePos = new Vector3(songPanel.localPosition.x, y, 0);
+            songPanel.localPosition = updatePos;
+            
+            yield return new WaitForFixedUpdate();
+            StartCoroutine("dropSongPanelEnumerator");
+        }
+
+        public void FloatSongPanel()
+        {
+            if (difficultySelector.IsExpanded)
+            {
+                return;
+            }
+            StopCoroutine("dropSongPanelEnumerator");
+            StartCoroutine("floatSongPanelEnumerator");
+        }
+        IEnumerator floatSongPanelEnumerator()
+        {
+            Vector2 endPos = new Vector2(750f, 649.5f);
+
+            float y = Mathf.SmoothDamp(songPanel.localPosition.y, 649.5f, ref vel, 0.1f, 1000f);
+            Vector3 updatePos = new Vector3(songPanel.localPosition.x, y, 0);
+            songPanel.localPosition = updatePos;
+
+            yield return new WaitForFixedUpdate();
+            StartCoroutine("floatSongPanelEnumerator");
         }
 
         private void TriggerTime(float value)
@@ -161,7 +215,9 @@ namespace Larvend.Gameplay
                 Global.IsDirectorySelected = true;
                 DirectoryManager.ReadFolder();
                 StartCoroutine(AudioManager.LoadAudio());
+                StartCoroutine(ImageManager.LoadImg());
                 InitDifficultySelector();
+                InitSongInfo();
             }
         }
 
@@ -172,6 +228,18 @@ namespace Larvend.Gameplay
 
             var time = Global.TimeFormat(length);
             Instance.timeTotal.SetText($"/  {time[0]}:{time[1]}.{time[2]}");
+        }
+
+        public static void InitAlbumCover(Sprite sprite)
+        {
+            Instance.albumCover.sprite = sprite;
+        }
+
+        public static void InitSongInfo()
+        {
+            Instance.songName.text = Global.Chart.title == null ? "Sample Song" : Global.Chart.title;
+            Instance.artistName.text = Global.Chart.composer == null ? "Artist: Sample Artist" : "Artist: " + Global.Chart.composer;
+            Instance.difficultySelector.interactable = true;
         }
 
         void OpenInfoPanel()
@@ -185,7 +253,9 @@ namespace Larvend.Gameplay
 
         private void UpdateInfo()
         {
+            songName.text = Global.Chart.title;
             songNameInputField.text = Global.Chart.title;
+            artistName.text = "Artist: " + Global.Chart.composer;
             composerInputField.text = Global.Chart.composer;
             arrangerInputField.text = Global.Chart.arranger;
             bpmInputField.text = Global.Chart.bpm.ToString();
