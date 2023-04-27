@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using JetBrains.Annotations;
 using Larvend;
+using Schwarzer.Windows;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,6 +13,7 @@ using UnityEngine.EventSystems;
 
 namespace Larvend.Gameplay
 {
+    public delegate void Callback();
     public class UIController : MonoBehaviour
     {
         public static UIController Instance { get; private set; }
@@ -31,6 +33,7 @@ namespace Larvend.Gameplay
         private Toggle showGridToggle;
         private Toggle enableAdsorptionToggle;
 
+        // UI under SongPanel
         private RectTransform songPanel;
         private Image albumCover;
         private Button selectFolder;
@@ -49,7 +52,6 @@ namespace Larvend.Gameplay
 
             openInfoMenu = this.gameObject.transform.Find("OpenInfoButton").GetComponent<Button>();
             
-
             infoPanel = this.gameObject.transform.Find("InfoPanel").gameObject;
             gridPanel = this.gameObject.transform.Find("GridPanel").gameObject;
             audioTime = this.gameObject.transform.Find("AudioTime").Find("AudioTimeText").GetComponent<TMP_Text>();
@@ -69,6 +71,7 @@ namespace Larvend.Gameplay
             artistName = this.gameObject.transform.Find("SongPanel").Find("ArtistName").GetComponent<TMP_Text>();
             difficultySelector = this.gameObject.transform.Find("SongPanel").Find("DifficultySelector").GetComponent<TMP_Dropdown>();
 
+            // UI under Info Panel
             songNameInputField = infoPanel.transform.Find("SongNameInfo").Find("SongNameInput").GetComponent<TMP_InputField>();
             composerInputField = infoPanel.transform.Find("ComposerInfo").Find("ComposerInput").GetComponent<TMP_InputField>();
             arrangerInputField = infoPanel.transform.Find("ArrangerInfo").Find("ArrangerInput").GetComponent<TMP_InputField>();
@@ -169,7 +172,7 @@ namespace Larvend.Gameplay
         {
             if (!Global.IsSaved)
             {
-                Debug.LogWarning("The chart is unsaved.");
+                MsgBoxManager.ShowMessage(MsgType.Warning, "Warning", "The chart is unsaved, do you want to save it?\nÆ×ÃæÎ´±£´æ£¬ÄúÏ£Íû±£´æÂð£¿");
             }
 
             if (Global.Difficulties[diff])
@@ -180,7 +183,6 @@ namespace Larvend.Gameplay
             }
             else
             {
-                Debug.Log("Create empty chart.");
                 DirectoryManager.CreateChart(diff);
                 difficultySelector.options[diff].text = Enum.GetName(typeof(Chart.Difficulties), diff);
                 difficultySelector.gameObject.transform.Find("Label").GetComponent<TMP_Text>().text = Enum.GetName(typeof(Chart.Difficulties), diff);
@@ -274,5 +276,4 @@ namespace Larvend.Gameplay
                 float.Parse(offsetInputField.text, CultureInfo.InvariantCulture.NumberFormat));
         }
     }
-
 }

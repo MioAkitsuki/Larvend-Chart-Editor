@@ -40,7 +40,6 @@ public class NoteManager : MonoBehaviour
     /// <param name="note">The note wanted to load.</param>
     public static void LoadNote(Note note)
     {
-        Debug.Log("Load Note");
         if (note.type == Note.Type.Tap)
         {
             var newNote = Instantiate(_instance.prefabs[0], _instance.transform.GetChild(0));
@@ -67,7 +66,7 @@ public class NoteManager : MonoBehaviour
         }
         else if (note.type == Note.Type.SpeedAdjust)
         {
-            
+            // TODO
         }
     }
 }

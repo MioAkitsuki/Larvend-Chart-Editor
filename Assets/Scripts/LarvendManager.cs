@@ -33,7 +33,8 @@ namespace Larvend
 
                 if (chart.Length == 0)
                 {
-                    throw new Exception("Empty Chart.");
+                    MsgBoxManager.ShowMessage(MsgType.Warning, "Warning", "You are loading an empty chart. Do you want to initialize it?\n您正在读取空谱面，是否需要初始化该谱面？", InitChart);
+                    return;
                 }
 
                 foreach (var line in chart)
@@ -77,11 +78,12 @@ namespace Larvend
                 {
                     NoteManager.LoadNote(note);
                 }
+
+                MsgBoxManager.ShowMessage(MsgType.Info, "Event Load Complete", $"All {notes.Count} events have been loaded.\n已完成共 {notes.Count} 个事件的加载。");
             }
             catch (Exception e)
             {
-                Debug.LogError("The file could not be read:");
-                Debug.LogError(e.Message);
+                MsgBoxManager.ShowMessage(MsgType.Error, "Chart Read Failed", e.Message);
             }
         }
 
@@ -170,10 +172,10 @@ namespace Larvend
                 if (File.Exists(path))
                     chartWriter = new(path);
                 else
-                    throw (new Exception("There doesn't exist chart file."));
+                    throw (new Exception("There doesn't exist a chart file for writing."));
 
                 if (isInfoWriting || isNotesWriting)
-                    throw (new Exception("There is an unfinished writing process."));
+                    throw (new Exception("There was an unfinished writing process."));
 
                 chartWriter.WriteLine("version=" + Global.ChartVersion);
 
@@ -191,8 +193,7 @@ namespace Larvend
             }
             catch (Exception e)
             {
-                Debug.LogError("The file could not be written:");
-                Debug.LogError(e.Message);
+                MsgBoxManager.ShowMessage(MsgType.Error, "Written Failed", e.Message);
             }
         }
 
@@ -239,6 +240,11 @@ namespace Larvend
 
             isInfoWriting = false;
             return;
+        }
+
+        public static void InitChart()
+        {
+            Debug.Log("Init.");
         }
 
         private static void LineDivider(string line, out int arg1, out float arg2, out float arg3)
@@ -311,12 +317,14 @@ namespace Larvend
 
             if (chart.Exists)
             {
-                Debug.LogError("Already Exist!");
+                MsgBoxManager.ShowMessage(MsgType.Error, "Error", "Already exist a chart.\n文件夹下已存在相应难度谱面。");
             }
             else
             {
                 chart.Create();
                 Global.Difficulties[difficulty] = true;
+                
+                MsgBoxManager.ShowMessage(MsgType.Info, "Created Successfully", "New chart has been created successfully, do you want to initialize it?\n已成功创建新谱面，需要将其初始化吗？（若不清楚，请选是）", ChartManager.InitChart);
             }
         }
     }
