@@ -2,14 +2,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using JetBrains.Annotations;
 using Larvend;
-using Schwarzer.Windows;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using UnityEngine.EventSystems;
 
 namespace Larvend.Gameplay
 {
