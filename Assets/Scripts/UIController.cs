@@ -26,8 +26,10 @@ namespace Larvend.Gameplay
         private Slider slider;
         private Button saveButton;
         private Button cancelButton;
-        private Toggle showGridToggle;
-        private Toggle enableAdsorptionToggle;
+
+        // UI under Left Toolbar
+        private Button showGridButton;
+        private Button enableAbsorptionButton;
 
         // UI under SongPanel
         private RectTransform songPanel;
@@ -35,6 +37,12 @@ namespace Larvend.Gameplay
         private Button selectFolder;
         private TMP_Text songName;
         private TMP_Text artistName;
+
+        // UI under Play Controller
+        private Button playSwitchButton;
+        [SerializeField] private Sprite[] playAndPause;
+        private Button stepBackwardButton;
+        private Button stepForwardButton;
 
         private TMP_InputField songNameInputField;
         private TMP_InputField composerInputField;
@@ -56,8 +64,16 @@ namespace Larvend.Gameplay
             slider = this.gameObject.transform.Find("Slider").GetComponent<Slider>();
             saveButton = infoPanel.transform.Find("SaveInfo").GetComponent<Button>();
             cancelButton = infoPanel.transform.Find("CancelInfo").GetComponent<Button>();
-            showGridToggle = this.gameObject.transform.Find("ShowGrid").GetComponent<Toggle>();
-            enableAdsorptionToggle = this.gameObject.transform.Find("EnableAdsorption").GetComponent<Toggle>();
+
+            // UI under Left Toolbar
+            showGridButton = this.gameObject.transform.Find("LeftToolbar").Find("ShowGrid").GetComponent<Button>();
+            enableAbsorptionButton = this.gameObject.transform.Find("LeftToolbar").Find("EnableAbsorption").GetComponent<Button>();
+
+            showGridButton.onClick.AddListener(SwitchGridStatus);
+            enableAbsorptionButton.onClick.AddListener(SwitchAbsorptionStatus);
+            showGridButton.gameObject.GetComponent<Image>().color = Color.white;
+            enableAbsorptionButton.gameObject.GetComponent<Image>().color = Color.white;
+            enableAbsorptionButton.interactable = false;
 
             // UI under SongPanel
             songPanel = this.gameObject.transform.Find("SongPanel").GetComponent<RectTransform>();
@@ -74,12 +90,19 @@ namespace Larvend.Gameplay
             bpmInputField = infoPanel.transform.Find("BPMInfo").Find("BPMInput").GetComponent<TMP_InputField>();
             offsetInputField = infoPanel.transform.Find("OffsetInfo").Find("OffsetInput").GetComponent<TMP_InputField>();
 
+            // UI under Play Controller
+            playSwitchButton = this.gameObject.transform.Find("PlayController").Find("PlaySwitch").GetComponent<Button>();
+            stepBackwardButton = this.gameObject.transform.Find("PlayController").Find("StepBackward").GetComponent<Button>();
+            stepForwardButton = this.gameObject.transform.Find("PlayController").Find("StepForward").GetComponent<Button>();
+
+            playSwitchButton.onClick.AddListener(PlaySwitch);
+
             selectFolder.onClick.AddListener(SelectFolder);
             openInfoMenu.onClick.AddListener(OpenInfoPanel);
             difficultySelector.onValueChanged.AddListener(SelectDifficulty);
             saveButton.onClick.AddListener(SaveInfo);
             cancelButton.onClick.AddListener(CloseInfoPanel);
-            showGridToggle.onValueChanged.AddListener((bool isOn) => { TriggerGrid(isOn); });
+            
             slider.onValueChanged.AddListener((float value) => { TriggerTime(value); });
 
             Instance.audioTime.SetText("0");
@@ -88,8 +111,6 @@ namespace Larvend.Gameplay
 
             infoPanel.SetActive(false);
             gridPanel.SetActive(false);
-            showGridToggle.isOn = false;
-            enableAdsorptionToggle.isOn = false;
         }
 
         private void Update()
@@ -108,6 +129,56 @@ namespace Larvend.Gameplay
             Instance.audioTime.SetText(EditorManager.GetAudioPCMTime().ToString());
 
             Instance.slider.value = EditorManager.GetAudioTime() / EditorManager.GetAudioLength();
+        }
+
+        private void PlaySwitch()
+        {
+            if (!Global.IsAudioLoaded)
+            {
+                return;
+            }
+
+            if (playSwitchButton.gameObject.GetComponent<Image>().sprite == playAndPause[0])
+            {
+                playSwitchButton.gameObject.GetComponent<Image>().sprite = playAndPause[1];
+            }
+            else
+            {
+                playSwitchButton.gameObject.GetComponent<Image>().sprite = playAndPause[0];
+            }
+        }
+
+        private void SwitchGridStatus()
+        {
+            gridPanel.SetActive(!gridPanel.activeSelf);
+            if (showGridButton.gameObject.GetComponent<Image>().color == Color.white)
+            {
+                showGridButton.gameObject.GetComponent<Image>().color = new Color(255, 255, 0, 170);
+                enableAbsorptionButton.interactable = true;
+            }
+            else
+            {
+                showGridButton.gameObject.GetComponent<Image>().color = Color.white;
+                enableAbsorptionButton.gameObject.GetComponent<Image>().color = Color.white;
+                enableAbsorptionButton.interactable = false;
+            }
+        }
+
+        private void SwitchAbsorptionStatus()
+        {
+            if (!gridPanel.activeSelf)
+            {
+                return;
+            }
+
+            if (enableAbsorptionButton.gameObject.GetComponent<Image>().color == Color.white)
+            {
+                enableAbsorptionButton.gameObject.GetComponent<Image>().color = new Color(255, 255, 0, 170);
+            }
+            else
+            {
+                enableAbsorptionButton.gameObject.GetComponent<Image>().color = Color.white;
+            }
         }
 
         public void DropSongPanel()

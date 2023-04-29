@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: ad690c5ed16c5fb4eb74af4d36f673df
+guid: bda8ae91d7f83f94eb4b675197a770dd
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -127,7 +127,133 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
-    sprites: []
+    sprites:
+    - serializedVersion: 2
+      name: CreateTap
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 535
+        width: 90
+        height: 90
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d38b2148d59d626459941b445afef2f3
+      internalID: -952722744
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CreateHold
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 428
+        width: 90
+        height: 90
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4cf3e5ba16701bd428253cf8c0de0f08
+      internalID: 1696504059
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CreateFlick
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 321
+        width: 90
+        height: 90
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a68be7d66d94051439adb9cc3c8a6372
+      internalID: -438653688
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OpenSpeedPanel
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 214
+        width: 90
+        height: 90
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0dc2156f175efe84395b8e9e0955c4dd
+      internalID: -1523831562
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ShowGrid
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 108
+        width: 90
+        height: 90
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e081c93013e22e044ba38a883e4ccc3d
+      internalID: -1663915968
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: EnableAbsorption
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 90
+        height: 90
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 93debecb225690044bfd9f4f77a942e3
+      internalID: -101518828
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     physicsShape: []
     bones: []
@@ -138,7 +264,13 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      OpenSpeedPanel: -1523831562
+      CreateHold: 1696504059
+      CreateFlick: -438653688
+      EnableAbsorption: -101518828
+      ShowGrid: -1663915968
+      CreateTap: -952722744
   spritePackingTag: 
   pSDRemoveMatte: 0
   pSDShowRemoveMatteOption: 0
