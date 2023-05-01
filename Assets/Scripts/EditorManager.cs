@@ -16,6 +16,7 @@ namespace Larvend.Gameplay
 
         private static float cortchet;
         private static float step;
+        public static float tick;
         private static float timePointer;
 
         public static bool isAudioPlaying;
@@ -62,6 +63,10 @@ namespace Larvend.Gameplay
             }
         }
 
+        /// <summary>
+        /// Load AudioClip to Editor
+        /// </summary>
+        /// <param name="clip">External AudioClip</param>
         public static void InitAudio(AudioClip clip)
         {
             song.clip = clip;
@@ -72,14 +77,19 @@ namespace Larvend.Gameplay
         /// </summary>
         public static void ResetAudio()
         {
-            song.time = 0;
-            timePointer = 0;
+            if (Global.IsAudioLoaded)
+            {
+                song.time = 0;
+                timePointer = 0;
+                UIController.RefreshUI();
+            }
         }
 
         public void InitializeBPM(float bpm)
         {
             BPM = bpm;
-            cortchet = 60 / bpm;
+            cortchet = 60f / bpm;
+            tick = cortchet / 960f;
         }
 
         public static float GetAudioLength()
@@ -119,7 +129,8 @@ namespace Larvend.Gameplay
             if (deltaTime <= 0 || beginTime == endTime)
             {
                 BPM = targetBPM;
-                cortchet = 60 / BPM;
+                cortchet = 60f / BPM;
+                tick = cortchet / 960f;
             }
             else
             {
@@ -137,7 +148,8 @@ namespace Larvend.Gameplay
             int time = song.timeSamples - beginTime;
 
             BPM = Mathf.Lerp(initialBPM, targetBPM, (float)time / deltaTime);
-            cortchet = 60 / BPM;
+            cortchet = 60f / BPM;
+            tick = cortchet / 960f;
 
             yield return new WaitForFixedUpdate();
             StartCoroutine(LinearlyUpdateBPM(beginTime, initialBPM, targetBPM, deltaTime));

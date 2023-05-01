@@ -43,6 +43,7 @@ namespace Larvend.Gameplay
         [SerializeField] private Sprite[] playAndPause;
         private Button stepBackwardButton;
         private Button stepForwardButton;
+        private Button backToBeginningButton;
 
         private TMP_InputField songNameInputField;
         private TMP_InputField composerInputField;
@@ -94,8 +95,10 @@ namespace Larvend.Gameplay
             playSwitchButton = this.gameObject.transform.Find("PlayController").Find("PlaySwitch").GetComponent<Button>();
             stepBackwardButton = this.gameObject.transform.Find("PlayController").Find("StepBackward").GetComponent<Button>();
             stepForwardButton = this.gameObject.transform.Find("PlayController").Find("StepForward").GetComponent<Button>();
+            backToBeginningButton = this.gameObject.transform.Find("PlayController").Find("BackToBeginning").GetComponent<Button>();
 
             playSwitchButton.onClick.AddListener(PlaySwitch);
+            backToBeginningButton.onClick.AddListener(EditorManager.ResetAudio);
 
             selectFolder.onClick.AddListener(SelectFolder);
             openInfoMenu.onClick.AddListener(OpenInfoPanel);
