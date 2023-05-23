@@ -7,6 +7,6 @@ If you're also interested in rhythm game development / design. Don't hesitate to
 
 若您也对开发/设计音游感兴趣，您可随时通过邮箱或Twitter PM我
 
-E-mail: <a href="mailto:k@ahympia.com">k@ahympia.com</a>
+E-mail: <a href="mailto:k@ahympia.com"> k@ahympia.com </a>
 
-Twitter: @MioAkitsuki
+Twitter: <a href="https://twitter.com/MioAkitsuki"> @MioAkitsuki </a>
