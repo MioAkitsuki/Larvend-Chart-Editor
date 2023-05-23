@@ -13,23 +13,22 @@ namespace Larvend.Gameplay
     public class UIController : MonoBehaviour
     {
         public static UIController Instance { get; private set; }
-        public float vel;
+        public float[] vel;
 
         private Button openInfoMenu;
-        private TMP_Dropdown difficultySelector;
 
         private GameObject infoPanel;
         private GameObject gridPanel;
         private TMP_Text audioTime;
-        private TMP_Text timePlayed;
-        private TMP_Text timeTotal;
-        private Slider slider;
+        
         private Button saveButton;
         private Button cancelButton;
 
         // UI under Left Toolbar
         private Button showGridButton;
         private Button enableAbsorptionButton;
+        private Button openStepPanelButton;
+        private bool isStepPanelOpen;
 
         // UI under SongPanel
         private RectTransform songPanel;
@@ -37,6 +36,14 @@ namespace Larvend.Gameplay
         private Button selectFolder;
         private TMP_Text songName;
         private TMP_Text artistName;
+        private TMP_Dropdown difficultySelector;
+
+        // UI under StepPanel
+        private RectTransform stepPanel;
+        private TMP_Dropdown stepSelector;
+        private Toggle tripletToggle;
+        private Toggle dottedToggle;
+        private TMP_Text currentStepStatus;
 
         // UI under Play Controller
         private Button playSwitchButton;
@@ -54,27 +61,30 @@ namespace Larvend.Gameplay
         void Start()
         {
             Instance = this;
+            vel = new float[2];
 
             openInfoMenu = this.gameObject.transform.Find("OpenInfoButton").GetComponent<Button>();
             
             infoPanel = this.gameObject.transform.Find("InfoPanel").gameObject;
             gridPanel = this.gameObject.transform.Find("GridPanel").gameObject;
             audioTime = this.gameObject.transform.Find("AudioTime").Find("AudioTimeText").GetComponent<TMP_Text>();
-            timePlayed = this.gameObject.transform.Find("Timer").Find("TimePlayed").GetComponent<TMP_Text>();
-            timeTotal = this.gameObject.transform.Find("Timer").Find("TimeTotal").GetComponent<TMP_Text>();
-            slider = this.gameObject.transform.Find("Slider").GetComponent<Slider>();
+            
             saveButton = infoPanel.transform.Find("SaveInfo").GetComponent<Button>();
             cancelButton = infoPanel.transform.Find("CancelInfo").GetComponent<Button>();
 
             // UI under Left Toolbar
             showGridButton = this.gameObject.transform.Find("LeftToolbar").Find("ShowGrid").GetComponent<Button>();
             enableAbsorptionButton = this.gameObject.transform.Find("LeftToolbar").Find("EnableAbsorption").GetComponent<Button>();
+            openStepPanelButton = this.gameObject.transform.Find("LeftToolbar").Find("OpenStepPanel")
+                .GetComponent<Button>();
 
             showGridButton.onClick.AddListener(SwitchGridStatus);
             enableAbsorptionButton.onClick.AddListener(SwitchAbsorptionStatus);
+            openStepPanelButton.onClick.AddListener(ToggleStepPanel);
             showGridButton.gameObject.GetComponent<Image>().color = Color.white;
             enableAbsorptionButton.gameObject.GetComponent<Image>().color = Color.white;
             enableAbsorptionButton.interactable = false;
+            isStepPanelOpen = false;
 
             // UI under SongPanel
             songPanel = this.gameObject.transform.Find("SongPanel").GetComponent<RectTransform>();
@@ -83,6 +93,25 @@ namespace Larvend.Gameplay
             songName = this.gameObject.transform.Find("SongPanel").Find("SongName").GetComponent<TMP_Text>();
             artistName = this.gameObject.transform.Find("SongPanel").Find("ArtistName").GetComponent<TMP_Text>();
             difficultySelector = this.gameObject.transform.Find("SongPanel").Find("DifficultySelector").GetComponent<TMP_Dropdown>();
+
+            selectFolder.onClick.AddListener(SelectFolder);
+            difficultySelector.onValueChanged.AddListener(SelectDifficulty);
+
+            // UI under StepPanel
+            stepPanel = this.gameObject.transform.Find("StepPanel").GetComponent<RectTransform>();
+            stepSelector = this.gameObject.transform.Find("StepPanel").Find("StepSelector")
+                .GetComponent<TMP_Dropdown>();
+            tripletToggle = this.gameObject.transform.Find("StepPanel").Find("TripletToggle").GetComponent<Toggle>();
+            dottedToggle = this.gameObject.transform.Find("StepPanel").Find("DottedToggle").GetComponent<Toggle>();
+            currentStepStatus = this.gameObject.transform.Find("StepPanel").Find("CurrentStepStatus")
+                .GetComponent<TMP_Text>();
+
+            stepSelector.onValueChanged.AddListener(RefreshStep);
+            tripletToggle.onValueChanged.AddListener(RefreshStep);
+            dottedToggle.onValueChanged.AddListener(RefreshStep);
+            Instance.currentStepStatus.SetText($"1 Step = 1.000 Beat(s)");
+            tripletToggle.isOn = false;
+            dottedToggle.isOn = false;
 
             // UI under Info Panel
             songNameInputField = infoPanel.transform.Find("SongNameInfo").Find("SongNameInput").GetComponent<TMP_InputField>();
@@ -100,17 +129,11 @@ namespace Larvend.Gameplay
             playSwitchButton.onClick.AddListener(PlaySwitch);
             backToBeginningButton.onClick.AddListener(EditorManager.ResetAudio);
 
-            selectFolder.onClick.AddListener(SelectFolder);
             openInfoMenu.onClick.AddListener(OpenInfoPanel);
-            difficultySelector.onValueChanged.AddListener(SelectDifficulty);
             saveButton.onClick.AddListener(SaveInfo);
             cancelButton.onClick.AddListener(CloseInfoPanel);
-            
-            slider.onValueChanged.AddListener((float value) => { TriggerTime(value); });
 
             Instance.audioTime.SetText("0");
-            Instance.timePlayed.SetText("00:00.000");
-            Instance.timeTotal.SetText("/  00:00.000");
 
             infoPanel.SetActive(false);
             gridPanel.SetActive(false);
@@ -126,12 +149,25 @@ namespace Larvend.Gameplay
 
         public static void RefreshUI()
         {
-            var time = Global.TimeFormat(EditorManager.GetAudioTime());
-            Instance.timePlayed.SetText($"{time[0]}:{time[1]}.{time[2]}");
-
             Instance.audioTime.SetText(EditorManager.GetAudioPCMTime().ToString());
+        }
 
-            Instance.slider.value = EditorManager.GetAudioTime() / EditorManager.GetAudioLength();
+        private static int[] GetStepValue()
+        {
+            int[] value = new int[] { Instance.stepSelector.value, Convert.ToInt32(Instance.tripletToggle.isOn), Convert.ToInt32(Instance.dottedToggle.isOn) };
+            return value;
+        }
+
+        private void RefreshStep(int value)
+        {
+            string res = String.Format("1 Step = {0:N3} Beat(s)", 4.0 / Math.Pow(2, stepSelector.value) * Math.Pow(2f / 3f, Convert.ToDouble(tripletToggle.isOn)) * Math.Pow(3f / 2f, Convert.ToDouble(dottedToggle.isOn)));
+            Instance.currentStepStatus.SetText(res);
+        }
+
+        private void RefreshStep(bool value)
+        {
+            string res = String.Format("1 Step = {0:N3} Beat(s)", 4.0 / Math.Pow(2, stepSelector.value) * Math.Pow(2f / 3f, Convert.ToDouble(tripletToggle.isOn)) * Math.Pow(3f / 2f, Convert.ToDouble(dottedToggle.isOn)));
+            Instance.currentStepStatus.SetText(res);
         }
 
         private void PlaySwitch()
@@ -184,6 +220,46 @@ namespace Larvend.Gameplay
             }
         }
 
+        private void ToggleStepPanel()
+        {
+            if (isStepPanelOpen)
+            {
+                StopCoroutine("openStepPanelEnumerator");
+                StartCoroutine("closeStepPanelEnumerator");
+            }
+            else
+            {
+                StopCoroutine("closeStepPanelEnumerator");
+                StartCoroutine("openStepPanelEnumerator");
+            }
+
+            isStepPanelOpen = !isStepPanelOpen;
+        }
+
+        IEnumerator openStepPanelEnumerator()
+        {
+            // Vector2 endPos = new Vector2(-705f, 6.35f);
+
+            float x = Mathf.SmoothDamp(stepPanel.localPosition.x, -705f, ref vel[1], 0.1f, 1000f);
+            Vector3 updatePos = new Vector3(x, stepPanel.localPosition.y, 0);
+            stepPanel.localPosition = updatePos;
+
+            yield return new WaitForFixedUpdate();
+            StartCoroutine("openStepPanelEnumerator");
+        }
+
+        IEnumerator closeStepPanelEnumerator()
+        {
+            // Vector2 endPos = new Vector2(-705f, 6.35f);
+
+            float x = Mathf.SmoothDamp(stepPanel.localPosition.x, -1105f, ref vel[1], 0.1f, 1000f);
+            Vector3 updatePos = new Vector3(x, stepPanel.localPosition.y, 0);
+            stepPanel.localPosition = updatePos;
+
+            yield return new WaitForFixedUpdate();
+            StartCoroutine("closeStepPanelEnumerator");
+        }
+
         public void DropSongPanel()
         {
             StopCoroutine("floatSongPanelEnumerator");
@@ -192,9 +268,9 @@ namespace Larvend.Gameplay
 
         IEnumerator dropSongPanelEnumerator()
         {
-            Vector2 endPos = new Vector2(750f, 449.5f);
+            // Vector2 endPos = new Vector2(750f, 449.5f);
 
-            float y = Mathf.SmoothDamp(songPanel.localPosition.y, 449.5f, ref vel, 0.1f, 1000f);
+            float y = Mathf.SmoothDamp(songPanel.localPosition.y, 449.5f, ref vel[0], 0.1f, 1000f);
             Vector3 updatePos = new Vector3(songPanel.localPosition.x, y, 0);
             songPanel.localPosition = updatePos;
             
@@ -213,24 +289,14 @@ namespace Larvend.Gameplay
         }
         IEnumerator floatSongPanelEnumerator()
         {
-            Vector2 endPos = new Vector2(750f, 649.5f);
+            // Vector2 endPos = new Vector2(750f, 649.5f);
 
-            float y = Mathf.SmoothDamp(songPanel.localPosition.y, 649.5f, ref vel, 0.1f, 1000f);
+            float y = Mathf.SmoothDamp(songPanel.localPosition.y, 649.5f, ref vel[0], 0.1f, 1000f);
             Vector3 updatePos = new Vector3(songPanel.localPosition.x, y, 0);
             songPanel.localPosition = updatePos;
 
             yield return new WaitForFixedUpdate();
             StartCoroutine("floatSongPanelEnumerator");
-        }
-
-        private void TriggerTime(float value)
-        {
-            var time = Global.TimeFormat(value * EditorManager.GetAudioLength());
-            Instance.timePlayed.SetText($"{time[0]}:{time[1]}.{time[2]}");
-
-            EditorManager.SetPlayTime(value * EditorManager.GetAudioLength());
-
-            Instance.audioTime.SetText(EditorManager.GetAudioPCMTime().ToString());
         }
 
         private void TriggerGrid(bool state)
@@ -296,10 +362,6 @@ namespace Larvend.Gameplay
         public static void InitAudioLabel(float length)
         {
             Instance.audioTime.SetText("0");
-            Instance.timePlayed.SetText("00:00.000");
-
-            var time = Global.TimeFormat(length);
-            Instance.timeTotal.SetText($"/  {time[0]}:{time[1]}.{time[2]}");
         }
 
         public static void InitAlbumCover(Sprite sprite)

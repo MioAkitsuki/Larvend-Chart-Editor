@@ -63,6 +63,11 @@ namespace Larvend.Gameplay
             }
         }
 
+        public static float GetBPM()
+        {
+            return Instance.BPM;
+        }
+
         /// <summary>
         /// Load AudioClip to Editor
         /// </summary>

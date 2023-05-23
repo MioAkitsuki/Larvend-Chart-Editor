@@ -133,11 +133,11 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 0
-        y: 535
+        y: 749
         width: 90
         height: 90
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -154,11 +154,11 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 0
-        y: 428
+        y: 642
         width: 90
         height: 90
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -175,11 +175,11 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 0
-        y: 321
+        y: 535
         width: 90
         height: 90
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -196,11 +196,11 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 0
-        y: 214
+        y: 428
         width: 90
         height: 90
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -217,11 +217,11 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 0
-        y: 108
+        y: 321
         width: 90
         height: 90
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -238,7 +238,28 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 0
-        y: 0
+        y: 214
+        width: 90
+        height: 90
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 93debecb225690044bfd9f4f77a942e3
+      internalID: -101518828
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: OpenStepPanel
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 107
         width: 90
         height: 90
       alignment: 0
@@ -248,8 +269,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 93debecb225690044bfd9f4f77a942e3
-      internalID: -101518828
+      spriteID: 4a08ccf8bcf2b2e45b31ec3dd21941d0
+      internalID: 1457138627
       vertices: []
       indices: 
       edges: []
@@ -268,6 +289,7 @@ TextureImporter:
       OpenSpeedPanel: -1523831562
       CreateHold: 1696504059
       CreateFlick: -438653688
+      OpenStepPanel: 1457138627
       EnableAbsorption: -101518828
       ShowGrid: -1663915968
       CreateTap: -952722744
