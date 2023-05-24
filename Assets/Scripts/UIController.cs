@@ -25,6 +25,7 @@ namespace Larvend.Gameplay
         private Button cancelButton;
 
         // UI under Left Toolbar
+        private Button showSpeedPanelButton;
         private Button showGridButton;
         private Button enableAbsorptionButton;
         private Button openStepPanelButton;
@@ -44,6 +45,12 @@ namespace Larvend.Gameplay
         private Toggle tripletToggle;
         private Toggle dottedToggle;
         private TMP_Text currentStepStatus;
+
+        // UI under SpeedPanel
+        private CanvasGroup speedPanel;
+        private TMP_InputField speedInput;
+        private Button speedPanelConfirm;
+        private Button speedPanelCancel;
 
         // UI under Play Controller
         private Button playSwitchButton;
@@ -73,11 +80,13 @@ namespace Larvend.Gameplay
             cancelButton = infoPanel.transform.Find("CancelInfo").GetComponent<Button>();
 
             // UI under Left Toolbar
+            showSpeedPanelButton = this.gameObject.transform.Find("LeftToolbar").Find("OpenSpeedPanel").GetComponent<Button>();
             showGridButton = this.gameObject.transform.Find("LeftToolbar").Find("ShowGrid").GetComponent<Button>();
             enableAbsorptionButton = this.gameObject.transform.Find("LeftToolbar").Find("EnableAbsorption").GetComponent<Button>();
             openStepPanelButton = this.gameObject.transform.Find("LeftToolbar").Find("OpenStepPanel")
                 .GetComponent<Button>();
 
+            showSpeedPanelButton.onClick.AddListener(ToggleSpeedPanel);
             showGridButton.onClick.AddListener(SwitchGridStatus);
             enableAbsorptionButton.onClick.AddListener(SwitchAbsorptionStatus);
             openStepPanelButton.onClick.AddListener(ToggleStepPanel);
@@ -112,6 +121,16 @@ namespace Larvend.Gameplay
             Instance.currentStepStatus.SetText($"1 Step = 1.000 Beat(s)");
             tripletToggle.isOn = false;
             dottedToggle.isOn = false;
+
+            // UI under SpeedPanel
+            speedPanel = this.gameObject.transform.Find("SpeedPanel").GetComponent<CanvasGroup>();
+            speedInput = this.gameObject.transform.Find("SpeedPanel").Find("EditArea").GetComponent<TMP_InputField>();
+            speedPanelConfirm = this.gameObject.transform.Find("SpeedPanel").Find("Confirm").GetComponent<Button>();
+            speedPanelCancel = this.gameObject.transform.Find("SpeedPanel").Find("Cancel").GetComponent<Button>();
+
+            speedPanel.alpha = 0;
+            speedPanel.gameObject.SetActive(false);
+            speedPanelCancel.onClick.AddListener((() => StartCoroutine("closeSpeedPanelEnumerator")));
 
             // UI under Info Panel
             songNameInputField = infoPanel.transform.Find("SongNameInfo").Find("SongNameInput").GetComponent<TMP_InputField>();
@@ -170,6 +189,9 @@ namespace Larvend.Gameplay
             Instance.currentStepStatus.SetText(res);
         }
 
+        /// <summary>
+        /// Switch the pause and play status.
+        /// </summary>
         private void PlaySwitch()
         {
             if (!Global.IsAudioLoaded)
@@ -258,6 +280,50 @@ namespace Larvend.Gameplay
 
             yield return new WaitForFixedUpdate();
             StartCoroutine("closeStepPanelEnumerator");
+        }
+
+        private void ToggleSpeedPanel()
+        {
+            if (speedPanel.gameObject.activeSelf)
+            {
+                StopCoroutine("openSpeedPanelEnumerator");
+                StartCoroutine("closeSpeedPanelEnumerator");
+            }
+            else
+            {
+                speedPanel.gameObject.SetActive(true);
+                StopCoroutine("closeSpeedPanelEnumerator");
+                StartCoroutine("openSpeedPanelEnumerator");
+            }
+        }
+
+        IEnumerator openSpeedPanelEnumerator()
+        {
+            speedPanel.alpha = Mathf.Lerp(speedPanel.alpha, 1f, 0.2f);
+
+            if (speedPanel.alpha > 0.98f)
+            {
+                speedPanel.alpha = 1;
+                yield break;
+            }
+
+            yield return new WaitForFixedUpdate();
+            StartCoroutine("openSpeedPanelEnumerator");
+        }
+
+        IEnumerator closeSpeedPanelEnumerator()
+        {
+            speedPanel.alpha = Mathf.Lerp(speedPanel.alpha, 0f, 0.2f);
+
+            if (speedPanel.alpha < 0.02f)
+            {
+                speedPanel.alpha = 0;
+                speedPanel.gameObject.SetActive(false);
+                yield break;
+            }
+
+            yield return new WaitForFixedUpdate();
+            StartCoroutine("closeSpeedPanelEnumerator");
         }
 
         public void DropSongPanel()
