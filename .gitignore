@@ -81,4 +81,8 @@ crashlytics-build.properties
 # End of https://www.toptal.com/developers/gitignore/api/unity
 
 # Large Assets
+<<<<<<< HEAD
 /[Aa]ssets/[Ff]onts/*
+=======
+/[Aa]ssets/[Ff]onts/*
+>>>>>>> 35e4e8bc922b20039a678dddc98627419740d016
