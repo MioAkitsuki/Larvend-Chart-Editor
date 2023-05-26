@@ -53,6 +53,7 @@ namespace Larvend.Gameplay
 
         public static void DialogClosed()
         {
+            Global.IsDialoging = false;
             isDisplaying = false;
             Instance.dialogBox = null;
             ShowMessage();

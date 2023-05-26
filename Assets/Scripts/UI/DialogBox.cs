@@ -75,6 +75,7 @@ namespace Larvend.Gameplay
             {
                 this.GetComponent<CanvasGroup>().alpha = 1;
                 MsgBoxManager.isDisplaying = true;
+                Global.IsDialoging = true;
                 yield break;
             }
 

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
@@ -28,22 +29,26 @@ namespace Larvend.Gameplay
             timePointer = 0f;
             BPM = 120f;
             isAudioPlaying = false;
+
+            Global.IsAudioLoaded = false;
+            Global.IsDirectorySelected = false;
+            Global.IsFileSelected = false;
         }
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Space) && Global.IsAudioLoaded)
+            if (Input.GetKeyDown(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging)
             {
                 song.time = timePointer;
                 lastTimePointer = timePointer;
                 isAudioPlaying = true;
                 song.Play();
             }
-            if (Input.GetKey(KeyCode.Space) && Global.IsAudioLoaded)
+            if (Input.GetKey(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging)
             {
                 // Debug.Log(song.timeSamples);
             }
-            if (Input.GetKeyUp(KeyCode.Space) && Global.IsAudioLoaded)
+            if (Input.GetKeyUp(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging)
             {
                 timePointer = lastTimePointer;
                 song.time = lastTimePointer;
@@ -52,20 +57,46 @@ namespace Larvend.Gameplay
                 song.Stop();
             }
 
-            if (Input.GetKeyUp(KeyCode.RightArrow) && Global.IsAudioLoaded && !isAudioPlaying)
+            if (Input.GetKeyUp(KeyCode.RightArrow) && Global.IsAudioLoaded && !isAudioPlaying && !Global.IsDialoging)
             {
-                timePointer = timePointer + step > song.clip.length ? song.clip.length : timePointer + step;
+                StepForward();
             }
 
-            if (Input.GetKeyUp(KeyCode.LeftArrow) && Global.IsAudioLoaded && !isAudioPlaying)
+            if (Input.GetKeyUp(KeyCode.LeftArrow) && Global.IsAudioLoaded && !isAudioPlaying && !Global.IsDialoging)
             {
-                timePointer = timePointer - step < 0 ? 0 : timePointer - step;
+                StepBackward();
             }
         }
 
         public static float GetBPM()
         {
             return Instance.BPM;
+        }
+
+        public static void SetStep(double s)
+        {
+            step = Convert.ToSingle( cortchet * s );
+        }
+
+        public static void StepForward()
+        {
+            timePointer += step;
+            song.time = timePointer;
+            UIController.RefreshUI();
+        }
+
+        public static void StepBackward()
+        {
+            timePointer = timePointer - step < 0 ? 0 : timePointer - step;
+            song.time = timePointer;
+            UIController.RefreshUI();
+        }
+
+        public static void AdjustPointer(int pointer)
+        {
+            timePointer  = pointer * tick;
+            song.time = timePointer;
+            UIController.RefreshUI();
         }
 
         /// <summary>
@@ -109,11 +140,13 @@ namespace Larvend.Gameplay
         {
             return song.timeSamples;
         }
-        public static void SetPlayTime(float time)
-        {
-            timePointer = time;
-        }
-        // TODO: Connect with UI System
+        
+        /// <summary>
+        /// Deprecated.
+        /// </summary>
+        /// <param name="denominator"></param>
+        /// <param name="isTriplet"></param>
+        /// <param name="isDotted"></param>
         public static void UpdateStep(int denominator, bool isTriplet, bool isDotted)
         {
             step = cortchet * 4 / denominator;

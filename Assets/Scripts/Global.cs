@@ -12,6 +12,7 @@ public class Global
     public static bool IsDirectorySelected;
     public static bool IsFileSelected;
     public static bool IsAudioLoaded;
+    public static bool IsDialoging;
     public static Chart Chart = new Chart();
     public static bool[] Difficulties = new bool[4];
     public static bool IsSaved;

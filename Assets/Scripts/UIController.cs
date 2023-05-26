@@ -6,6 +6,7 @@ using Larvend;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Unity.Mathematics;
 
 namespace Larvend.Gameplay
 {
@@ -14,6 +15,7 @@ namespace Larvend.Gameplay
     {
         public static UIController Instance { get; private set; }
         public float[] vel;
+        private int[] beatTick;
 
         private Button openInfoMenu;
 
@@ -45,6 +47,7 @@ namespace Larvend.Gameplay
         private Toggle tripletToggle;
         private Toggle dottedToggle;
         private TMP_Text currentStepStatus;
+        private TMP_Text currentBPMStatus;
 
         // UI under SpeedPanel
         private CanvasGroup speedPanel;
@@ -58,6 +61,8 @@ namespace Larvend.Gameplay
         private Button stepBackwardButton;
         private Button stepForwardButton;
         private Button backToBeginningButton;
+        private Button adjustPointerButton;
+        private TMP_Text beatInfo;
 
         private TMP_InputField songNameInputField;
         private TMP_InputField composerInputField;
@@ -69,6 +74,7 @@ namespace Larvend.Gameplay
         {
             Instance = this;
             vel = new float[2];
+            beatTick = new int[] {1, 0};
 
             openInfoMenu = this.gameObject.transform.Find("OpenInfoButton").GetComponent<Button>();
             
@@ -114,11 +120,14 @@ namespace Larvend.Gameplay
             dottedToggle = this.gameObject.transform.Find("StepPanel").Find("DottedToggle").GetComponent<Toggle>();
             currentStepStatus = this.gameObject.transform.Find("StepPanel").Find("CurrentStepStatus")
                 .GetComponent<TMP_Text>();
+            currentBPMStatus = this.gameObject.transform.Find("StepPanel").Find("CurrentBPMStatus")
+                .GetComponent<TMP_Text>();
 
             stepSelector.onValueChanged.AddListener(RefreshStep);
             tripletToggle.onValueChanged.AddListener(RefreshStep);
             dottedToggle.onValueChanged.AddListener(RefreshStep);
-            Instance.currentStepStatus.SetText($"1 Step = 1.000 Beat(s)");
+            currentStepStatus.SetText($"1 Step = 1.000 Beat(s)");
+            currentBPMStatus.SetText("Chart Unloaded");
             tripletToggle.isOn = false;
             dottedToggle.isOn = false;
 
@@ -144,15 +153,19 @@ namespace Larvend.Gameplay
             stepBackwardButton = this.gameObject.transform.Find("PlayController").Find("StepBackward").GetComponent<Button>();
             stepForwardButton = this.gameObject.transform.Find("PlayController").Find("StepForward").GetComponent<Button>();
             backToBeginningButton = this.gameObject.transform.Find("PlayController").Find("BackToBeginning").GetComponent<Button>();
+            adjustPointerButton = this.gameObject.transform.Find("PlayController").Find("AdjustPointer").GetComponent<Button>();
+            beatInfo = this.gameObject.transform.Find("BeatInfo").Find("CurrentBeat").GetComponent<TMP_Text>();
 
             playSwitchButton.onClick.AddListener(PlaySwitch);
-            backToBeginningButton.onClick.AddListener(EditorManager.ResetAudio);
+            stepBackwardButton.onClick.AddListener(StepBackward);
+            stepForwardButton.onClick.AddListener(StepForward);
+            backToBeginningButton.onClick.AddListener(ResetPointer);
+            adjustPointerButton.onClick.AddListener(AdjustPointer);
+            beatInfo.SetText("Audio Unloaded");
 
             openInfoMenu.onClick.AddListener(OpenInfoPanel);
             saveButton.onClick.AddListener(SaveInfo);
             cancelButton.onClick.AddListener(CloseInfoPanel);
-
-            Instance.audioTime.SetText("0");
 
             infoPanel.SetActive(false);
             gridPanel.SetActive(false);
@@ -164,6 +177,14 @@ namespace Larvend.Gameplay
             {
                 RefreshUI();
             }
+            if (Input.GetKeyUp(KeyCode.RightArrow) && Global.IsAudioLoaded && !EditorManager.isAudioPlaying && !Global.IsDialoging )
+            {
+                StepForward();
+            }
+            if (Input.GetKeyUp(KeyCode.LeftArrow) && Global.IsAudioLoaded && !EditorManager.isAudioPlaying && !Global.IsDialoging )
+            {
+                StepBackward();
+            }
         }
 
         public static void RefreshUI()
@@ -171,22 +192,30 @@ namespace Larvend.Gameplay
             Instance.audioTime.SetText(EditorManager.GetAudioPCMTime().ToString());
         }
 
-        private static int[] GetStepValue()
+        private static int[] GetStep()
         {
-            int[] value = new int[] { Instance.stepSelector.value, Convert.ToInt32(Instance.tripletToggle.isOn), Convert.ToInt32(Instance.dottedToggle.isOn) };
+            int[] value = new int[] {Instance.stepSelector.value, Convert.ToInt32(Instance.tripletToggle.isOn), Convert.ToInt32(Instance.dottedToggle.isOn)};
             return value;
         }
 
         private void RefreshStep(int value)
         {
-            string res = String.Format("1 Step = {0:N3} Beat(s)", 4.0 / Math.Pow(2, stepSelector.value) * Math.Pow(2f / 3f, Convert.ToDouble(tripletToggle.isOn)) * Math.Pow(3f / 2f, Convert.ToDouble(dottedToggle.isOn)));
+            double step = 4.0 / Math.Pow(2, stepSelector.value) *
+                          Math.Pow(2f / 3f, Convert.ToDouble(tripletToggle.isOn)) *
+                          Math.Pow(3f / 2f, Convert.ToDouble(dottedToggle.isOn));
+            string res = String.Format("1 Step = {0:N3} Beat(s)", step);
             Instance.currentStepStatus.SetText(res);
+            EditorManager.SetStep(step);
         }
 
         private void RefreshStep(bool value)
         {
-            string res = String.Format("1 Step = {0:N3} Beat(s)", 4.0 / Math.Pow(2, stepSelector.value) * Math.Pow(2f / 3f, Convert.ToDouble(tripletToggle.isOn)) * Math.Pow(3f / 2f, Convert.ToDouble(dottedToggle.isOn)));
+            double step = 4.0 / Math.Pow(2, stepSelector.value) *
+                          Math.Pow(2f / 3f, Convert.ToDouble(tripletToggle.isOn)) *
+                          Math.Pow(3f / 2f, Convert.ToDouble(dottedToggle.isOn));
+            string res = String.Format("1 Step = {0:N3} Beat(s)", step);
             Instance.currentStepStatus.SetText(res);
+            EditorManager.SetStep(step);
         }
 
         /// <summary>
@@ -206,6 +235,69 @@ namespace Larvend.Gameplay
             else
             {
                 playSwitchButton.gameObject.GetComponent<Image>().sprite = playAndPause[0];
+            }
+        }
+
+        private void StepBackward()
+        {
+            if (!Global.IsAudioLoaded || EditorManager.isAudioPlaying)
+            {
+                return;
+            }
+
+            int ticks = Convert.ToInt32(3840 / Math.Pow(2, stepSelector.value) *
+                                        Math.Pow(2f / 3f, Convert.ToDouble(tripletToggle.isOn)) *
+                                        Math.Pow(3f / 2f, Convert.ToDouble(dottedToggle.isOn)));
+
+            if (beatTick[0] * 960 + beatTick[1] - ticks < 0)
+            {
+                beatInfo.SetText("1:000");
+            }
+            else
+            {
+                int res = beatTick[0] * 960 + beatTick[1] - ticks;
+                beatTick[0] = res / 960;
+                beatTick[1] = res % 960;
+                beatInfo.SetText($"{beatTick[0]}: {Convert.ToString(beatTick[1]).PadLeft(3, '0')}");
+            }
+            EditorManager.StepBackward();
+        }
+
+        private void StepForward()
+        {
+            if (!Global.IsAudioLoaded || EditorManager.isAudioPlaying)
+            {
+                return;
+            }
+
+            int ticks = Convert.ToInt32(3840 / Math.Pow(2, stepSelector.value) *
+                                        Math.Pow(2f / 3f, Convert.ToDouble(tripletToggle.isOn)) *
+                                        Math.Pow(3f / 2f, Convert.ToDouble(dottedToggle.isOn)));
+
+            int res = beatTick[0] * 960 + beatTick[1] + ticks;
+            beatTick[0] = res / 960;
+            beatTick[1] = res % 960;
+            beatInfo.SetText($"{beatTick[0]}: {Convert.ToString(beatTick[1]).PadLeft(3, '0')}");
+
+            EditorManager.StepForward();
+        }
+
+        private void AdjustPointer()
+        {
+            if (Global.IsAudioLoaded && !Global.IsDialoging)
+            {
+                beatInfo.SetText($"{beatTick[0]}: 000");
+                EditorManager.AdjustPointer(beatTick[0] * 960 + beatTick[1]);
+            }
+        }
+
+        private void ResetPointer()
+        {
+            if (Global.IsAudioLoaded && !Global.IsDialoging)
+            {
+                audioTime.SetText("0");
+                beatInfo.SetText("1: 000");
+                EditorManager.ResetAudio();
             }
         }
 
@@ -288,12 +380,14 @@ namespace Larvend.Gameplay
             {
                 StopCoroutine("openSpeedPanelEnumerator");
                 StartCoroutine("closeSpeedPanelEnumerator");
+                Global.IsDialoging = false;
             }
             else
             {
                 speedPanel.gameObject.SetActive(true);
                 StopCoroutine("closeSpeedPanelEnumerator");
                 StartCoroutine("openSpeedPanelEnumerator");
+                Global.IsDialoging = true;
             }
         }
 
@@ -425,9 +519,22 @@ namespace Larvend.Gameplay
             }
         }
 
+        public static void InitSpeedPanel(List<String> lines)
+        {
+            string res = "";
+            foreach (var line in lines)
+            {
+                res += line + '\n';
+            }
+            Instance.speedInput.text = res;
+        }
+
         public static void InitAudioLabel(float length)
         {
             Instance.audioTime.SetText("0");
+            Instance.beatInfo.SetText("1: 000");
+            Instance.currentBPMStatus.SetText(EditorManager.GetBPM().ToString());
+            EditorManager.SetStep(1);
         }
 
         public static void InitAlbumCover(Sprite sprite)
