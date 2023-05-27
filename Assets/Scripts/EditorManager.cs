@@ -20,6 +20,9 @@ namespace Larvend.Gameplay
         public static float tick;
         private static float timePointer;
 
+        private float startDspTime;
+        private float deltaDspTime;
+
         public static bool isAudioPlaying;
 
         private void Awake()
@@ -28,11 +31,9 @@ namespace Larvend.Gameplay
             song = gameObject.GetComponent<AudioSource>();
             timePointer = 0f;
             BPM = 120f;
+            cortchet = 60f / BPM;
+            tick = cortchet / 960f;
             isAudioPlaying = false;
-
-            Global.IsAudioLoaded = false;
-            Global.IsDirectorySelected = false;
-            Global.IsFileSelected = false;
         }
 
         private void Update()
@@ -41,12 +42,15 @@ namespace Larvend.Gameplay
             {
                 song.time = timePointer;
                 lastTimePointer = timePointer;
+                startDspTime = (float) AudioSettings.dspTime;
+
                 isAudioPlaying = true;
                 song.Play();
             }
             if (Input.GetKey(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging)
             {
-                // Debug.Log(song.timeSamples);
+                deltaDspTime = (float) AudioSettings.dspTime - startDspTime + timePointer;
+                Debug.Log(deltaDspTime);
             }
             if (Input.GetKeyUp(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging)
             {
@@ -55,16 +59,6 @@ namespace Larvend.Gameplay
                 UIController.RefreshUI();
                 isAudioPlaying = false;
                 song.Stop();
-            }
-
-            if (Input.GetKeyUp(KeyCode.RightArrow) && Global.IsAudioLoaded && !isAudioPlaying && !Global.IsDialoging)
-            {
-                StepForward();
-            }
-
-            if (Input.GetKeyUp(KeyCode.LeftArrow) && Global.IsAudioLoaded && !isAudioPlaying && !Global.IsDialoging)
-            {
-                StepBackward();
             }
         }
 

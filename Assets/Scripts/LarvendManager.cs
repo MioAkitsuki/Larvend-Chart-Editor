@@ -14,7 +14,6 @@ namespace Larvend
         private static string path;
         static string[] chart; // Lines of Chart
         static List<Note> notes = new(); // Notes in Chart
-        private static List<String> speedLines = new();
 
         private static bool isInfoReading = false;
         private static bool isNotesReading = false;
@@ -73,14 +72,13 @@ namespace Larvend
                     }
 
                     if (isInfoReading) ReadInfo(line);
-                    if (isNotesReading) ReadNote(line);
+                    if (isNotesReading) notes.Add(ReadNote(line));
                 }
                 foreach (var note in notes)
                 {
                     NoteManager.LoadNote(note);
                 }
-
-                UIController.InitSpeedPanel(speedLines);
+                
                 MsgBoxManager.ShowMessage(MsgType.Info, "Event Load Complete", $"All {notes.Count} events have been loaded.\n已完成共 {notes.Count} 个事件的加载。");
             }
             catch (Exception e)
@@ -89,16 +87,17 @@ namespace Larvend
             }
         }
 
-        private static void ReadNote(string line)
+        public static Note ReadNote(string line)
         {
             int time;
             float x, y; 
             int endTime;
             float targetBpm;
 
-            string[] splitedLine = line.Split(new char[2] { '(', ')' });
+            string[] splitedLine = line.Split(new [] { '(', ')' });
 
-            if (notes.Count == 0 && splitedLine[0] == "speed")
+            /*
+            if (NoteManager.Instance.SpeedAdjust.Count == 0 && splitedLine[0] == "speed")
             {
                 LineDivider(splitedLine[1], out time, out targetBpm, out endTime);
                 if (time > 0 || endTime > 0)
@@ -107,30 +106,26 @@ namespace Larvend
                 }
 
                 EditorManager.Instance.InitializeBPM(targetBpm);
-                notes.Add(new Note(Note.Type.SpeedAdjust, time, targetBpm, endTime));
-                speedLines.Add(line);
-                return;
+                // speedLines.Add(line);
+                return new Note(Note.Type.SpeedAdjust, time, targetBpm, endTime);
             }
+            */
 
             switch (splitedLine[0]) 
             { 
                 case "tap":
                     LineDivider(splitedLine[1], out time, out x, out y); 
-                    notes.Add(new Note(Note.Type.Tap, time, new Vector2(x, y)));
-                    break;
+                    return new Note(Note.Type.Tap, time, new Vector2(x, y));
                 case "hold": 
                     LineDivider(splitedLine[1], out time, out x, out y, out endTime);
-                    notes.Add(new Note(Note.Type.Hold, time, new Vector2(x, y), endTime));
-                    break;
+                    return new Note(Note.Type.Hold, time, new Vector2(x, y), endTime);
                 case "flick": 
                     LineDivider(splitedLine[1], out time, out x, out y);
-                    notes.Add(new Note(Note.Type.Flick, time, new Vector2(x, y)));
-                    break;
+                    return new Note(Note.Type.Flick, time, new Vector2(x, y));
                 case "speed": 
                     LineDivider(splitedLine[1], out time, out targetBpm, out endTime);
-                    notes.Add(new Note(Note.Type.SpeedAdjust, time, targetBpm, endTime));
-                    speedLines.Add(line);
-                    break;
+                    return new Note(Note.Type.SpeedAdjust, time, targetBpm, endTime);
+                    // speedLines.Add(line);
                 default:
                     throw new Exception("Unknown Note Type.");
             }

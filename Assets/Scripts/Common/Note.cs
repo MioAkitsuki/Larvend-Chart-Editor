@@ -25,6 +25,11 @@ namespace Larvend
         public int endTime;
         public float targetBpm;
 
+        internal Note()
+        {
+
+        }
+
         internal Note(Type type, int time, Vector2 pos)
         {
             this.type = type;
@@ -47,5 +52,10 @@ namespace Larvend
             this.targetBpm = targetBpm;
             this.endTime = endTime;
         }
+    }
+
+    public class SpeedAdjust : Note
+    {
+
     }
 }

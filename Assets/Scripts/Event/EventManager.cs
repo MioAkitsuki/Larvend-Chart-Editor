@@ -6,15 +6,8 @@ namespace Larvend.Gameplay
 {
     public class EventManager : MonoBehaviour
     {
-        void Start()
-        {
+        public static EventManager Instance { get; private set; }
+        private List<Note> speedAdjusts = new ();
 
-        }
-
-        // Update is called once per frame
-        void Update()
-        {
-
-        }
     }
 }

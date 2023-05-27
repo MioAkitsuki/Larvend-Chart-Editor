@@ -52,6 +52,7 @@ namespace Larvend.Gameplay
         // UI under SpeedPanel
         private CanvasGroup speedPanel;
         private TMP_InputField speedInput;
+        private bool isSpeedInputChanged;
         private Button speedPanelConfirm;
         private Button speedPanelCancel;
 
@@ -139,6 +140,8 @@ namespace Larvend.Gameplay
 
             speedPanel.alpha = 0;
             speedPanel.gameObject.SetActive(false);
+            speedInput.onValueChanged.AddListener((value) => { isSpeedInputChanged = true; });
+            speedPanelConfirm.onClick.AddListener(SaveSpeedEvent);
             speedPanelCancel.onClick.AddListener((() => StartCoroutine("closeSpeedPanelEnumerator")));
 
             // UI under Info Panel
@@ -260,6 +263,7 @@ namespace Larvend.Gameplay
                 beatTick[1] = res % 960;
                 beatInfo.SetText($"{beatTick[0]}: {Convert.ToString(beatTick[1]).PadLeft(3, '0')}");
             }
+
             EditorManager.StepBackward();
         }
 
@@ -287,7 +291,7 @@ namespace Larvend.Gameplay
             if (Global.IsAudioLoaded && !Global.IsDialoging)
             {
                 beatInfo.SetText($"{beatTick[0]}: 000");
-                EditorManager.AdjustPointer(beatTick[0] * 960 + beatTick[1]);
+                EditorManager.AdjustPointer(beatTick[0] * 960);
             }
         }
 
@@ -301,6 +305,11 @@ namespace Larvend.Gameplay
             }
         }
 
+        private void SaveSpeedEvent()
+        {
+            List<string> list = new List<string>(speedInput.text.Split('\n'));
+            NoteManager.UpdateSpeedEvents(list);
+        }
         private void SwitchGridStatus()
         {
             gridPanel.SetActive(!gridPanel.activeSelf);
