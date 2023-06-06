@@ -11,9 +11,10 @@ GameObject:
   - component: {fileID: 4003367544241291932}
   - component: {fileID: 7132292477579481481}
   - component: {fileID: 2043725372652860644}
+  - component: {fileID: 6365461565414510750}
   m_Layer: 0
   m_Name: Tap
-  m_TagString: Untagged
+  m_TagString: Notes
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -71,6 +72,23 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
+--- !u!114 &6365461565414510750
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4371861312729581155}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 117b9d96ca8a71147ae2cf89230786d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  type: 0
+  time: 0
+  position: {x: 0, y: 0}
+  endTime: 0
+  targetBpm: 0
 --- !u!1 &4451730539227827694
 GameObject:
   m_ObjectHideFlags: 0

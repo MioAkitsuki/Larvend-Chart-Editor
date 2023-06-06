@@ -179,9 +179,10 @@ GameObject:
   - component: {fileID: 4813716475859077012}
   - component: {fileID: 439560257}
   - component: {fileID: 439560256}
+  - component: {fileID: 9122876727027568401}
   m_Layer: 0
   m_Name: Flick
-  m_TagString: Untagged
+  m_TagString: Notes
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -252,3 +253,20 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
+--- !u!114 &9122876727027568401
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7062030594521437869}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 117b9d96ca8a71147ae2cf89230786d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  type: 2
+  time: 0
+  position: {x: 0, y: 0}
+  endTime: 0
+  targetBpm: 0

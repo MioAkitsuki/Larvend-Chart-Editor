@@ -9,11 +9,43 @@ using UnityEngine.Networking;
 
 namespace Larvend
 {
+    public class Line
+    {
+        internal Type type;
+        internal int time;
+        internal Vector2 position;
+        internal int endTime;
+        internal float targetBpm;
+
+        internal Line(Type type, int time, Vector2 pos)
+        {
+            this.type = type;
+            this.time = time;
+            this.position = pos;
+        }
+
+        internal Line(Type type, int time, Vector2 pos, int endTime)
+        {
+            this.type = type;
+            this.time = time;
+            this.position = pos;
+            this.endTime = endTime;
+        }
+
+        internal Line(Type type, int time, float targetBpm, int endTime)
+        {
+            this.type = type;
+            this.time = time;
+            this.targetBpm = targetBpm;
+            this.endTime = endTime;
+        }
+    }
+
     public class ChartManager
     {
         private static string path;
         static string[] chart; // Lines of Chart
-        static List<Note> notes = new(); // Notes in Chart
+        static List<Line> notes = new(); // Notes in Chart
 
         private static bool isInfoReading = false;
         private static bool isNotesReading = false;
@@ -87,7 +119,7 @@ namespace Larvend
             }
         }
 
-        public static Note ReadNote(string line)
+        public static Line ReadNote(string line)
         {
             int time;
             float x, y; 
@@ -114,17 +146,17 @@ namespace Larvend
             switch (splitedLine[0]) 
             { 
                 case "tap":
-                    LineDivider(splitedLine[1], out time, out x, out y); 
-                    return new Note(Note.Type.Tap, time, new Vector2(x, y));
-                case "hold": 
-                    LineDivider(splitedLine[1], out time, out x, out y, out endTime);
-                    return new Note(Note.Type.Hold, time, new Vector2(x, y), endTime);
-                case "flick": 
                     LineDivider(splitedLine[1], out time, out x, out y);
-                    return new Note(Note.Type.Flick, time, new Vector2(x, y));
-                case "speed": 
+                    return new Line(Type.Tap, time, new Vector2(x, y));
+                case "hold":
+                    LineDivider(splitedLine[1], out time, out x, out y, out endTime);
+                    return new Line(Type.Hold, time, new Vector2(x, y), endTime);
+                case "flick":
+                    LineDivider(splitedLine[1], out time, out x, out y);
+                    return new Line(Type.Flick, time, new Vector2(x, y));
+                case "speed":
                     LineDivider(splitedLine[1], out time, out targetBpm, out endTime);
-                    return new Note(Note.Type.SpeedAdjust, time, targetBpm, endTime);
+                    return new Line(Type.SpeedAdjust, time, targetBpm, endTime);
                     // speedLines.Add(line);
                 default:
                     throw new Exception("Unknown Note Type.");
@@ -163,7 +195,7 @@ namespace Larvend
         private static void WriteChart(int difficulty)
         {
             path = Global.FolderPath + "/" + difficulty + ".lff";
-            notes = Global.Notes;
+            notes = NoteManager.GetAllNotes();
 
             try
             {
@@ -198,7 +230,7 @@ namespace Larvend
 
         private static void WriteNotes(StreamWriter chartWriter)
         {
-            List<Note> toWriteNotes = ChartManager.notes;
+            List<Line> toWriteNotes = notes;
 
             chartWriter.WriteLine("[NOTES]");
 
@@ -206,16 +238,16 @@ namespace Larvend
             {
                 switch (note.type)
                 {
-                    case Note.Type.Tap:
+                    case Type.Tap:
                         chartWriter.WriteLine("tap(" + note.time + "," + note.position.x + "," + note.position.y + ")");
                         continue;
-                    case Note.Type.Hold:
+                    case Type.Hold:
                         chartWriter.WriteLine("hold(" + note.time + "," + note.position.x + "," + note.position.y + "," + note.endTime + ")");
                         continue;
-                    case Note.Type.Flick:
+                    case Type.Flick:
                         chartWriter.WriteLine("flick(" + note.time + "," + note.position.x + "," + note.position.y + ")");
                         continue;
-                    case Note.Type.SpeedAdjust:
+                    case Type.SpeedAdjust:
                         chartWriter.WriteLine("speed(" + note.time + "," + note.targetBpm + "," + note.endTime + ")");
                         continue;
                 }
@@ -243,7 +275,7 @@ namespace Larvend
 
         public static void InitChart()
         {
-            Debug.Log("Init.");
+            MsgBoxManager.ShowMessage(MsgType.Info, "Init Chart", "Init Chart");
         }
 
         private static void LineDivider(string line, out int arg1, out float arg2, out float arg3)

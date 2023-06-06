@@ -242,7 +242,7 @@ TextureImporter:
         width: 553
         height: 309
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -250,6 +250,27 @@ TextureImporter:
       bones: []
       spriteID: a09c0ba7a4b859b4bb027375d0e2b7cb
       internalID: -1467808006
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: NotePanel
+      rect:
+        serializedVersion: 2
+        x: 975
+        y: 419
+        width: 410
+        height: 410
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 80d21daeadf73e24cbeb48da3448d382
+      internalID: -1193867651
       vertices: []
       indices: 
       edges: []
@@ -269,6 +290,7 @@ TextureImporter:
       BottomBar: 1310975967
       InfoPanel: -852642787
       StepPanel: -1467808006
+      NotePanel: -1193867651
       TopBar: -1072051586
       Triangle: 1907262883
   spritePackingTag: 

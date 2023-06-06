@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Android;
 using UnityEngine.Events;
 
 namespace Larvend.Gameplay
@@ -16,8 +17,7 @@ namespace Larvend.Gameplay
         public List<GameObject> TapNotes { get; private set; }
         public List<GameObject> HoldNotes { get; private set; }
         public List<GameObject> FlickNotes { get; private set; }
-        public List<Note> Tap = new();
-        public List<Note> SpeedAdjust = new();
+        public List<Line> SpeedAdjust = new();
 
         private void Awake()
         {
@@ -40,38 +40,52 @@ namespace Larvend.Gameplay
         /// Load a certain note into the scene. At its position and disabled by default.
         /// Will be automatically distributed to NoteManager.
         /// </summary>
-        /// <param name="note">The note wanted to load.</param>
-        public static void LoadNote(Note note)
+        /// <param name="line">The line provided and wanted to load.</param>
+        public static void LoadNote(Line line)
         {
-            if (note.type == Note.Type.Tap)
+            if (line.type == Type.Tap)
             {
                 var newNote = Instantiate(_instance.prefabs[0], _instance.transform.GetChild(0));
-                var newPos = Camera.main.ViewportToWorldPoint(note.position);
+                newNote.GetComponent<Note>().InitNote(line.type, line.time, line.position);
+
+                var newPos = Camera.main.ViewportToWorldPoint(line.position);
                 newNote.transform.Translate(newPos.x, newPos.y, 1f);
                 newNote.gameObject.SetActive(false);
-                _instance.Tap.Add(note);
+
                 _instance.TapNotes.Add(newNote);
             }
-            else if (note.type == Note.Type.Hold)
+            else if (line.type == Type.Hold)
             {
                 var newNote = Instantiate(_instance.prefabs[1], _instance.transform.GetChild(1));
-                var newPos = Camera.main.ViewportToWorldPoint(note.position);
+                newNote.GetComponent<Note>().InitNote(line.type, line.time, line.position, line.endTime);
+
+                var newPos = Camera.main.ViewportToWorldPoint(line.position);
                 newNote.transform.Translate(newPos.x, newPos.y, 1f);
                 newNote.gameObject.SetActive(false);
+
                 _instance.HoldNotes.Add(newNote);
             }
-            else if (note.type == Note.Type.Flick)
+            else if (line.type == Type.Flick)
             {
                 var newNote = Instantiate(_instance.prefabs[2], _instance.transform.GetChild(2));
-                var newPos = Camera.main.ViewportToWorldPoint(note.position);
+                newNote.GetComponent<Note>().InitNote(line.type, line.time, line.position);
+
+                var newPos = Camera.main.ViewportToWorldPoint(line.position);
                 newNote.transform.Translate(newPos.x, newPos.y, 1f);
                 newNote.gameObject.SetActive(false);
+
                 _instance.FlickNotes.Add(newNote);
             }
-            else if (note.type == Note.Type.SpeedAdjust)
+            else if (line.type == Type.SpeedAdjust)
             {
-                _instance.SpeedAdjust.Add(note);
+                _instance.SpeedAdjust.Add(line);
             }
+        }
+
+        public static List<Line> GetAllNotes()
+        {
+            MsgBoxManager.ShowMessage(MsgType.Error, "Unfinished Method", "Unfinished Method");
+            return null;
         }
 
         public static void UpdateSpeedEvents(List<string> list)

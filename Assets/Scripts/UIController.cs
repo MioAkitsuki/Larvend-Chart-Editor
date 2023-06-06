@@ -7,6 +7,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Unity.Mathematics;
+using UnityEngine.EventSystems;
+using Unity.Burst.CompilerServices;
 
 namespace Larvend.Gameplay
 {
@@ -16,6 +18,8 @@ namespace Larvend.Gameplay
         public static UIController Instance { get; private set; }
         public float[] vel;
         private int[] beatTick;
+
+        private Camera UICamera;
 
         private Button openInfoMenu;
 
@@ -56,6 +60,15 @@ namespace Larvend.Gameplay
         private Button speedPanelConfirm;
         private Button speedPanelCancel;
 
+        // UI under NotePanel
+        private RectTransform notePanel;
+        private TMP_Dropdown typeSelector;
+        private TMP_InputField timeInput;
+        private TMP_InputField posXInput;
+        private TMP_InputField posYInput;
+        private TMP_InputField endTimeInput;
+        private Button deleteNote;
+
         // UI under Play Controller
         private Button playSwitchButton;
         [SerializeField] private Sprite[] playAndPause;
@@ -76,6 +89,8 @@ namespace Larvend.Gameplay
             Instance = this;
             vel = new float[2];
             beatTick = new int[] {1, 0};
+
+            UICamera = GameObject.Find("UICamera").GetComponent<Camera>();
 
             openInfoMenu = this.gameObject.transform.Find("OpenInfoButton").GetComponent<Button>();
             
@@ -144,6 +159,17 @@ namespace Larvend.Gameplay
             speedPanelConfirm.onClick.AddListener(SaveSpeedEvent);
             speedPanelCancel.onClick.AddListener((() => StartCoroutine("closeSpeedPanelEnumerator")));
 
+            // UI under NotePanel
+            notePanel = this.gameObject.transform.Find("NotePanel").GetComponent<RectTransform>();
+            typeSelector = this.gameObject.transform.Find("NotePanel").Find("TypeSelector").GetComponent<TMP_Dropdown>();
+            timeInput = this.gameObject.transform.Find("NotePanel").Find("TimeInput").GetComponent<TMP_InputField>();
+            posXInput = this.gameObject.transform.Find("NotePanel").Find("PosXInput").GetComponent<TMP_InputField>();
+            posYInput = this.gameObject.transform.Find("NotePanel").Find("PosYInput").GetComponent<TMP_InputField>();
+            endTimeInput = this.gameObject.transform.Find("NotePanel").Find("EndTimeInput").GetComponent<TMP_InputField>();
+            deleteNote = this.gameObject.transform.Find("NotePanel").Find("DeleteNote").GetComponent<Button>();
+
+            notePanel.gameObject.SetActive(false);
+
             // UI under Info Panel
             songNameInputField = infoPanel.transform.Find("SongNameInfo").Find("SongNameInput").GetComponent<TMP_InputField>();
             composerInputField = infoPanel.transform.Find("ComposerInfo").Find("ComposerInput").GetComponent<TMP_InputField>();
@@ -187,6 +213,56 @@ namespace Larvend.Gameplay
             if (Input.GetKeyUp(KeyCode.LeftArrow) && Global.IsAudioLoaded && !EditorManager.isAudioPlaying && !Global.IsDialoging )
             {
                 StepBackward();
+            }
+            
+            if (Input.GetMouseButtonUp(1))
+            {
+                Collider2D col = Physics2D.OverlapPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition), LayerMask.GetMask("Note"));
+
+                if (col != null)
+                {
+                    Note note = col.gameObject.GetComponent<Note>();
+                    typeSelector.value = (int) note.type;
+                    timeInput.text = $"{note.time}";
+                    posXInput.text = $"{note.position.x}";
+                    posYInput.text = $"{note.position.y}";
+
+                    if (note.type == Type.Hold)
+                    {
+                        endTimeInput.text = $"{note.endTime}";
+                        endTimeInput.interactable = true;
+                    }
+                    else
+                    {
+                        endTimeInput.text = "";
+                        endTimeInput.interactable = false;
+                    }
+
+                    Vector2 panelPos = (Vector2) Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                    
+                    if (panelPos.y < -1.5)
+                    {
+                        panelPos += new Vector2(0, 2.8f);
+                    }
+                    if (panelPos.x > 6)
+                    {
+                        panelPos -= new Vector2(2.8f, 0);
+                    }
+
+                    notePanel.position = panelPos;
+                    notePanel.gameObject.SetActive(true);
+                }
+            }
+
+            if (Input.GetMouseButtonUp(0))
+            {
+                if (Physics2D.OverlapPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition)) != null)
+                {
+                    if (notePanel.gameObject.activeSelf)
+                    {
+                        notePanel.gameObject.SetActive(false);
+                    }
+                }
             }
         }
 

@@ -9,53 +9,43 @@ using Vector3 = UnityEngine.Vector3;
 
 namespace Larvend
 {
-    public class Note
+    public enum Type
     {
-        public enum Type
-        {
-            Tap,
-            Hold,
-            Flick,
-            SpeedAdjust
-        }
+        Tap,
+        Hold,
+        Flick,
+        SpeedAdjust
+    }
 
+    public class Note : MonoBehaviour
+    {
         public Type type;
         public int time;
         public Vector2 position;
         public int endTime;
         public float targetBpm;
 
-        internal Note()
+        public void InitNote(Type _type, int _time, Vector2 _pos)
         {
-
+            type = _type;
+            time = _time;
+            position = _pos;
         }
 
-        internal Note(Type type, int time, Vector2 pos)
+        public void InitNote(Type _type, int _time, Vector2 _pos, int _endTime)
         {
-            this.type = type;
-            this.time = time;
-            this.position = pos;
+            type = _type;
+            time = _time;
+            position = _pos;
+            endTime = _endTime;
         }
 
-        internal Note(Type type, int time, Vector2 pos, int endTime)
+        public void InitNote(Type _type, int _time, Vector2 _pos, float _targetBpm)
         {
-            this.type = type;
-            this.time = time;
-            this.position = pos;
-            this.endTime = endTime;
+            type = _type;
+            time = _time;
+            position = _pos;
+            targetBpm = _targetBpm;
         }
-
-        internal Note(Type type, int time, float targetBpm, int endTime)
-        {
-            this.type = type;
-            this.time = time;
-            this.targetBpm = targetBpm;
-            this.endTime = endTime;
-        }
-    }
-
-    public class SpeedAdjust : Note
-    {
-
     }
 }

@@ -84,6 +84,12 @@ namespace Larvend.Gameplay
             Instance.dialogBox.GetReferences();
         }
 
+        /// <summary>
+        /// Use Dialog Box to show message.
+        /// </summary>
+        /// <param name="type">Info, Warning or Error</param>
+        /// <param name="title"></param>
+        /// <param name="msg"></param>
         public static void ShowMessage(MsgType type, string title, string msg)
         {
             if (!Instance.dialogBox || Instance.messages.Count == 0)

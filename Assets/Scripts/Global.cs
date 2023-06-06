@@ -17,7 +17,7 @@ public class Global
     public static bool[] Difficulties = new bool[4];
     public static bool IsSaved;
 
-    public static List<Note> Notes;
+    // public static List<Note> Notes;
     // public static AudioClip song;
 
     public static string[] TimeFormat(float sec)
