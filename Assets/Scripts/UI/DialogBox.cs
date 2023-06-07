@@ -33,6 +33,7 @@ namespace Larvend.Gameplay
 
             dialogConfirm.onClick.AddListener(ConfirmDialogBox);
         }
+
         public void SetMessage(string title, string msg, Callback callback)
         {
             this.GetComponent<CanvasGroup>().alpha = 0;
@@ -55,16 +56,19 @@ namespace Larvend.Gameplay
         {
             StartCoroutine("DialogBoxFadeOut");
             dialogConfirm.onClick.RemoveListener(ConfirmDialogBox);
+            MsgBoxManager.flag = true;
         }
         private void ConfirmDialogBox(Callback confirmCallback)
         {
             StartCoroutine("DialogBoxFadeOut");
             confirmCallback();
             dialogConfirm.onClick.RemoveListener(delegate () { this.ConfirmDialogBox(confirmCallback); });
+            MsgBoxManager.flag = true;
         }
         private void CancelDialogBox()
         {
             StartCoroutine("DialogBoxFadeOut");
+            MsgBoxManager.flag = false;
         }
 
         IEnumerator DialogBoxFadeIn()

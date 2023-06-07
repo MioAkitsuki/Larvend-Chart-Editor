@@ -1,5 +1,8 @@
-﻿using System.Numerics;
+﻿using System;
+using System.Collections;
+using System.Numerics;
 using System.Runtime.CompilerServices;
+using Larvend.Gameplay;
 using Mono.Cecil;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -46,6 +49,46 @@ namespace Larvend
             time = _time;
             position = _pos;
             targetBpm = _targetBpm;
+        }
+
+        public void UpdateTime(string value)
+        {
+            if (Global.IsModifyTimeAllowed)
+            {
+                int newTime = Int32.Parse(value);
+                if (newTime >= 0)
+                {
+                    time = newTime;
+                }
+            }
+        }
+
+        public void UpdateInfo(params string[] param)
+        {
+            type = (Type) Int32.Parse(param[0]);
+            time = (int) Int32.Parse(param[1]);
+            position = new Vector2(Single.Parse(param[2]), Single.Parse(param[3]));
+            if (param.Length > 4)
+            {
+                endTime = (int) Int32.Parse(param[4]);
+            }
+        }
+
+        public void DeleteSelf()
+        {
+            switch (type)
+            {
+                case Type.Tap:
+                    NoteManager.Instance.TapNotes.Remove(this.gameObject);
+                    break;
+                case Type.Hold:
+                    NoteManager.Instance.HoldNotes.Remove(this.gameObject);
+                    break;
+                case Type.Flick:
+                    NoteManager.Instance.FlickNotes.Remove(this.gameObject);
+                    break;
+            }
+            Destroy(this.gameObject);
         }
     }
 }

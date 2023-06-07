@@ -36,8 +36,49 @@ namespace Larvend.Gameplay
             }
         }
 
+        public static void CreateNote(Type type)
+        {
+            if (!Global.IsFileSelected)
+            {
+                return;
+            }
+
+            if (type == Type.Tap)
+            {
+                var newNote = Instantiate(_instance.prefabs[0], _instance.transform.GetChild(0));
+                newNote.GetComponent<Note>().InitNote(type, EditorManager.GetAudioPCMTime(), new Vector2(0.5f, 0.5f));
+
+                var newPos = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
+                newNote.transform.Translate(newPos.x, newPos.y, 1f);
+
+                _instance.TapNotes.Add(newNote);
+            }
+            else if (type == Type.Hold)
+            {
+                var newNote = Instantiate(_instance.prefabs[1], _instance.transform.GetChild(1));
+                newNote.GetComponent<Note>().InitNote(type, EditorManager.GetAudioPCMTime(), new Vector2(0.5f, 0.5f), EditorManager.GetAudioPCMTime());
+
+                var newPos = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
+                newNote.transform.Translate(newPos.x, newPos.y, 1f);
+
+                _instance.HoldNotes.Add(newNote);
+            }
+            else if (type == Type.Flick)
+            {
+                var newNote = Instantiate(_instance.prefabs[2], _instance.transform.GetChild(2));
+                newNote.GetComponent<Note>().InitNote(type, EditorManager.GetAudioPCMTime(), new Vector2(0.5f, 0.5f));
+
+                var newPos = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
+                newNote.transform.Translate(newPos.x, newPos.y, 1f);
+
+                _instance.FlickNotes.Add(newNote);
+            }
+
+            Global.IsSaved = false;
+        }
+
         /// <summary>
-        /// Load a certain note into the scene. At its position and disabled by default.
+        /// From chart file to load a certain note into the scene. At its position and disabled by default.
         /// Will be automatically distributed to NoteManager.
         /// </summary>
         /// <param name="line">The line provided and wanted to load.</param>

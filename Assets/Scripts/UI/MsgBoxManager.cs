@@ -18,18 +18,25 @@ namespace Larvend.Gameplay
         public string msg;
         public MsgType type;
         public Callback callback;
+        public bool flag;
 
-        public Msg(MsgType type, string title, string msg, params Callback[] callbacks)
+        public Msg(MsgType type, string title, string msg)
         {
             this.title = title;
             this.msg = msg;
             this.type = type;
             this.callback = null;
+            this.flag = false;
+        }
 
-            if (callbacks.Length > 0)
-            {
-                this.callback = callbacks[0];
-            }
+        public Msg(MsgType type, string title, string msg, Callback callbacks)
+        {
+            this.title = title;
+            this.msg = msg;
+            this.type = type;
+            this.flag = false;
+            
+            this.callback = callbacks;
         }
     }
 
@@ -42,7 +49,7 @@ namespace Larvend.Gameplay
 
         private DialogBox dialogBox;
         private List<Msg> messages = new List<Msg>();
-
+        public static bool flag = false;
         public static bool isDisplaying = false;
 
         void Awake()

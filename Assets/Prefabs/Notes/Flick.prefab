@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5319021755417249436}
   - component: {fileID: 2819077371096766165}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Edge
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -94,7 +94,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4138183223111198696}
   - component: {fileID: 8497418801060492360}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Square
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -180,7 +180,7 @@ GameObject:
   - component: {fileID: 439560257}
   - component: {fileID: 439560256}
   - component: {fileID: 9122876727027568401}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Flick
   m_TagString: Notes
   m_Icon: {fileID: 0}
@@ -241,7 +241,7 @@ Animator:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7062030594521437869}
-  m_Enabled: 1
+  m_Enabled: 0
   m_Avatar: {fileID: 0}
   m_Controller: {fileID: 9100000, guid: acbd627264c22f34982397f109ce6c0f, type: 2}
   m_CullingMode: 0

@@ -1,0 +1,5 @@
+<Localization lang="zh_cn">
+  <ModNoteTimeAttempt>我们非常不推荐在目前的制谱器版本中手动修改音符时间\n这可能导致您无法找到该音符\n若您清楚此行为的后果，请按确认键继续</ModNoteTimeAttempt>
+  <EventLoadSuccess>已成功完成谱面的加载</EventLoadSuccess>
+  <LoadEmptyChartAttempt>您所读取的谱面无内容，是否需要初始化该谱面？</LoadEmptyChartAttempt>
+</Localization>

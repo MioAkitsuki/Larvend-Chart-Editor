@@ -6,6 +6,7 @@ using Larvend.Gameplay;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.SocialPlatforms;
 
 namespace Larvend
 {
@@ -54,7 +55,7 @@ namespace Larvend
 
         public static void ReadChart(int difficulty)
         {
-            path = Global.FolderPath + "/" + difficulty + ".lff";
+            path = Global.FolderPath + $"/{difficulty}.lff";
             notes = new();
             isInfoReading = false;
             isNotesReading = false;
@@ -65,7 +66,7 @@ namespace Larvend
 
                 if (chart.Length == 0)
                 {
-                    MsgBoxManager.ShowMessage(MsgType.Warning, "Warning", "You are loading an empty chart. Do you want to initialize it?\n您正在读取空谱面，是否需要初始化该谱面？", InitChart);
+                    MsgBoxManager.ShowMessage(MsgType.Warning, "Warning", Localization.GetString(Global.Language, "LoadEmptyChartAttempt"), InitChart);
                     return;
                 }
 
@@ -111,7 +112,7 @@ namespace Larvend
                     NoteManager.LoadNote(note);
                 }
                 
-                MsgBoxManager.ShowMessage(MsgType.Info, "Event Load Complete", $"All {notes.Count} events have been loaded.\n已完成共 {notes.Count} 个事件的加载。");
+                MsgBoxManager.ShowMessage(MsgType.Info, "Event Load Complete", Localization.GetString(Global.Language, "EventLoadSuccess"));
             }
             catch (Exception e)
             {

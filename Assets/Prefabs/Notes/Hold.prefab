@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4025272244109533134}
   - component: {fileID: 6043698204694887043}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Circle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -94,7 +94,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3068985271295357492}
   - component: {fileID: 3025598277036688175}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Ring
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -179,7 +179,7 @@ GameObject:
   - component: {fileID: 8152194388401354683}
   - component: {fileID: 8152194388401354685}
   - component: {fileID: 8152194388401354682}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Progress
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -256,7 +256,7 @@ GameObject:
   - component: {fileID: 8152194389520731307}
   - component: {fileID: 8152194389520731304}
   - component: {fileID: 8152194389520731305}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -357,7 +357,7 @@ GameObject:
   - component: {fileID: 7625441802962700067}
   - component: {fileID: 2474073597966423645}
   - component: {fileID: 889604074129028751}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Hold
   m_TagString: Notes
   m_Icon: {fileID: 0}
@@ -390,7 +390,7 @@ Animator:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8806695195708476535}
-  m_Enabled: 1
+  m_Enabled: 0
   m_Avatar: {fileID: 0}
   m_Controller: {fileID: 9100000, guid: 83632258d5e5b194e91ac12514164535, type: 2}
   m_CullingMode: 0

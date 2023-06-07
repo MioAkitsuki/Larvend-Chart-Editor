@@ -31,6 +31,9 @@ namespace Larvend.Gameplay
         private Button cancelButton;
 
         // UI under Left Toolbar
+        private Button createTapButton;
+        private Button createHoldButton;
+        private Button createFlickButton;
         private Button showSpeedPanelButton;
         private Button showGridButton;
         private Button enableAbsorptionButton;
@@ -102,12 +105,18 @@ namespace Larvend.Gameplay
             cancelButton = infoPanel.transform.Find("CancelInfo").GetComponent<Button>();
 
             // UI under Left Toolbar
+            createTapButton = this.gameObject.transform.Find("LeftToolbar").Find("CreateTap").GetComponent<Button>();
+            createHoldButton = this.gameObject.transform.Find("LeftToolbar").Find("CreateHold").GetComponent<Button>();
+            createFlickButton = this.gameObject.transform.Find("LeftToolbar").Find("CreateFlick").GetComponent<Button>();
             showSpeedPanelButton = this.gameObject.transform.Find("LeftToolbar").Find("OpenSpeedPanel").GetComponent<Button>();
             showGridButton = this.gameObject.transform.Find("LeftToolbar").Find("ShowGrid").GetComponent<Button>();
             enableAbsorptionButton = this.gameObject.transform.Find("LeftToolbar").Find("EnableAbsorption").GetComponent<Button>();
             openStepPanelButton = this.gameObject.transform.Find("LeftToolbar").Find("OpenStepPanel")
                 .GetComponent<Button>();
 
+            createTapButton.onClick.AddListener((() => NoteManager.CreateNote(Type.Tap)));
+            createHoldButton.onClick.AddListener((() => NoteManager.CreateNote(Type.Hold)));
+            createFlickButton.onClick.AddListener((() => NoteManager.CreateNote(Type.Flick)));
             showSpeedPanelButton.onClick.AddListener(ToggleSpeedPanel);
             showGridButton.onClick.AddListener(SwitchGridStatus);
             enableAbsorptionButton.onClick.AddListener(SwitchAbsorptionStatus);
@@ -249,6 +258,12 @@ namespace Larvend.Gameplay
                         panelPos -= new Vector2(2.8f, 0);
                     }
 
+                    timeInput.onSelect.AddListener(UpdateTimeAttempt);
+                    timeInput.onValueChanged.AddListener(note.UpdateTime);
+
+                    deleteNote.onClick.RemoveAllListeners();
+                    deleteNote.onClick.AddListener((() => { note.DeleteSelf(); notePanel.gameObject.SetActive(false);}));
+
                     notePanel.position = panelPos;
                     notePanel.gameObject.SetActive(true);
                 }
@@ -275,6 +290,16 @@ namespace Larvend.Gameplay
         {
             int[] value = new int[] {Instance.stepSelector.value, Convert.ToInt32(Instance.tripletToggle.isOn), Convert.ToInt32(Instance.dottedToggle.isOn)};
             return value;
+        }
+
+        private void UpdateTimeAttempt(string value)
+        {
+            if (Global.IsModifyTimeAllowed)
+            {
+                return;
+            }
+            MsgBoxManager.ShowMessage(MsgType.Warning, "Warning", Localization.GetString(Global.Language, "ModNoteTimeAttempt"),
+                delegate () { Global.IsModifyTimeAllowed = true; });
         }
 
         private void RefreshStep(int value)

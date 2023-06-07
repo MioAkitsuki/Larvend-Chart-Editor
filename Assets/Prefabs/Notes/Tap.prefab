@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 7132292477579481481}
   - component: {fileID: 2043725372652860644}
   - component: {fileID: 6365461565414510750}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Tap
   m_TagString: Notes
   m_Icon: {fileID: 0}
@@ -60,7 +60,7 @@ Animator:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4371861312729581155}
-  m_Enabled: 1
+  m_Enabled: 0
   m_Avatar: {fileID: 0}
   m_Controller: {fileID: 9100000, guid: 85eb7918460fd804781e39fe83d46e6f, type: 2}
   m_CullingMode: 0
@@ -99,7 +99,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3821332860406863359}
   - component: {fileID: 115124926104255970}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Ring
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -183,7 +183,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8216780713134624165}
   - component: {fileID: 3006653103987010049}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Circle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
