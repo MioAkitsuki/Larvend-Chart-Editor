@@ -11,7 +11,7 @@ namespace Larvend
     {
         public static string GetString(string lang, string key)
         {
-            string path = Application.dataPath + $"/I18n/{ lang }.xml";
+            string path = Application.streamingAssetsPath + $"/I18n/{ lang }.xml";
 
             if (File.Exists(path))
             {

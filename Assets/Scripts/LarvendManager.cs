@@ -6,7 +6,6 @@ using Larvend.Gameplay;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Networking;
-using UnityEngine.SocialPlatforms;
 
 namespace Larvend
 {
@@ -17,6 +16,14 @@ namespace Larvend
         internal Vector2 position;
         internal int endTime;
         internal float targetBpm;
+
+        internal Line(float bpm)
+        {
+            type = Type.SpeedAdjust;
+            time = 0;
+            endTime = 0;
+            targetBpm = bpm;
+        }
 
         internal Line(Type type, int time, Vector2 pos)
         {
@@ -48,17 +55,16 @@ namespace Larvend
         static string[] chart; // Lines of Chart
         static List<Line> notes = new(); // Notes in Chart
 
-        private static bool isInfoReading = false;
         private static bool isNotesReading = false;
-        private static bool isInfoWriting = false;
         private static bool isNotesWriting = false;
+        private static bool isBaseBpmReading;
 
         public static void ReadChart(int difficulty)
         {
             path = Global.FolderPath + $"/{difficulty}.lff";
             notes = new();
-            isInfoReading = false;
             isNotesReading = false;
+            isBaseBpmReading = false;
 
             try
             {
@@ -82,30 +88,49 @@ namespace Larvend
                         continue;
                     }
 
-                    switch (line)
+                    if (line.Contains("offset="))
                     {
-                        case "[INFO]" when !isInfoReading && !isNotesReading:
-                            isInfoReading = true;
-                            continue;
-                        case "[ENDINFO]" when isInfoReading && !isNotesReading:
-                            isInfoReading = false;
-                            continue;
-                        case "[NOTES]" when !isInfoReading && !isNotesReading:
-                            isNotesReading = true;
-                            continue;
-                        case "[ENDNOTES]" when !isInfoReading && isNotesReading:
-                            isNotesReading = false;
-                            continue;
-                        case "[END]" when notes.Count == Global.Chart.count:
-                            isInfoReading = false;
-                            isNotesReading = false;
-                            continue;
-                        case "[END]" when notes.Count != Global.Chart.count:
-                            throw new Exception("Error number of notes. Please check the file integrity.");
+                        EditorManager.Instance.offset = Int32.Parse(line.Replace("offset=", ""));
+                        continue;
                     }
 
-                    if (isInfoReading) ReadInfo(line);
-                    if (isNotesReading) notes.Add(ReadNote(line));
+                    switch (line)
+                    {
+                        case "[NOTES]" when !isNotesReading:
+                            isBaseBpmReading = true;
+                            continue;
+                        case "":
+                            continue;
+                        case "[END]":
+                            isNotesReading = false;
+                            continue;
+                    }
+
+                    if (isBaseBpmReading)
+                    {
+                        Line note = ReadNote(line);
+
+                        if (NoteManager.Instance.BaseSpeed == null && note.time == 0 && note.endTime == 0)
+                        {
+                            NoteManager.Instance.BaseSpeed = new Line(note.targetBpm);
+                            EditorManager.Instance.InitializeBPM(note.targetBpm);
+                        }
+
+                        if (NoteManager.Instance.BaseSpeed == null)
+                        {
+                            throw new Exception(Localization.GetString(Global.Language, "BaseBpmNonexistent"));
+                        }
+
+                        isBaseBpmReading = false;
+                        isNotesReading = true;
+
+                        continue;
+                    }
+
+                    if (isNotesReading)
+                    {
+                        notes.Add(ReadNote(line));
+                    }
                 }
                 foreach (var note in notes)
                 {
@@ -129,21 +154,6 @@ namespace Larvend
 
             string[] splitedLine = line.Split(new [] { '(', ')' });
 
-            /*
-            if (NoteManager.Instance.SpeedAdjust.Count == 0 && splitedLine[0] == "speed")
-            {
-                LineDivider(splitedLine[1], out time, out targetBpm, out endTime);
-                if (time > 0 || endTime > 0)
-                {
-                    throw new Exception("Invalid bpm setting!");
-                }
-
-                EditorManager.Instance.InitializeBPM(targetBpm);
-                // speedLines.Add(line);
-                return new Note(Note.Type.SpeedAdjust, time, targetBpm, endTime);
-            }
-            */
-
             switch (splitedLine[0]) 
             { 
                 case "tap":
@@ -158,67 +168,27 @@ namespace Larvend
                 case "speed":
                     LineDivider(splitedLine[1], out time, out targetBpm, out endTime);
                     return new Line(Type.SpeedAdjust, time, targetBpm, endTime);
-                    // speedLines.Add(line);
                 default:
-                    throw new Exception(Localization.GetString(Global.Language, "UnknownNoteType"));
+                    throw new Exception(Localization.GetString(Global.Language, "UnknownNoteType") + $"\n{line}");
             }
         }
 
-        private static void ReadInfo(string line)
+        public static void WriteChart(int difficulty)
         {
-            string[] splitedLine = line.Split('=');
-
-            switch (splitedLine[0])
-            {
-                case "title":
-                    Global.Chart.title = splitedLine[1];
-                    break;
-                case "composer":
-                    Global.Chart.composer = splitedLine[1]; 
-                    break;
-                case "arranger":
-                    Global.Chart.arranger = splitedLine[1];
-                    break;
-                case "bpm":
-                    Global.Chart.bpm = float.Parse(splitedLine[1]); 
-                    break;
-                case "offset":
-                    Global.Chart.offset = float.Parse(splitedLine[1]); 
-                    break;
-                case "count":
-                    Global.Chart.count = int.Parse(splitedLine[1]); 
-                    break;
-                default:
-                    throw new Exception("Unknown Info Type.");
-            }
-        }
-
-        private static void WriteChart(int difficulty)
-        {
-            path = Global.FolderPath + "/" + difficulty + ".lff";
+            path = Global.FolderPath + $"/{difficulty}.lff";
             notes = NoteManager.GetAllNotes();
 
             try
             {
-                StreamWriter chartWriter;
-                if (File.Exists(path))
-                    chartWriter = new(path);
-                else
-                    throw (new Exception("There doesn't exist a chart file for writing."));
+                StreamWriter chartWriter = new StreamWriter(path);
 
-                if (isInfoWriting || isNotesWriting)
+                if (isNotesWriting)
                     throw (new Exception("There was an unfinished writing process."));
 
-                chartWriter.WriteLine("version=" + Global.ChartVersion);
+                chartWriter.WriteLine($"version={Global.ChartVersion}");
+                chartWriter.WriteLine($"offset={EditorManager.Instance.offset}\n");
 
-                isInfoWriting = true;
-                WriteInfo(chartWriter);
-
-                if (!isInfoWriting)
-                {
-                    isNotesWriting = true;
-                    WriteNotes(chartWriter);
-                }
+                WriteNotes(chartWriter);
 
                 chartWriter.WriteLine("[END]");
                 chartWriter.Close();
@@ -234,6 +204,7 @@ namespace Larvend
             List<Line> toWriteNotes = notes;
 
             chartWriter.WriteLine("[NOTES]");
+            chartWriter.WriteLine($"speed(0,{NoteManager.Instance.BaseSpeed.targetBpm},0)");
 
             foreach (var note in toWriteNotes)
             {
@@ -253,30 +224,13 @@ namespace Larvend
                         continue;
                 }
             }
-
-            chartWriter.WriteLine("[ENDNOTES]");
+            
             isNotesWriting = false;
-            return;
-        }
-
-        private static void WriteInfo(StreamWriter chartWriter)
-        {
-            chartWriter.WriteLine("[INFO]");
-            chartWriter.WriteLine("title=" + Global.Chart.title);
-            chartWriter.WriteLine("composer=" + Global.Chart.composer);
-            chartWriter.WriteLine("arranger=" + Global.Chart.arranger);
-            chartWriter.WriteLine("bpm=" + Global.Chart.bpm);
-            chartWriter.WriteLine("offset=" + Global.Chart.offset);
-            chartWriter.WriteLine("count=" + Global.Chart.count);
-            chartWriter.WriteLine("[ENDINFO]");
-
-            isInfoWriting = false;
-            return;
         }
 
         public static void InitChart()
         {
-            MsgBoxManager.ShowMessage(MsgType.Info, "Init Chart", "Init Chart");
+            WriteChart(EditorManager.Instance.difficulty);
         }
 
         private static void LineDivider(string line, out int arg1, out float arg2, out float arg3)
@@ -305,47 +259,218 @@ namespace Larvend
         }
     }
 
+    [Serializable]
+    public class DifficultyInfo
+    {
+        public int diffIndex;
+        public string arranger;
+        public string rating;
+
+        public DifficultyInfo(int diffIndex, string arranger, string rating)
+        {
+            this.diffIndex = diffIndex;
+            this.arranger = arranger;
+            this.rating = rating;
+        }
+
+        public DifficultyInfo()
+        {
+            this.diffIndex = 0;
+            this.arranger = "Sample Arranger";
+            this.rating = "TBD";
+        }
+    }
+    
+    public class Info
+    {
+        public int index;
+        public string id;
+        public string title;
+        public string composer;
+
+        public List<DifficultyInfo> difficulties;
+
+        public Info(int index, string id, string title, string composer, List<DifficultyInfo> difficulties)
+        {
+            this.index = index;
+            this.id = id;
+            this.title = title;
+            this.composer = composer;
+            this.difficulties = difficulties;
+        }
+
+        public Info()
+        {
+            this.index = 0;
+            this.id = "Sample Id";
+            this.title = "Sample Title";
+            this.composer = "Sample Composer";
+            this.difficulties = new List<DifficultyInfo>();
+        }
+    }
+
+    public class InfoManager
+    {
+        public static void ReadInfo()
+        {
+            string path = Global.FolderPath + "/info.json";
+
+            try
+            {
+                StreamReader str = File.OpenText(path);
+                string raw = str.ReadToEnd();
+
+                Info info = JsonUtility.FromJson<Info>(raw);
+                EditorManager.UpdateInfo(info);
+                str.Close();
+            }
+            catch (Exception e)
+            {
+                MsgBoxManager.ShowMessage(MsgType.Error, "Error", e.Message);
+            }
+        }
+
+        public static void WriteInfo(Info info)
+        {
+            string path = Global.FolderPath + "/info.json";
+
+            try
+            {
+                string json = JsonUtility.ToJson(info);
+
+                StreamWriter sw = new StreamWriter(path);
+                sw.Write(FormatJson(json));
+
+                sw.Close();
+            }
+            catch (Exception e)
+            {
+                MsgBoxManager.ShowMessage(MsgType.Error, "Error", e.Message);
+            }
+        }
+
+        public static string FormatJson(string sourceJson)
+        {
+            sourceJson += " ";
+            int itap = 0;
+            string newjson = "";
+
+            for (int i = 0; i < sourceJson.Length - 1; i++)
+            {
+                if (sourceJson[i] == ':' && sourceJson[i + 1] != '{' && sourceJson[i + 1] != '[')
+                {
+                    newjson += sourceJson[i] + " ";
+                }
+                else if (sourceJson[i] == ':' && (sourceJson[i + 1] == '{' || sourceJson[i + 1] == '['))
+                {
+                    newjson += sourceJson[i] + "\n";
+                    for (var a = 0; a < itap; a++)
+                    {
+                        newjson += "\t";
+                    }
+                }
+                else if (sourceJson[i] == '{' || sourceJson[i] == '[')
+                {
+                    itap++;
+                    newjson += sourceJson[i] + "\n";
+                    for (var a = 0; a < itap; a++)
+                    {
+                        newjson += "\t";
+                    }
+                }
+                else if ((sourceJson[i] == '}' || sourceJson[i] == ']'))
+                {
+                    itap--;
+                    newjson += "\n";
+                    for (var a = 0; a < itap; a++)
+                    {
+                        newjson += "\t";
+                    }
+
+                    newjson += sourceJson[i] + "" + ((sourceJson[i + 1] == ',') ? ",\n" : "");
+                    if (sourceJson[i + 1] == ',')
+                    {
+                        i++;
+                        for (var a = 0; a < itap; a++)
+                        {
+                            newjson += "\t";
+                        }
+                    }
+                }
+                else if (sourceJson[i] != '}' && sourceJson[i] != ']' && sourceJson[i + 1] == ',')
+                {
+                    newjson += sourceJson[i] + "" + sourceJson[i + 1] + "\n";
+                    i++;
+                    for (var a = 0; a < itap; a++)
+                    {
+                        newjson += "\t";
+                    }
+                }
+                else
+                {
+                    newjson += sourceJson[i];
+                }
+            }
+            return newjson;
+        }
+    }
+
     public class DirectoryManager
     {
         public static void ReadFolder()
         {
-            if (Directory.Exists(Global.FolderPath))
+            try
             {
-                DirectoryInfo dir = new DirectoryInfo(Global.FolderPath);
-                FileInfo [] files = dir.GetFiles();
-
-                FileInfo def = new FileInfo(Global.FolderPath + "/0.lff");
-                if (files.Length == 0)
-                    def.Create();
-                
-                foreach (var file in files)
+                if (Directory.Exists(Global.FolderPath))
                 {
-                    switch (file.Name)
+                    DirectoryInfo dir = new DirectoryInfo(Global.FolderPath);
+                    FileInfo [] files = dir.GetFiles();
+
+                    // FileInfo def = new FileInfo(Global.FolderPath + "/0.lff");
+                    if (files.Length == 0)
+                        throw new Exception(Localization.GetString(Global.Language, "LoadEmptyDirectoryAttempt"));
+                
+                    foreach (var file in files)
                     {
-                        case "0.lff":
-                            Global.Difficulties[0] = true;
-                            continue;
-                        case "1.lff":
-                            Global.Difficulties[1] = true;
-                            continue;
-                        case "2.lff":
-                            Global.Difficulties[2] = true;
-                            continue;
-                        case "3.lff":
-                            Global.Difficulties[3] = true;
-                            continue;
-                        case "base.mp3":
-                            continue;
-                        case "preview.mp3":
-                            continue;
+                        switch (file.Name)
+                        {
+                            case "0.lff":
+                                Global.Difficulties[0] = true;
+                                continue;
+                            case "1.lff":
+                                Global.Difficulties[1] = true;
+                                continue;
+                            case "2.lff":
+                                Global.Difficulties[2] = true;
+                                continue;
+                            case "3.lff":
+                                Global.Difficulties[3] = true;
+                                continue;
+                            case "base.mp3":
+                                continue;
+                            case "preview.mp3":
+                                continue;
+                            case "info.json":
+                                InfoManager.ReadInfo();
+                                continue;
+                        }
                     }
                 }
             }
+            catch (Exception e)
+            {
+                MsgBoxManager.ShowMessage(MsgType.Info, "Empty Directory", e.Message, InitDirectory);
+            }
+        }
+
+        public static void InitDirectory()
+        {
+            throw new Exception("Unfinished Method.");
         }
 
         public static void CreateChart(int difficulty)
         {
-            FileInfo chart = new FileInfo(Global.FolderPath + "/" + difficulty + ".lff");
+            FileInfo chart = new FileInfo($"{Global.FolderPath}/{difficulty}.lff");
 
             if (chart.Exists)
             {
@@ -356,7 +481,7 @@ namespace Larvend
                 chart.Create();
                 Global.Difficulties[difficulty] = true;
                 
-                MsgBoxManager.ShowMessage(MsgType.Info, "Created Successfully", "New chart has been created successfully, do you want to initialize it?\n已成功创建新谱面，需要将其初始化吗？（若不清楚，请选是）", ChartManager.InitChart);
+                MsgBoxManager.ShowMessage(MsgType.Info, "Created Successfully", Localization.GetString(Global.Language, "CreateChartSuccess"), ChartManager.InitChart);
             }
         }
     }

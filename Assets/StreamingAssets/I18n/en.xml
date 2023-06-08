@@ -1,0 +1,13 @@
+<Localization lang="en">
+  <ModBaseBpmAttempt>We strongly recommend you DO NOT manually modify the base BPM.\nSince notes may lose rhythm.\nIf you are knowing what you're doing, press confirm to continue.</ModBaseBpmAttempt>
+  <ModNoteTimeAttempt>We strongly recommend you DO NOT manually modify the time.\nSince the note may lose rhythm.\nIf you are knowing what you're doing, press confirm to continue.</ModNoteTimeAttempt>
+  <EventLoadSuccess>Chart was loaded successfully.</EventLoadSuccess>
+  <CreateChartSuccess>New chart has been created successfully.\nDo you want to initialize it?</CreateChartSuccess>
+  <SaveChartSuccess>Chart was saved successfully.</SaveChartSuccess>
+  <LoadEmptyChartAttempt>You are loading an empty chart.\nDo you want to initialize it?</LoadEmptyChartAttempt>
+  <LoadEmptyDirectoryAttempt>You are loading an empty directory.\nDo you want to initialize it?</LoadEmptyDirectoryAttempt>
+  <UnsavedChart>There has unsaved change in chart.\nDo you want to save it?</UnsavedChart>
+  <DeleteAllNotesAlert>Are you REALLY want to delete all notes?\nThis action is irreversible!</DeleteAllNotesAlert>
+  <UnknownNoteType>Unknown note type. Please check the input.</UnknownNoteType>
+  <BaseBpmNonexistent>Chart Load Failed: Base BPM setting does not exist.\nPlease check the file integrity.</BaseBpmNonexistent>
+</Localization>

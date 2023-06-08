@@ -10,8 +10,11 @@ namespace Larvend.Gameplay
     {
         public static EditorManager Instance { get; private set; }
         private static AudioSource song;
+        private static Info info;
 
         private float BPM;
+        public int offset;
+        public int difficulty;
 
         private float lastTimePointer;
         
@@ -29,11 +32,16 @@ namespace Larvend.Gameplay
         {
             Instance = this;
             song = gameObject.GetComponent<AudioSource>();
+            offset = 0;
+            difficulty = 0;
+
             timePointer = 0f;
             BPM = 120f;
             cortchet = 60f / BPM;
             tick = cortchet / 960f;
             isAudioPlaying = false;
+
+            Application.wantsToQuit += WantsToQuit;
         }
 
         private void Update()
@@ -59,6 +67,86 @@ namespace Larvend.Gameplay
                 UIController.RefreshUI();
                 isAudioPlaying = false;
                 song.Stop();
+            }
+        }
+
+        static bool WantsToQuit()
+        {
+            if (!Global.IsSaved)
+            {
+                MsgBoxManager.ShowMessage(MsgType.Warning, "Warning", Localization.GetString(Global.Language, "UnsavedChart"),
+                    SaveProject, delegate()
+                    {
+                        Application.wantsToQuit -= WantsToQuit;
+                        Application.Quit();
+                    });
+                return false;
+            }
+            return true;
+        }
+
+        public static void SaveProject()
+        {
+            try
+            {
+                if (!Global.IsFileSelected)
+                {
+                    return;
+                }
+                InfoManager.WriteInfo(info);
+                ChartManager.WriteChart(Instance.difficulty);
+
+                MsgBoxManager.ShowMessage(MsgType.Info, "Saved Successfully", Localization.GetString(Global.Language, "SaveChartSuccess"));
+                Global.IsSaved = true;
+            }
+            catch (Exception e)
+            {
+                MsgBoxManager.ShowMessage(MsgType.Error, "Error", e.Message);
+            }
+        }
+
+        public static Info GetInfo()
+        {
+            return info;
+        }
+
+        public static void UpdateInfo(Info newInfo)
+        {
+            info = newInfo;
+        }
+
+        public static void UpdateInfo(string title, string composer, string arranger, string rating)
+        {
+            info.title = title;
+            info.composer = composer;
+            info.difficulties[Instance.difficulty].arranger = arranger;
+            info.difficulties[Instance.difficulty].rating = rating;
+        }
+
+        public static void AddDifficulty(int diff, string arranger, string rating)
+        {
+            info.difficulties.Add(new DifficultyInfo(diff, arranger, rating));
+        }
+
+        public static void SwitchDifficulty(int diff)
+        {
+            NoteManager.ClearAllNotes();
+
+            if (Global.Difficulties[diff])
+            {
+                ChartManager.ReadChart(diff);
+
+                ResetAudio();
+                Instance.difficulty = diff;
+
+                UIController.RefreshUI();
+            }
+            else
+            {
+                DirectoryManager.CreateChart(diff);
+
+                Instance.difficulty = diff;
+                AddDifficulty(diff, "Sample Arranger", "TBD");
             }
         }
 
@@ -120,11 +208,18 @@ namespace Larvend.Gameplay
             BPM = bpm;
             cortchet = 60f / bpm;
             tick = cortchet / 960f;
+
+            ResetAudio();
         }
 
         public static float GetAudioLength()
         {
             return song.clip.length;
+        }
+
+        public static int GetAudioPCMLength()
+        {
+            return song.clip.samples;
         }
         public static float GetAudioTime()
         {

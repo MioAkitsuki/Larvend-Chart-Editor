@@ -2,10 +2,7 @@ using System;
 using Larvend;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.Android;
-using UnityEngine.Events;
 
 namespace Larvend.Gameplay
 {
@@ -18,6 +15,7 @@ namespace Larvend.Gameplay
         public List<Note> TapNotes { get; private set; }
         public List<Note> HoldNotes { get; private set; }
         public List<Note> FlickNotes { get; private set; }
+        public Line BaseSpeed;
         public List<Line> SpeedAdjust = new();
 
         private void Awake()
@@ -35,6 +33,15 @@ namespace Larvend.Gameplay
                 _instance ??= new NoteManager();
                 return _instance;
             }
+        }
+
+        public static void ClearAllNotes()
+        {
+            Instance.TapNotes.Clear();
+            Instance.HoldNotes.Clear();
+            Instance.FlickNotes.Clear();
+            Instance.SpeedAdjust.Clear();
+            Instance.BaseSpeed = null;
         }
 
         public static void RefreshAllNotes()
@@ -152,14 +159,54 @@ namespace Larvend.Gameplay
             }
             else if (line.type == Type.SpeedAdjust)
             {
+                if (Instance.BaseSpeed == null && line.time == 0 && line.endTime == 0)
+                {
+                    Instance.BaseSpeed = new Line(line.targetBpm);
+                    EditorManager.Instance.InitializeBPM(line.targetBpm);
+                    return;
+                }
                 _instance.SpeedAdjust.Add(line);
             }
         }
 
         public static List<Line> GetAllNotes()
         {
-            MsgBoxManager.ShowMessage(MsgType.Error, "Unfinished Method", "Unfinished Method");
-            return null;
+            List<Note> allNotes = Instance.TapNotes;
+            allNotes.AddRange(Instance.HoldNotes);
+            allNotes.AddRange(Instance.FlickNotes);
+            
+            List<Line> allLines = new List<Line>();
+            foreach (var note in allNotes)
+            {
+                switch (note.type)
+                {
+                    case Type.Tap:
+                        allLines.Add(new Line(note.type, note.time, note.position));
+                        break;
+                    case Type.Hold:
+                        allLines.Add(new Line(note.type, note.time, note.position, note.endTime));
+                        break;
+                    case Type.Flick:
+                        allLines.Add(new Line(note.type, note.time, note.position));
+                        break;
+                }
+            }
+            allLines.AddRange(Instance.SpeedAdjust);
+
+            allLines.Sort((p1, p2) =>
+            {
+                if (p1.time != p2.time)
+                {
+                    return p1.time.CompareTo(p2.time);
+                }
+                else if (p1.type != p2.type)
+                {
+                    return p1.type.CompareTo(p2.type);
+                }
+                else return 0;
+            });
+
+            return allLines;
         }
 
         public static void UpdateSpeedEvents(List<string> list)

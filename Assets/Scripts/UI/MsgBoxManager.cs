@@ -17,7 +17,8 @@ namespace Larvend.Gameplay
         public string title;
         public string msg;
         public MsgType type;
-        public Callback callback;
+        public Callback confirmCallback;
+        public Callback cancelCallback;
         public bool flag;
 
         public Msg(MsgType type, string title, string msg)
@@ -25,18 +26,31 @@ namespace Larvend.Gameplay
             this.title = title;
             this.msg = msg;
             this.type = type;
-            this.callback = null;
+            this.confirmCallback = null;
+            this.cancelCallback = null;
             this.flag = false;
         }
 
-        public Msg(MsgType type, string title, string msg, Callback callbacks)
+        public Msg(MsgType type, string title, string msg, Callback confirmCallback)
         {
             this.title = title;
             this.msg = msg;
             this.type = type;
             this.flag = false;
             
-            this.callback = callbacks;
+            this.confirmCallback = confirmCallback;
+            this.cancelCallback = null;
+        }
+
+        public Msg(MsgType type, string title, string msg, Callback confirmCallback, Callback cancelCallback)
+        {
+            this.title = title;
+            this.msg = msg;
+            this.type = type;
+            this.flag = false;
+
+            this.confirmCallback = confirmCallback;
+            this.cancelCallback = cancelCallback;
         }
     }
 
@@ -49,7 +63,6 @@ namespace Larvend.Gameplay
 
         private DialogBox dialogBox;
         private List<Msg> messages = new List<Msg>();
-        public static bool flag = false;
         public static bool isDisplaying = false;
 
         void Awake()
@@ -124,6 +137,19 @@ namespace Larvend.Gameplay
             Instance.messages.Add(new Msg(type, title, msg, confirmCallback));
         }
 
+        public static void ShowMessage(MsgType type, string title, string msg, Callback confirmCallback, Callback cancelCallback)
+        {
+            if (!Instance.dialogBox)
+            {
+                InitDialogBox(type);
+
+                Instance.dialogBox.SetMessage(title, msg, confirmCallback, cancelCallback);
+                return;
+            }
+
+            Instance.messages.Add(new Msg(type, title, msg, confirmCallback, cancelCallback));
+        }
+
         public static void ShowMessage()
         {
             if (!Instance.dialogBox && Instance.messages.Count > 0)
@@ -142,7 +168,7 @@ namespace Larvend.Gameplay
                 });
                 InitDialogBox(Instance.messages[0].type);
 
-                Instance.dialogBox.SetMessage(Instance.messages[0].title, Instance.messages[0].msg, Instance.messages[0].callback);
+                Instance.dialogBox.SetMessage(Instance.messages[0].title, Instance.messages[0].msg, Instance.messages[0].confirmCallback, Instance.messages[0].cancelCallback);
                 Instance.messages.RemoveAt(0);
             }
         }

@@ -1,0 +1,13 @@
+<Localization lang="zh_cn">
+  <ModBaseBpmAttempt>我们非常不推荐手动修改基准BPM\n这可能导致全体音符时间混乱\n若您确信您知道您在做什么，请按确认键继续</ModBaseBpmAttempt>
+  <ModNoteTimeAttempt>我们非常不推荐手动修改音符时间\n这可能导致该音符的判定时间产生偏差\n若您确信您知道您在做什么，请按确认键继续</ModNoteTimeAttempt>
+  <EventLoadSuccess>已成功完成谱面的加载</EventLoadSuccess>
+  <CreateChartSuccess>已成功创建新谱面，需要将其初始化吗？\n若您不清楚，请选“是”</CreateChartSuccess>
+  <SaveChartSuccess>已成功保存谱面及其相关信息</SaveChartSuccess>
+  <LoadEmptyChartAttempt>您所读取的谱面无内容，是否需要初始化该谱面？</LoadEmptyChartAttempt>
+  <LoadEmptyDirectoryAttempt>所选文件夹为空，是否要初始化该文件夹？</LoadEmptyDirectoryAttempt>
+  <UnsavedChart>谱面有更改未保存，您希望保存吗？</UnsavedChart>
+  <DeleteAllNotesAlert>您真的要清空所有音符吗？该操作不可撤销</DeleteAllNotesAlert>
+  <UnknownNoteType>未知的音符类型，请检查谱面输入</UnknownNoteType>
+  <BaseBpmNonexistent>谱面加载失败：未找到基准BPM设置行\n请检查文件完整性</BaseBpmNonexistent>
+</Localization>

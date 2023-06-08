@@ -9,7 +9,7 @@ namespace Larvend.Gameplay
     public class Global
     {
         public static string FolderPath;
-        public static string ChartVersion = "1.1.2"; // Version that expected
+        public static string ChartVersion = "1.0.0"; // Version that expected
         public static string Language = "zh_cn";
 
         public static bool IsDirectorySelected;
@@ -21,6 +21,7 @@ namespace Larvend.Gameplay
         public static bool[] Difficulties = new bool[4];
         public static bool IsSaved;
 
+        public static bool IsModifyBaseBpmAllowed = false;
         public static bool IsModifyTimeAllowed = false;
 
         // public static List<Note> Notes;

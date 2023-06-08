@@ -189,6 +189,33 @@ namespace Larvend
             }
         }
 
+        public void UpdateEndTime(string value)
+        {
+            if (type != Type.Hold)
+            {
+                return;
+            }
+            try
+            {
+                int newTime = Int32.Parse(value);
+                if (newTime >= time)
+                {
+                    endTime = newTime;
+                }
+                else
+                {
+                    endTime = time;
+                }
+                UIController.RefreshUI();
+
+                RefreshState();
+            }
+            catch (Exception e)
+            {
+                MsgBoxManager.ShowMessage(MsgType.Error, "Error", e.Message);
+            }
+        }
+
         public void UpdatePosX(string value)
         {
             try

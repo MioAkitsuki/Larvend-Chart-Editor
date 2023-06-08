@@ -19,8 +19,6 @@ namespace Larvend.Gameplay
             dialogMsg = transform.Find("Body").Find("BodyLabel").GetComponent<TMP_Text>();
             dialogConfirm = transform.Find("Confirm").GetComponent<Button>();
             dialogCancel = transform.Find("Cancel")?.GetComponent<Button>();
-
-            dialogCancel?.onClick.AddListener(CancelDialogBox);
         }
 
         public void SetMessage(string title, string msg)
@@ -31,6 +29,7 @@ namespace Larvend.Gameplay
             this.gameObject.SetActive(true);
             StartCoroutine("DialogBoxFadeIn");
 
+            dialogCancel?.onClick.AddListener(CancelDialogBox);
             dialogConfirm.onClick.AddListener(ConfirmDialogBox);
         }
 
@@ -50,25 +49,50 @@ namespace Larvend.Gameplay
             {
                 dialogConfirm.onClick.AddListener(ConfirmDialogBox);
             }
+            dialogCancel?.onClick.AddListener(CancelDialogBox);
+        }
+
+        public void SetMessage(string title, string msg, Callback confirmCallback, Callback cancelCallback)
+        {
+            this.GetComponent<CanvasGroup>().alpha = 0;
+            dialogTitle.text = title;
+            dialogMsg.text = msg;
+            this.gameObject.SetActive(true);
+            StartCoroutine("DialogBoxFadeIn");
+
+            if (confirmCallback != null && cancelCallback != null)
+            {
+                dialogConfirm.onClick.AddListener(delegate () { this.ConfirmDialogBox(confirmCallback); });
+                dialogCancel.onClick.AddListener(delegate () { this.CancelDialogBox(cancelCallback); });
+            }
+            else
+            {
+                dialogConfirm.onClick.AddListener(ConfirmDialogBox);
+                dialogCancel.onClick.AddListener(CancelDialogBox);
+            }
         }
 
         private void ConfirmDialogBox()
         {
             StartCoroutine("DialogBoxFadeOut");
             dialogConfirm.onClick.RemoveListener(ConfirmDialogBox);
-            MsgBoxManager.flag = true;
         }
         private void ConfirmDialogBox(Callback confirmCallback)
         {
             StartCoroutine("DialogBoxFadeOut");
             confirmCallback();
             dialogConfirm.onClick.RemoveListener(delegate () { this.ConfirmDialogBox(confirmCallback); });
-            MsgBoxManager.flag = true;
         }
         private void CancelDialogBox()
         {
             StartCoroutine("DialogBoxFadeOut");
-            MsgBoxManager.flag = false;
+            dialogCancel.onClick.RemoveListener(CancelDialogBox);
+        }
+        private void CancelDialogBox(Callback cancelCallback)
+        {
+            StartCoroutine("DialogBoxFadeOut");
+            cancelCallback();
+            dialogCancel.onClick.RemoveListener(delegate () { this.CancelDialogBox(cancelCallback); });
         }
 
         IEnumerator DialogBoxFadeIn()
