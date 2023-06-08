@@ -1,5 +1,6 @@
 <Localization lang="en">
-  <ModNoteTimeAttempt>We strongly recommend you DO NOT manually modify the time.\nSince you may never find this note.\nIf you are knowing what you're doing, press confirm to continue.</ModNoteTimeAttempt>
+  <ModNoteTimeAttempt>We strongly recommend you DO NOT manually modify the time.\nSince the note may lose rhythm.\nIf you are knowing what you're doing, press confirm to continue.</ModNoteTimeAttempt>
   <EventLoadSuccess>Chart was loaded successfully</EventLoadSuccess>
   <LoadEmptyChartAttempt>You are loading an empty chart. Do you want to initialize it?</LoadEmptyChartAttempt>
+  <UnknownNoteType>Unknown note type. Please check the input.</UnknownNoteType>
 </Localization>

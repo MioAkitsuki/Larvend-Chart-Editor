@@ -14,7 +14,7 @@ namespace Larvend.Gameplay
         private float BPM;
 
         private float lastTimePointer;
-
+        
         private static float cortchet;
         private static float step;
         public static float tick;
@@ -38,7 +38,7 @@ namespace Larvend.Gameplay
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging)
+            if (Input.GetKeyDown(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing)
             {
                 song.time = timePointer;
                 lastTimePointer = timePointer;
@@ -47,12 +47,12 @@ namespace Larvend.Gameplay
                 isAudioPlaying = true;
                 song.Play();
             }
-            if (Input.GetKey(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging)
+            if (Input.GetKey(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing)
             {
                 deltaDspTime = (float) AudioSettings.dspTime - startDspTime + timePointer;
                 Debug.Log(deltaDspTime);
             }
-            if (Input.GetKeyUp(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging)
+            if (Input.GetKeyUp(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing)
             {
                 timePointer = lastTimePointer;
                 song.time = lastTimePointer;
@@ -74,7 +74,7 @@ namespace Larvend.Gameplay
 
         public static void StepForward()
         {
-            timePointer += step;
+            timePointer = timePointer + step > song.clip.samples ? song.clip.samples : timePointer + step;
             song.time = timePointer;
             UIController.RefreshUI();
         }

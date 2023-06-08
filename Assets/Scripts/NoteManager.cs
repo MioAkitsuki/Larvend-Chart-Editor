@@ -1,3 +1,4 @@
+using System;
 using Larvend;
 using System.Collections;
 using System.Collections.Generic;
@@ -14,9 +15,9 @@ namespace Larvend.Gameplay
 
         [SerializeField] private GameObject[] prefabs;
 
-        public List<GameObject> TapNotes { get; private set; }
-        public List<GameObject> HoldNotes { get; private set; }
-        public List<GameObject> FlickNotes { get; private set; }
+        public List<Note> TapNotes { get; private set; }
+        public List<Note> HoldNotes { get; private set; }
+        public List<Note> FlickNotes { get; private set; }
         public List<Line> SpeedAdjust = new();
 
         private void Awake()
@@ -36,6 +37,41 @@ namespace Larvend.Gameplay
             }
         }
 
+        public static void RefreshAllNotes()
+        {
+            foreach (var note in Instance.TapNotes)
+            {
+                if ((EditorManager.GetAudioPCMTime() - note.time) / 44100f / (60f / EditorManager.GetBPM()) < -1)
+                {
+                    continue;
+                }
+
+                note.RefreshState();
+            }
+
+            foreach (var note in Instance.HoldNotes)
+            {
+                if ((EditorManager.GetAudioPCMTime() - note.time) / 44100f / (60f / EditorManager.GetBPM()) < -1)
+                {
+                    continue;
+                }
+
+                note.RefreshState();
+            }
+
+            foreach (var note in Instance.FlickNotes)
+            {
+                if ((EditorManager.GetAudioPCMTime() - note.time) / 44100f / (60f / EditorManager.GetBPM()) < -1)
+                {
+                    continue;
+                }
+
+                note.RefreshState();
+            }
+
+            UIController.RefreshSpeedPanel(Instance.SpeedAdjust);
+        }
+
         public static void CreateNote(Type type)
         {
             if (!Global.IsFileSelected)
@@ -49,9 +85,9 @@ namespace Larvend.Gameplay
                 newNote.GetComponent<Note>().InitNote(type, EditorManager.GetAudioPCMTime(), new Vector2(0.5f, 0.5f));
 
                 var newPos = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
-                newNote.transform.Translate(newPos.x, newPos.y, 1f);
+                newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
 
-                _instance.TapNotes.Add(newNote);
+                _instance.TapNotes.Add(newNote.GetComponent<Note>());
             }
             else if (type == Type.Hold)
             {
@@ -59,9 +95,9 @@ namespace Larvend.Gameplay
                 newNote.GetComponent<Note>().InitNote(type, EditorManager.GetAudioPCMTime(), new Vector2(0.5f, 0.5f), EditorManager.GetAudioPCMTime());
 
                 var newPos = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
-                newNote.transform.Translate(newPos.x, newPos.y, 1f);
+                newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
 
-                _instance.HoldNotes.Add(newNote);
+                _instance.HoldNotes.Add(newNote.GetComponent<Note>());
             }
             else if (type == Type.Flick)
             {
@@ -69,9 +105,9 @@ namespace Larvend.Gameplay
                 newNote.GetComponent<Note>().InitNote(type, EditorManager.GetAudioPCMTime(), new Vector2(0.5f, 0.5f));
 
                 var newPos = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
-                newNote.transform.Translate(newPos.x, newPos.y, 1f);
+                newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
 
-                _instance.FlickNotes.Add(newNote);
+                _instance.FlickNotes.Add(newNote.GetComponent<Note>());
             }
 
             Global.IsSaved = false;
@@ -90,10 +126,9 @@ namespace Larvend.Gameplay
                 newNote.GetComponent<Note>().InitNote(line.type, line.time, line.position);
 
                 var newPos = Camera.main.ViewportToWorldPoint(line.position);
-                newNote.transform.Translate(newPos.x, newPos.y, 1f);
-                newNote.gameObject.SetActive(false);
+                newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
 
-                _instance.TapNotes.Add(newNote);
+                _instance.TapNotes.Add(newNote.GetComponent<Note>());
             }
             else if (line.type == Type.Hold)
             {
@@ -101,10 +136,9 @@ namespace Larvend.Gameplay
                 newNote.GetComponent<Note>().InitNote(line.type, line.time, line.position, line.endTime);
 
                 var newPos = Camera.main.ViewportToWorldPoint(line.position);
-                newNote.transform.Translate(newPos.x, newPos.y, 1f);
-                newNote.gameObject.SetActive(false);
+                newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
 
-                _instance.HoldNotes.Add(newNote);
+                _instance.HoldNotes.Add(newNote.GetComponent<Note>());
             }
             else if (line.type == Type.Flick)
             {
@@ -112,10 +146,9 @@ namespace Larvend.Gameplay
                 newNote.GetComponent<Note>().InitNote(line.type, line.time, line.position);
 
                 var newPos = Camera.main.ViewportToWorldPoint(line.position);
-                newNote.transform.Translate(newPos.x, newPos.y, 1f);
-                newNote.gameObject.SetActive(false);
+                newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
 
-                _instance.FlickNotes.Add(newNote);
+                _instance.FlickNotes.Add(newNote.GetComponent<Note>());
             }
             else if (line.type == Type.SpeedAdjust)
             {
@@ -131,11 +164,20 @@ namespace Larvend.Gameplay
 
         public static void UpdateSpeedEvents(List<string> list)
         {
-            _instance.SpeedAdjust.Clear();
-            foreach (var line in list)
+            try
             {
-                var note = ChartManager.ReadNote(line);
-                _instance.SpeedAdjust.Add(note);
+                _instance.SpeedAdjust.Clear();
+                foreach (var line in list)
+                {
+                    var note = ChartManager.ReadNote(line);
+                    _instance.SpeedAdjust.Add(note);
+                }
+
+                UIController.Instance.isSpeedInputChanged = false;
+            }
+            catch (Exception e)
+            {
+                MsgBoxManager.ShowMessage(MsgType.Error, "Error", e.Message);
             }
         }
     }

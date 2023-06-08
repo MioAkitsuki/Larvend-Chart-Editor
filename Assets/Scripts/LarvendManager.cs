@@ -160,7 +160,7 @@ namespace Larvend
                     return new Line(Type.SpeedAdjust, time, targetBpm, endTime);
                     // speedLines.Add(line);
                 default:
-                    throw new Exception("Unknown Note Type.");
+                    throw new Exception(Localization.GetString(Global.Language, "UnknownNoteType"));
             }
         }
 
@@ -385,7 +385,8 @@ namespace Larvend
             // Global.song = clip;
             Global.IsAudioLoaded = true;
             EditorManager.InitAudio(clip);
-            UIController.InitAudioLabel(clip.length);
+            UIController.InitUI();
+            NoteManager.RefreshAllNotes();
         }
     }
 
