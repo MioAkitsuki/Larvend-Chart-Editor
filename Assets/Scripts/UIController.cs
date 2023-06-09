@@ -9,6 +9,8 @@ using TMPro;
 namespace Larvend.Gameplay
 {
     public delegate void Callback();
+
+    public delegate void Callback<T>(T obj);
     public class UIController : MonoBehaviour
     {
         public static UIController Instance { get; private set; }
@@ -20,6 +22,7 @@ namespace Larvend.Gameplay
         // UI under Top Bar
         private TMP_Text audioTime;
         private Button newProject;
+        private Button openProject;
         private Button saveProject;
         private Button openSettings;
         private Button deleteAllNotes;
@@ -39,6 +42,7 @@ namespace Larvend.Gameplay
 
         private TMP_Dropdown languageSelector;
         private Dictionary<int, string> languageDictionary;
+        private Button resetPlayerPrefs;
 
         // UI under Left Toolbar
         private Button createTapButton;
@@ -53,7 +57,6 @@ namespace Larvend.Gameplay
         // UI under SongPanel
         private RectTransform songPanel;
         private Image albumCover;
-        private Button selectFolder;
         private TMP_Text songName;
         private TMP_Text artistName;
         private TMP_Dropdown difficultySelector;
@@ -107,10 +110,72 @@ namespace Larvend.Gameplay
             // UI under Top Bar
             audioTime = this.gameObject.transform.Find("TopBar").Find("AudioTime").Find("AudioTimeText").GetComponent<TMP_Text>();
             newProject = this.gameObject.transform.Find("TopBar").Find("NewProject").GetComponent<Button>();
+            openProject = this.gameObject.transform.Find("TopBar").Find("OpenProject").GetComponent<Button>();
             saveProject = this.gameObject.transform.Find("TopBar").Find("SaveProject").GetComponent<Button>();
             openSettings = this.gameObject.transform.Find("TopBar").Find("OpenSettings").GetComponent<Button>();
             deleteAllNotes = this.gameObject.transform.Find("TopBar").Find("DeleteAllNotes").GetComponent<Button>();
 
+            newProject.onClick.AddListener(() =>
+            {
+                if (!Global.IsSaved)
+                {
+                    MsgBoxManager.ShowMessage(MsgType.Warning, "Project Unsaved", Localization.GetString("UnsavedChart"),
+                        delegate()
+                        {
+                            EditorManager.SaveProject();
+                        },
+                        delegate()
+                        {
+                            Global.IsSaved = true;
+                            string path = SelectFolder();
+                            if (path != null)
+                            {
+                                Global.FolderPath = path;
+                                DirectoryManager.InitDirectory();
+                            }
+                        });
+                }
+                else
+                {
+                    Global.IsSaved = true;
+                    string path = SelectFolder();
+                    if (path != null)
+                    {
+                        Global.FolderPath = path;
+                        DirectoryManager.InitDirectory();
+                    }
+                }
+            });
+            openProject.onClick.AddListener(() =>
+            {
+                if (!Global.IsSaved)
+                {
+                    MsgBoxManager.ShowMessage(MsgType.Warning, "Project Unsaved", Localization.GetString("UnsavedChart"),
+                        delegate ()
+                        {
+                            EditorManager.SaveProject();
+                        },
+                        delegate ()
+                        {
+                            Global.IsSaved = true;
+                            string path = SelectFolder();
+                            if (path != null)
+                            {
+                                Global.FolderPath = path;
+                                DirectoryManager.ReadFolder();
+                            }
+                        });
+                }
+                else
+                {
+                    string path = SelectFolder();
+                    if (path != null)
+                    {
+                        Global.FolderPath = path;
+                        DirectoryManager.ReadFolder();
+                    }
+                }
+            });
             saveProject.onClick.AddListener(EditorManager.SaveProject);
             openSettings.onClick.AddListener(ToggleSettingsPanel);
             deleteAllNotes.onClick.AddListener((() =>
@@ -118,7 +183,7 @@ namespace Larvend.Gameplay
                 if (Global.IsFileSelected)
                 {
                     MsgBoxManager.ShowMessage(MsgType.Warning, "Warning",
-                        Localization.GetString(Global.Language, "DeleteAllNotesAlert"), NoteManager.ClearAllNotes);
+                        Localization.GetString("DeleteAllNotesAlert"), NoteManager.ClearAllNotes);
                 }
             }));
 
@@ -136,11 +201,16 @@ namespace Larvend.Gameplay
 
             languageSelector = this.gameObject.transform.Find("SettingsPanel").Find("LanguageSelector").GetComponent<TMP_Dropdown>();
             languageDictionary = new Dictionary<int, string>() { {0, "zh_cn"}, {1, "en"} };
+            resetPlayerPrefs = this.gameObject.transform.Find("SettingsPanel").Find("ResetPlayerPrefs").GetComponent<Button>();
 
             saveSettings.onClick.AddListener(SaveSettings);
             cancelSettings.onClick.AddListener(() => StartCoroutine("closeSettingsPanelEnumerator"));
             settingsPanel.alpha = 0;
             settingsPanel.gameObject.SetActive(false);
+            resetPlayerPrefs.onClick.AddListener(() =>
+            {
+                MsgBoxManager.ShowMessage(MsgType.Info, "Reset Preferences", Localization.GetString("ResetPrefsAttempt"), EditorManager.InitPlayerPrefs);
+            });
 
             titleInputField.onValueChanged.AddListener(value => isInfoEdited = true);
             composerInputField.onValueChanged.AddListener(value => isInfoEdited = true);
@@ -175,13 +245,9 @@ namespace Larvend.Gameplay
             // UI under SongPanel
             songPanel = this.gameObject.transform.Find("SongPanel").GetComponent<RectTransform>();
             albumCover = this.gameObject.transform.Find("SongPanel").Find("AlbumCover").GetComponent<Image>();
-            selectFolder = this.gameObject.transform.Find("SongPanel").Find("AlbumCover").GetComponent<Button>();
             songName = this.gameObject.transform.Find("SongPanel").Find("SongName").GetComponent<TMP_Text>();
             artistName = this.gameObject.transform.Find("SongPanel").Find("ArtistName").GetComponent<TMP_Text>();
             difficultySelector = this.gameObject.transform.Find("SongPanel").Find("DifficultySelector").GetComponent<TMP_Dropdown>();
-
-            selectFolder.onClick.AddListener(SelectFolder);
-            difficultySelector.onValueChanged.AddListener(SelectDifficultyAttempt);
 
             // UI under StepPanel
             stepPanel = this.gameObject.transform.Find("StepPanel").GetComponent<RectTransform>();
@@ -226,15 +292,19 @@ namespace Larvend.Gameplay
 
             notePanel.gameObject.SetActive(false);
             selectedNote = null;
+            timeInput.interactable = true;
+            if (PlayerPrefs.HasKey("IsModifyNoteTimeAllowed"))
+            {
+                if(PlayerPrefs.GetInt("IsModifyNoteTimeAllowed") == 0)
+                {
+                    timeInput.interactable = false;
+                }
+            }
+
             posXInput.onSelect.AddListener((value) => Global.IsEditing = true);
             posYInput.onSelect.AddListener((value) => Global.IsEditing = true);
             endTimeInput.onSelect.AddListener((value) => Global.IsEditing = true);
             closeNotePanel.onClick.AddListener(() => notePanel.gameObject.SetActive(false));
-
-            if (PlayerPrefs.GetInt("IsModifyNoteTimeAllowed") == 0)
-            {
-                timeInput.interactable = false;
-            }
 
             // UI under Play Controller
             playSwitchButton = this.gameObject.transform.Find("PlayController").Find("PlaySwitch").GetComponent<Button>();
@@ -277,12 +347,12 @@ namespace Larvend.Gameplay
                     selectedNote = note;
                 }
 
-                if (selectedNote != null)
+                if (selectedNote != null && col != null)
                 {
                     typeSelector.value = (int)selectedNote.type;
                     timeInput.text = $"{selectedNote.time}";
-                    posXInput.text = $"{selectedNote.position.x}";
-                    posYInput.text = $"{selectedNote.position.y}";
+                    posXInput.text = $"{selectedNote.position.x:N2}";
+                    posYInput.text = $"{selectedNote.position.y:N2}";
 
                     if (selectedNote.type == Type.Hold)
                     {
@@ -306,9 +376,18 @@ namespace Larvend.Gameplay
                         panelPos -= new Vector2(2.8f, 0);
                     }
 
-                    timeInput.onSelect.AddListener(UpdateTimeAttempt);
+                    if (!PlayerPrefs.HasKey("IsModifyNoteTimeAllowed"))
+                    {
+                        timeInput.onSelect.AddListener(UpdateTimeAttempt);
+                    }
+                    timeInput.onEndEdit.RemoveAllListeners();
                     timeInput.onEndEdit.AddListener(value =>
                     {
+                        if (PlayerPrefs.GetInt("IsModifyNoteTimeAllowed") == 0)
+                        {
+                            RefreshUI();
+                            return;
+                        }
                         selectedNote.UpdateTime(value);
                         Global.IsEditing = false;
                     });
@@ -365,24 +444,13 @@ namespace Larvend.Gameplay
             }
         }
 
-        public static string GetArranger()
-        {
-            return Instance.arrangerInputField.text;
-        }
-
-        private static int[] GetStep()
-        {
-            int[] value = new int[] {Instance.stepSelector.value, Convert.ToInt32(Instance.tripletToggle.isOn), Convert.ToInt32(Instance.dottedToggle.isOn)};
-            return value;
-        }
-
         private void ModifyBaseBpmAttempt(string value)
         {
             if (Global.IsModifyBaseBpmAllowed)
             {
                 return;
             }
-            MsgBoxManager.ShowMessage(MsgType.Warning, "Warning", Localization.GetString(Global.Language, "ModBaseBpmAttempt"),
+            MsgBoxManager.ShowMessage(MsgType.Warning, "Warning", Localization.GetString("ModBaseBpmAttempt"),
                 delegate()
                 {
                     Global.IsModifyBaseBpmAllowed = true;
@@ -396,15 +464,13 @@ namespace Larvend.Gameplay
             if (!PlayerPrefs.HasKey("IsModifyNoteTimeAllowed"))
             {
                 PlayerPrefs.SetInt("IsModifyNoteTimeAllowed", 0);
-                timeInput.interactable = false;
-                MsgBoxManager.ShowMessage(MsgType.Warning, "Warning", Localization.GetString(Global.Language, "ModNoteTimeAttempt"),
+                MsgBoxManager.ShowMessage(MsgType.Warning, "Warning", Localization.GetString("ModNoteTimeAttempt"),
                     delegate ()
                     {
                         // Global.IsModifyTimeAllowed = true;
                         PlayerPrefs.SetInt("IsModifyNoteTimeAllowed", 1);
                         timeInput.onSelect.RemoveAllListeners();
                         timeInput.onSelect.AddListener((value) => Global.IsEditing = true);
-                        timeInput.interactable = true;
                     });
             }
         }
@@ -460,14 +526,16 @@ namespace Larvend.Gameplay
                                         Math.Pow(2f / 3f, Convert.ToDouble(tripletToggle.isOn)) *
                                         Math.Pow(3f / 2f, Convert.ToDouble(dottedToggle.isOn)));
 
-            if (beatTick[0] * 960 + beatTick[1] - ticks <= 0)
+            if ((beatTick[0] - 1) * 960 + beatTick[1] - ticks <= 0)
             {
                 beatInfo.SetText("1: 000");
+                beatTick[0] = 1;
+                beatTick[1] = 0;
             }
             else
             {
-                int res = beatTick[0] * 960 + beatTick[1] - ticks;
-                beatTick[0] = res / 960;
+                int res = (beatTick[0] - 1) * 960 + beatTick[1] - ticks;
+                beatTick[0] = 1 + res / 960;
                 beatTick[1] = res % 960;
                 beatInfo.SetText($"{beatTick[0]}: {Convert.ToString(beatTick[1]).PadLeft(3, '0')}");
             }
@@ -487,16 +555,16 @@ namespace Larvend.Gameplay
                                         Math.Pow(2f / 3f, Convert.ToDouble(tripletToggle.isOn)) *
                                         Math.Pow(3f / 2f, Convert.ToDouble(dottedToggle.isOn)));
 
-            int res = 0;
-            if (beatTick[0] * 960 + beatTick[1] + ticks >= EditorManager.GetAudioPCMLength())
+            int res;
+            if ((beatTick[0] - 1) * 960 + beatTick[1] + ticks >= EditorManager.GetAudioPCMLength())
             {
                 res = EditorManager.GetAudioPCMLength();
             }
             else
             {
-                res = beatTick[0] * 960 + beatTick[1] + ticks;
+                res = (beatTick[0] - 1) * 960 + beatTick[1] + ticks;
             }
-            beatTick[0] = res / 960;
+            beatTick[0] = 1 + res / 960;
             beatTick[1] = res % 960;
             beatInfo.SetText($"{beatTick[0]}: {Convert.ToString(beatTick[1]).PadLeft(3, '0')}");
 
@@ -540,6 +608,7 @@ namespace Larvend.Gameplay
             {
                 showGridButton.gameObject.GetComponent<Image>().color = Color.white;
                 enableAbsorptionButton.gameObject.GetComponent<Image>().color = Color.white;
+                Global.IsAbsorption = false;
                 enableAbsorptionButton.interactable = false;
             }
         }
@@ -554,10 +623,12 @@ namespace Larvend.Gameplay
             if (enableAbsorptionButton.gameObject.GetComponent<Image>().color == Color.white)
             {
                 enableAbsorptionButton.gameObject.GetComponent<Image>().color = new Color(255, 255, 0, 170);
+                Global.IsAbsorption = true;
             }
             else
             {
                 enableAbsorptionButton.gameObject.GetComponent<Image>().color = Color.white;
+                Global.IsAbsorption = false;
             }
         }
 
@@ -616,12 +687,14 @@ namespace Larvend.Gameplay
             else
             {
                 Info info = EditorManager.GetInfo();
+                DifficultyInfo diffInfo = EditorManager.GetDifficultyInfo();
+
                 titleInputField.text = info.title;
                 composerInputField.text = info.composer;
-                arrangerInputField.text = info.difficulties[EditorManager.Instance.difficulty].arranger;
+                arrangerInputField.text = diffInfo.arranger;
                 offsetInputField.text = EditorManager.Instance.offset.ToString();
                 baseBpmInputField.text = NoteManager.Instance.BaseSpeed.targetBpm.ToString();
-                ratingInputField.text = info.difficulties[EditorManager.Instance.difficulty].rating;
+                ratingInputField.text = diffInfo.rating;
 
                 settingsPanel.gameObject.SetActive(true);
                 StopCoroutine("closeSettingsPanelEnumerator");
@@ -744,16 +817,11 @@ namespace Larvend.Gameplay
             StartCoroutine("floatSongPanelEnumerator");
         }
 
-        private void TriggerGrid(bool state)
-        {
-            gridPanel.SetActive(state);
-        }
-
         private void SelectDifficultyAttempt(int diff)
         {
             if (!Global.IsSaved)
             {
-                MsgBoxManager.ShowMessage(MsgType.Warning, "Warning", Localization.GetString(Global.Language, "UnsavedChart"),
+                MsgBoxManager.ShowMessage(MsgType.Warning, "Warning", Localization.GetString("UnsavedChart"),
                     delegate()
                     {
                         EditorManager.SaveProject();
@@ -762,42 +830,54 @@ namespace Larvend.Gameplay
                         difficultySelector.gameObject.transform.Find("Label").GetComponent<TMP_Text>().text = Enum.GetName(typeof(Chart.Difficulties), diff);
                     });
             }
+            else
+            {
+                EditorManager.SwitchDifficulty(diff);
+                difficultySelector.options[diff].text = Enum.GetName(typeof(Chart.Difficulties), diff);
+                difficultySelector.gameObject.transform.Find("Label").GetComponent<TMP_Text>().text = Enum.GetName(typeof(Chart.Difficulties), diff);
+            }
         }
 
-        private void InitDifficultySelector()
+        public void InitDifficultySelector()
         {
             difficultySelector.ClearOptions();
+            bool[] diffBools = new bool[4];
+
+            foreach (var diff in EditorManager.GetInfo().difficulties)
+            {
+                diffBools[diff.diffIndex] = true;
+            }
 
             for (int i = 0; i < 4; i++)
             {
                 TMP_Dropdown.OptionData op = new TMP_Dropdown.OptionData();
-                if (Global.Difficulties[i])
+                
+                if (diffBools[i])
+                {
                     op.text = Enum.GetName(typeof(Chart.Difficulties), i);
+                    difficultySelector.options.Add(op);
+                    if (!Global.IsFileSelected)
+                    {
+                        difficultySelector.GetComponentInChildren<TMP_Text>().text = Enum.GetName(typeof(Chart.Difficulties), i);
+                        difficultySelector.value = i;
+                        EditorManager.SwitchDifficulty(i);
+                        Global.IsFileSelected = true;
+                    }
+                }
                 else
+                {
                     op.text = "Create " + Enum.GetName(typeof(Chart.Difficulties), i);
-                difficultySelector.options.Add(op);
+                    difficultySelector.options.Add(op);
+                }
             }
 
-            difficultySelector.gameObject.transform.Find("Label").GetComponent<TMP_Text>().text = "Light";
-
-            ChartManager.ReadChart(0);
-            EditorManager.Instance.difficulty = 0;
-            Global.IsFileSelected = true;
+            difficultySelector.onValueChanged.AddListener(SelectDifficultyAttempt);
         }
 
-        void SelectFolder()
+        private string SelectFolder()
         {
             string path = Schwarzer.Windows.Dialog.OpenFolderDialog("Select Folder", "/");
-            if (path != null && Global.FolderPath != path)
-            {
-                Global.FolderPath = path;
-                Global.IsDirectorySelected = true;
-                DirectoryManager.ReadFolder();
-                StartCoroutine(AudioManager.LoadAudio());
-                StartCoroutine(ImageManager.LoadImg());
-                InitDifficultySelector();
-                InitSongInfo();
-            }
+            return path;
         }
 
         public static void RefreshSpeedPanel(List<Line> lines)
@@ -827,8 +907,8 @@ namespace Larvend.Gameplay
 
         public static void InitSongInfo()
         {
-            Instance.songName.text = Global.Chart.title == null ? "Sample Song" : Global.Chart.title;
-            Instance.artistName.text = Global.Chart.composer == null ? "Artist: Sample Artist" : "Artist: " + Global.Chart.composer;
+            Instance.songName.text = EditorManager.GetInfo().title == null ? "Sample Song" : EditorManager.GetInfo().title;
+            Instance.artistName.text = EditorManager.GetInfo().composer == null ? "Artist: Sample Artist" : $"Artist: {EditorManager.GetInfo().composer}";
             Instance.difficultySelector.interactable = true;
         }
 
@@ -843,27 +923,11 @@ namespace Larvend.Gameplay
                     EditorManager.Instance.InitializeBPM(Single.Parse(baseBpmInputField.text));
                     NoteManager.Instance.BaseSpeed = new Line(Single.Parse(baseBpmInputField.text));
                 }
+
+                Global.IsSaved = false;
             }
 
-            Global.Language = languageDictionary[languageSelector.value];
+            PlayerPrefs.SetString("Language", languageDictionary[languageSelector.value]);
         }
-
-        /*
-        private void RefreshSettingsPanel()
-        {
-            titleInputField.text = EditorManager.title;
-            songNameInputField.text = Global.Chart.title;
-            artistName.text = "Artist: " + Global.Chart.composer;
-            composerInputField.text = Global.Chart.composer;
-            arrangerInputField.text = Global.Chart.arranger;
-            bpmInputField.text = Global.Chart.bpm.ToString();
-            offsetInputField.text = Global.Chart.offset.ToString();
-        }
-
-        public void CloseInfoPanel()
-        {
-            infoPanel.SetActive(false);
-        }
-        */
     }
 }

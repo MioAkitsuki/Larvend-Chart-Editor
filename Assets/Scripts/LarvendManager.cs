@@ -66,13 +66,18 @@ namespace Larvend
             isNotesReading = false;
             isBaseBpmReading = false;
 
+            NoteManager.ClearAllNotes();
             try
             {
                 chart = File.ReadAllLines(path);
 
                 if (chart.Length == 0)
                 {
-                    MsgBoxManager.ShowMessage(MsgType.Warning, "Warning", Localization.GetString(Global.Language, "LoadEmptyChartAttempt"), InitChart);
+                    MsgBoxManager.ShowMessage(MsgType.Warning, "Warning", Localization.GetString("LoadEmptyChartAttempt"),
+                        delegate()
+                        {
+                            InitChart();
+                        });
                     return;
                 }
 
@@ -118,7 +123,7 @@ namespace Larvend
 
                         if (NoteManager.Instance.BaseSpeed == null)
                         {
-                            throw new Exception(Localization.GetString(Global.Language, "BaseBpmNonexistent"));
+                            throw new Exception(Localization.GetString("BaseBpmNonexistent"));
                         }
 
                         isBaseBpmReading = false;
@@ -137,7 +142,7 @@ namespace Larvend
                     NoteManager.LoadNote(note);
                 }
                 
-                MsgBoxManager.ShowMessage(MsgType.Info, "Event Load Complete", Localization.GetString(Global.Language, "EventLoadSuccess"));
+                MsgBoxManager.ShowMessage(MsgType.Info, "Event Load Complete", Localization.GetString("EventLoadSuccess"));
             }
             catch (Exception e)
             {
@@ -169,7 +174,7 @@ namespace Larvend
                     LineDivider(splitedLine[1], out time, out targetBpm, out endTime);
                     return new Line(Type.SpeedAdjust, time, targetBpm, endTime);
                 default:
-                    throw new Exception(Localization.GetString(Global.Language, "UnknownNoteType") + $"\n{line}");
+                    throw new Exception(Localization.GetString("UnknownNoteType") + $"\n{line}");
             }
         }
 
@@ -188,6 +193,9 @@ namespace Larvend
                 chartWriter.WriteLine($"version={Global.ChartVersion}");
                 chartWriter.WriteLine($"offset={EditorManager.Instance.offset}\n");
 
+                chartWriter.WriteLine("[NOTES]");
+                chartWriter.WriteLine($"speed(0,{NoteManager.Instance.BaseSpeed.targetBpm},0)");
+
                 WriteNotes(chartWriter);
 
                 chartWriter.WriteLine("[END]");
@@ -203,24 +211,21 @@ namespace Larvend
         {
             List<Line> toWriteNotes = notes;
 
-            chartWriter.WriteLine("[NOTES]");
-            chartWriter.WriteLine($"speed(0,{NoteManager.Instance.BaseSpeed.targetBpm},0)");
-
             foreach (var note in toWriteNotes)
             {
                 switch (note.type)
                 {
                     case Type.Tap:
-                        chartWriter.WriteLine("tap(" + note.time + "," + note.position.x + "," + note.position.y + ")");
+                        chartWriter.WriteLine($"tap({note.time},{note.position.x:N2},{note.position.y:N2})");
                         continue;
                     case Type.Hold:
-                        chartWriter.WriteLine("hold(" + note.time + "," + note.position.x + "," + note.position.y + "," + note.endTime + ")");
+                        chartWriter.WriteLine($"hold({note.time},{note.position.x:N2},{note.position.y:N2},{note.endTime})");
                         continue;
                     case Type.Flick:
-                        chartWriter.WriteLine("flick(" + note.time + "," + note.position.x + "," + note.position.y + ")");
+                        chartWriter.WriteLine($"flick({note.time},{note.position.x:N2},{note.position.y:N2})");
                         continue;
                     case Type.SpeedAdjust:
-                        chartWriter.WriteLine("speed(" + note.time + "," + note.targetBpm + "," + note.endTime + ")");
+                        chartWriter.WriteLine($"speed({note.time},{note.targetBpm:N2},{note.endTime})");
                         continue;
                 }
             }
@@ -228,9 +233,45 @@ namespace Larvend
             isNotesWriting = false;
         }
 
-        public static void InitChart()
+        public static void InitChart(params bool[] param)
         {
-            WriteChart(EditorManager.Instance.difficulty);
+            NoteManager.ClearAllNotes();
+            try
+            {
+                MsgBoxManager.ShowInputDialog("Initialize Chart", "Please Set Base BPM", delegate(string value)
+                {
+                    EditorManager.Instance.InitializeBPM(Single.Parse(value));
+                    NoteManager.Instance.BaseSpeed = new Line(Single.Parse(value));
+
+                    WriteChart(EditorManager.Instance.difficulty);
+
+                    if (param.Length > 0)
+                    {
+                        MsgBoxManager.ShowMessage(MsgType.Info, "Initialize Directory Successfully",
+                            Localization.GetString("InitDirectorySuccess"));
+
+                        UIController.Instance.InitDifficultySelector();
+
+                        System.Diagnostics.Process.Start(Global.FolderPath);
+                        Global.IsDirectorySelected = true;
+                    }
+                    else
+                    {
+                        MsgBoxManager.ShowMessage(MsgType.Info, "Initialize Success",
+                            Localization.GetString("InitializeChartSuccess"));
+                    }
+                }, AbortInitChart);
+            }
+            catch (Exception e)
+            {
+                MsgBoxManager.ShowMessage(MsgType.Error, "Error in Initializing Chart", e.Message);
+                throw;
+            }
+        }
+
+        public static void AbortInitChart()
+        {
+            throw new Exception("Initialization Aborted.");
         }
 
         private static void LineDivider(string line, out int arg1, out float arg2, out float arg3)
@@ -311,7 +352,7 @@ namespace Larvend
 
     public class InfoManager
     {
-        public static void ReadInfo()
+        public static Info ReadInfo()
         {
             string path = Global.FolderPath + "/info.json";
 
@@ -321,18 +362,22 @@ namespace Larvend
                 string raw = str.ReadToEnd();
 
                 Info info = JsonUtility.FromJson<Info>(raw);
-                EditorManager.UpdateInfo(info);
                 str.Close();
+
+                return info;
             }
             catch (Exception e)
             {
                 MsgBoxManager.ShowMessage(MsgType.Error, "Error", e.Message);
             }
+
+            return null;
         }
 
-        public static void WriteInfo(Info info)
+        public static void WriteInfo()
         {
             string path = Global.FolderPath + "/info.json";
+            Info info = EditorManager.GetInfo();
 
             try
             {
@@ -421,51 +466,122 @@ namespace Larvend
         {
             try
             {
+                if (Global.FolderPath == null)
+                {
+                    return;
+                }
+
                 if (Directory.Exists(Global.FolderPath))
                 {
                     DirectoryInfo dir = new DirectoryInfo(Global.FolderPath);
                     FileInfo [] files = dir.GetFiles();
+                    
+                    bool isProjectExist = false;
+                    bool isChartExist = false;
 
-                    // FileInfo def = new FileInfo(Global.FolderPath + "/0.lff");
                     if (files.Length == 0)
-                        throw new Exception(Localization.GetString(Global.Language, "LoadEmptyDirectoryAttempt"));
-                
+                    {
+                        MsgBoxManager.ShowMessage(MsgType.Info, "Empty Directory", Localization.GetString("LoadEmptyDirectoryAttempt"),
+                            InitDirectory, () => throw new Exception("The directory is empty."));
+                    }
+
                     foreach (var file in files)
                     {
                         switch (file.Name)
                         {
                             case "0.lff":
-                                Global.Difficulties[0] = true;
+                                isChartExist = true;
                                 continue;
                             case "1.lff":
-                                Global.Difficulties[1] = true;
+                                isChartExist = true;
                                 continue;
                             case "2.lff":
-                                Global.Difficulties[2] = true;
+                                isChartExist = true;
                                 continue;
                             case "3.lff":
-                                Global.Difficulties[3] = true;
+                                isChartExist = true;
                                 continue;
-                            case "base.mp3":
+                            case "base.ogg":
+                                EditorManager.Instance.StartCoroutine(AudioManager.LoadAudio());
                                 continue;
                             case "preview.mp3":
                                 continue;
+                            case "base.jpg":
+                                EditorManager.Instance.StartCoroutine(ImageManager.LoadImg());
+                                continue;
                             case "info.json":
-                                InfoManager.ReadInfo();
+                                isProjectExist = true;
+                                EditorManager.UpdateInfo(InfoManager.ReadInfo());
+                                UIController.InitSongInfo();
                                 continue;
                         }
+                    }
+
+                    if (!isProjectExist)
+                    {
+                        throw new Exception(Localization.GetString("ProjectNotFound"));
+                    }
+
+                    if (!isChartExist)
+                    {
+                        MsgBoxManager.ShowMessage(MsgType.Info, "Chart Not Found", Localization.GetString("NoChartInDirectory"),
+                            delegate ()
+                            {
+                                EditorManager.Instance.difficulty = 0;
+                                ChartManager.InitChart();
+                                UIController.Instance.InitDifficultySelector();
+                            });
+                    }
+                    else
+                    {
+                        UIController.Instance.InitDifficultySelector();
                     }
                 }
             }
             catch (Exception e)
             {
-                MsgBoxManager.ShowMessage(MsgType.Info, "Empty Directory", e.Message, InitDirectory);
+                MsgBoxManager.ShowMessage(MsgType.Error, "Load Directory Failed", e.Message);
+                Global.IsDirectorySelected = false;
             }
         }
 
         public static void InitDirectory()
         {
-            throw new Exception("Unfinished Method.");
+            try
+            {
+                if (Global.FolderPath == null)
+                {
+                    return;
+                }
+
+                if (Directory.GetFiles(Global.FolderPath).Length > 0)
+                {
+                    MsgBoxManager.ShowMessage(MsgType.Warning, "Directory Not Empty", Localization.GetString("InitNonEmptyDirectoryAttempt"),
+                        delegate
+                        {
+                            EditorManager.UpdateInfo(new Info());
+                            EditorManager.AddDifficulty();
+                            EditorManager.Instance.difficulty = 0;
+                            UIController.InitSongInfo();
+
+                            ChartManager.InitChart(true);
+                        });
+                }
+                else
+                {
+                    EditorManager.UpdateInfo(new Info());
+                    EditorManager.AddDifficulty();
+                    EditorManager.Instance.difficulty = 0;
+                    UIController.InitSongInfo();
+
+                    ChartManager.InitChart(true);
+                }
+            }
+            catch (Exception e)
+            {
+                MsgBoxManager.ShowMessage(MsgType.Error, "Init Directory Failed", e.Message);
+                Global.IsDirectorySelected = false;
+            }
         }
 
         public static void CreateChart(int difficulty)
@@ -479,9 +595,11 @@ namespace Larvend
             else
             {
                 chart.Create();
-                Global.Difficulties[difficulty] = true;
-                
-                MsgBoxManager.ShowMessage(MsgType.Info, "Created Successfully", Localization.GetString(Global.Language, "CreateChartSuccess"), ChartManager.InitChart);
+                MsgBoxManager.ShowMessage(MsgType.Info, "Created Successfully", Localization.GetString("CreateChartSuccess"),
+                    delegate()
+                    {
+                        ChartManager.InitChart();
+                    });
             }
         }
     }

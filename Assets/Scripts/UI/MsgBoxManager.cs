@@ -10,14 +10,16 @@ namespace Larvend.Gameplay
         Info,
         Warning,
         Error,
+        Input
     }
 
-    public struct Msg
+    public class Msg
     {
         public string title;
         public string msg;
         public MsgType type;
         public Callback confirmCallback;
+        public Callback<string> paramCallback;
         public Callback cancelCallback;
         public bool flag;
 
@@ -52,6 +54,17 @@ namespace Larvend.Gameplay
             this.confirmCallback = confirmCallback;
             this.cancelCallback = cancelCallback;
         }
+
+        public Msg(MsgType type, string title, string msg, Callback<string> paramCallback, Callback cancelCallback)
+        {
+            this.title = title;
+            this.msg = msg;
+            this.type = type;
+            this.flag = false;
+
+            this.paramCallback = paramCallback;
+            this.cancelCallback = cancelCallback;
+        }
     }
 
     public class MsgBoxManager : MonoBehaviour
@@ -76,7 +89,9 @@ namespace Larvend.Gameplay
             Global.IsDialoging = false;
             isDisplaying = false;
             Instance.dialogBox = null;
-            ShowMessage();
+
+            if (Instance.messages.Count > 0)
+                ShowMessage();
         }
 
         private static void InitDialogBox(params object[] type)
@@ -93,6 +108,9 @@ namespace Larvend.Gameplay
                     break;
                 case MsgType.Error:
                     newBox = Instantiate(Instance.msgBoxPrefabs[2], Instance.transform.localPosition, Quaternion.identity, Instance.transform);
+                    break;
+                case MsgType.Input:
+                    newBox = Instantiate(Instance.msgBoxPrefabs[3], Instance.transform.localPosition, Quaternion.identity, Instance.transform);
                     break;
                 default:
                     newBox = Instantiate(Instance.msgBoxPrefabs[0], Instance.transform.localPosition, Quaternion.identity, Instance.transform);
@@ -122,8 +140,8 @@ namespace Larvend.Gameplay
             {
                 Instance.messages.Add(new Msg(type, title, msg));
             }
-
         }
+
         public static void ShowMessage(MsgType type, string title, string msg, Callback confirmCallback)
         {
             if (!Instance.dialogBox)
@@ -150,6 +168,27 @@ namespace Larvend.Gameplay
             Instance.messages.Add(new Msg(type, title, msg, confirmCallback, cancelCallback));
         }
 
+        public static void ShowInputDialog(string title, string msg, Callback<string> callback)
+        {
+            InitDialogBox(MsgType.Input);
+
+            Instance.dialogBox.SetMessage(title, msg, callback);
+            return;
+        }
+
+        public static void ShowInputDialog(string title, string msg, Callback<string> callback, Callback cancelCallback)
+        {
+            if (!Instance.dialogBox)
+            {
+                InitDialogBox(MsgType.Input);
+
+                Instance.dialogBox.SetMessage(title, msg, callback, cancelCallback);
+                return;
+            }
+
+            Instance.messages.Add(new Msg(MsgType.Input, title, msg, callback, cancelCallback));
+        }
+
         public static void ShowMessage()
         {
             if (!Instance.dialogBox && Instance.messages.Count > 0)
@@ -168,7 +207,15 @@ namespace Larvend.Gameplay
                 });
                 InitDialogBox(Instance.messages[0].type);
 
-                Instance.dialogBox.SetMessage(Instance.messages[0].title, Instance.messages[0].msg, Instance.messages[0].confirmCallback, Instance.messages[0].cancelCallback);
+                if (Instance.messages[0].type == MsgType.Input)
+                {
+                    Instance.dialogBox.SetMessage(Instance.messages[0].title, Instance.messages[0].msg, Instance.messages[0].paramCallback, Instance.messages[0].cancelCallback);
+                }
+                else
+                {
+                    Instance.dialogBox.SetMessage(Instance.messages[0].title, Instance.messages[0].msg, Instance.messages[0].confirmCallback, Instance.messages[0].cancelCallback);
+                }
+                
                 Instance.messages.RemoveAt(0);
             }
         }

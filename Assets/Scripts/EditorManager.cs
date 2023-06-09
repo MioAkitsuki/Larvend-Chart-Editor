@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Larvend.Gameplay
@@ -11,6 +10,7 @@ namespace Larvend.Gameplay
         public static EditorManager Instance { get; private set; }
         private static AudioSource song;
         private static Info info;
+        private static DifficultyInfo difficultyInfo;
 
         private float BPM;
         public int offset;
@@ -42,6 +42,7 @@ namespace Larvend.Gameplay
             isAudioPlaying = false;
 
             Application.wantsToQuit += WantsToQuit;
+            InitPlayerPrefs();
         }
 
         private void Update()
@@ -74,7 +75,7 @@ namespace Larvend.Gameplay
         {
             if (!Global.IsSaved)
             {
-                MsgBoxManager.ShowMessage(MsgType.Warning, "Warning", Localization.GetString(Global.Language, "UnsavedChart"),
+                MsgBoxManager.ShowMessage(MsgType.Warning, "Warning", Localization.GetString("UnsavedChart"),
                     SaveProject, delegate()
                     {
                         Application.wantsToQuit -= WantsToQuit;
@@ -85,6 +86,15 @@ namespace Larvend.Gameplay
             return true;
         }
 
+        public static void InitPlayerPrefs()
+        {
+            PlayerPrefs.DeleteAll();
+            if (!PlayerPrefs.HasKey("Language"))
+            {
+                PlayerPrefs.SetString("Language", "zh_cn");
+            }
+        }
+
         public static void SaveProject()
         {
             try
@@ -93,10 +103,10 @@ namespace Larvend.Gameplay
                 {
                     return;
                 }
-                InfoManager.WriteInfo(info);
+                InfoManager.WriteInfo();
                 ChartManager.WriteChart(Instance.difficulty);
 
-                MsgBoxManager.ShowMessage(MsgType.Info, "Saved Successfully", Localization.GetString(Global.Language, "SaveChartSuccess"));
+                MsgBoxManager.ShowMessage(MsgType.Info, "Saved Successfully", Localization.GetString("SaveChartSuccess"));
                 Global.IsSaved = true;
             }
             catch (Exception e)
@@ -110,6 +120,11 @@ namespace Larvend.Gameplay
             return info;
         }
 
+        public static DifficultyInfo GetDifficultyInfo()
+        {
+            return difficultyInfo;
+        }
+
         public static void UpdateInfo(Info newInfo)
         {
             info = newInfo;
@@ -119,35 +134,69 @@ namespace Larvend.Gameplay
         {
             info.title = title;
             info.composer = composer;
-            info.difficulties[Instance.difficulty].arranger = arranger;
-            info.difficulties[Instance.difficulty].rating = rating;
+            foreach (var diffInfo in info.difficulties)
+            {
+                if (diffInfo.diffIndex == Instance.difficulty)
+                {
+                    diffInfo.arranger = arranger;
+                    diffInfo.rating = rating;
+                }
+            }
+
+            difficultyInfo.arranger = arranger;
+            difficultyInfo.rating = rating;
+        }
+
+        public static void UpdateDifficultyInfo(DifficultyInfo newInfo)
+        {
+            difficultyInfo = newInfo;
+            Instance.difficulty = newInfo.diffIndex;
+        }
+
+        public static void AddDifficulty()
+        {
+            var newInfo = new DifficultyInfo();
+            info.difficulties.Add(newInfo);
+            UpdateDifficultyInfo(newInfo);
+
+            InfoManager.WriteInfo();
         }
 
         public static void AddDifficulty(int diff, string arranger, string rating)
         {
-            info.difficulties.Add(new DifficultyInfo(diff, arranger, rating));
+            var newInfo = new DifficultyInfo(diff, arranger, rating);
+            info.difficulties.Add(newInfo);
+            UpdateDifficultyInfo(newInfo);
+
+            InfoManager.WriteInfo();
         }
 
         public static void SwitchDifficulty(int diff)
         {
             NoteManager.ClearAllNotes();
+            NoteManager.RefreshAllNotes();
 
-            if (Global.Difficulties[diff])
+            foreach (var diffInfo in info.difficulties)
             {
-                ChartManager.ReadChart(diff);
+                if (diffInfo.diffIndex == diff)
+                {
+                    ChartManager.ReadChart(diff);
 
-                ResetAudio();
-                Instance.difficulty = diff;
+                    ResetAudio();
+                    Instance.difficulty = diff;
 
-                UIController.RefreshUI();
+                    UpdateDifficultyInfo(diffInfo);
+
+                    UIController.RefreshUI();
+                    return;
+                }
             }
-            else
-            {
-                DirectoryManager.CreateChart(diff);
 
-                Instance.difficulty = diff;
-                AddDifficulty(diff, "Sample Arranger", "TBD");
-            }
+            DirectoryManager.CreateChart(diff);
+            ResetAudio();
+            Instance.difficulty = diff;
+            UIController.RefreshUI();
+            AddDifficulty(diff, "Sample Arranger", "TBD");
         }
 
         public static float GetBPM()

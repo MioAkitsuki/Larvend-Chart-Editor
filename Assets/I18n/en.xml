@@ -1,19 +1,13 @@
 <Localization lang="en">
-  <InitNonEmptyDirectoryAttempt>The directory selected is not empty.\nDo you want to continue initialization?</InitNonEmptyDirectoryAttempt>
   <ModBaseBpmAttempt>We strongly recommend you DO NOT manually modify the base BPM.\nSince notes may lose rhythm.\nIf you are knowing what you're doing, press confirm to continue.</ModBaseBpmAttempt>
   <ModNoteTimeAttempt>We strongly recommend you DO NOT manually modify the time.\nSince the note may lose rhythm.\nIf you are knowing what you're doing, press confirm to continue.</ModNoteTimeAttempt>
   <EventLoadSuccess>Chart was loaded successfully.</EventLoadSuccess>
   <CreateChartSuccess>New chart has been created successfully.\nDo you want to initialize it?</CreateChartSuccess>
-  <InitializeChartSuccess>Chart has been initialized successfully.</InitializeChartSuccess>
-  <InitDirectorySuccess>Directory has been initialized successfully.\nPlease manually rename the audio and album cover to "base".\nThen convert them into .ogg/.jpg and paste them into folder.</InitDirectorySuccess>
-  <SaveChartSuccess>Chart has been saved successfully.</SaveChartSuccess>
-  <InitNonEmptyDirectoryAttempt>The </InitNonEmptyDirectoryAttempt>
+  <SaveChartSuccess>Chart was saved successfully.</SaveChartSuccess>
   <LoadEmptyChartAttempt>You are loading an empty chart.\nDo you want to initialize it?</LoadEmptyChartAttempt>
   <LoadEmptyDirectoryAttempt>You are loading an empty directory.\nDo you want to initialize it?</LoadEmptyDirectoryAttempt>
-  <ResetPrefsAttempt>Are you want to reset all preferences?</ResetPrefsAttempt>
   <UnsavedChart>There has unsaved change in chart.\nDo you want to save it?</UnsavedChart>
   <DeleteAllNotesAlert>Are you REALLY want to delete all notes?\nThis action is irreversible!</DeleteAllNotesAlert>
   <UnknownNoteType>Unknown note type. Please check the input.</UnknownNoteType>
-  <ProjectNotFound>Didn't find any projects under the directory.</ProjectNotFound>
   <BaseBpmNonexistent>Chart Load Failed: Base BPM setting does not exist.\nPlease check the file integrity.</BaseBpmNonexistent>
 </Localization>

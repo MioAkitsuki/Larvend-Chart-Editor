@@ -12,6 +12,7 @@ namespace Larvend.Gameplay
         private TMP_Text dialogMsg;
         private Button dialogConfirm;
         private Button dialogCancel;
+        public TMP_InputField dialogInput;
 
         public void GetReferences()
         {
@@ -19,6 +20,7 @@ namespace Larvend.Gameplay
             dialogMsg = transform.Find("Body").Find("BodyLabel").GetComponent<TMP_Text>();
             dialogConfirm = transform.Find("Confirm").GetComponent<Button>();
             dialogCancel = transform.Find("Cancel")?.GetComponent<Button>();
+            dialogInput = transform.Find("InputField")?.GetComponent<TMP_InputField>();
         }
 
         public void SetMessage(string title, string msg)
@@ -52,7 +54,43 @@ namespace Larvend.Gameplay
             dialogCancel?.onClick.AddListener(CancelDialogBox);
         }
 
+        public void SetMessage(string title, string msg, Callback<string> callback)
+        {
+            this.GetComponent<CanvasGroup>().alpha = 0;
+            dialogTitle.text = title;
+            dialogMsg.text = msg;
+            this.gameObject.SetActive(true);
+            StartCoroutine("DialogBoxFadeIn");
+            
+            dialogConfirm.onClick.AddListener(delegate()
+            {
+                this.ConfirmDialogBox(callback);
+            });
+            
+            dialogCancel?.onClick.AddListener(CancelDialogBox);
+        }
+
         public void SetMessage(string title, string msg, Callback confirmCallback, Callback cancelCallback)
+        {
+            this.GetComponent<CanvasGroup>().alpha = 0;
+            dialogTitle.text = title;
+            dialogMsg.text = msg;
+            this.gameObject.SetActive(true);
+            StartCoroutine("DialogBoxFadeIn");
+
+            if (confirmCallback != null && cancelCallback != null)
+            {
+                dialogConfirm.onClick.AddListener(delegate () { this.ConfirmDialogBox(confirmCallback); });
+                dialogCancel.onClick.AddListener(delegate () { this.CancelDialogBox(cancelCallback); });
+            }
+            else
+            {
+                dialogConfirm.onClick.AddListener(ConfirmDialogBox);
+                dialogCancel.onClick.AddListener(CancelDialogBox);
+            }
+        }
+
+        public void SetMessage(string title, string msg, Callback<string> confirmCallback, Callback cancelCallback)
         {
             this.GetComponent<CanvasGroup>().alpha = 0;
             dialogTitle.text = title;
@@ -81,6 +119,12 @@ namespace Larvend.Gameplay
         {
             StartCoroutine("DialogBoxFadeOut");
             confirmCallback();
+            dialogConfirm.onClick.RemoveListener(delegate () { this.ConfirmDialogBox(confirmCallback); });
+        }
+        private void ConfirmDialogBox(Callback<string> confirmCallback)
+        {
+            StartCoroutine("DialogBoxFadeOut");
+            confirmCallback(dialogInput.text);
             dialogConfirm.onClick.RemoveListener(delegate () { this.ConfirmDialogBox(confirmCallback); });
         }
         private void CancelDialogBox()
