@@ -18,16 +18,11 @@ namespace Larvend.Gameplay
         public static bool IsDialoging;
         public static bool IsEditing;
         public static bool IsAbsorption;
-        public static Chart Chart = new Chart();
-        public static bool[] Difficulties = new bool[4];
         public static bool IsSaved = true;
 
         public static bool IsModifyBaseBpmAllowed = false;
         public static bool IsModifyTimeAllowed = false;
-
-        // public static List<Note> Notes;
-        // public static AudioClip song;
-
+        
         public static string[] TimeFormat(float sec)
         {
             string[] formattedTime = new string[3];

@@ -536,6 +536,8 @@ namespace Larvend
                     {
                         UIController.Instance.InitDifficultySelector();
                     }
+
+                    Global.IsDirectorySelected = true;
                 }
             }
             catch (Exception e)
@@ -565,7 +567,7 @@ namespace Larvend
                             UIController.InitSongInfo();
 
                             ChartManager.InitChart(true);
-                        });
+                        }, () => Global.IsDirectorySelected = false);
                 }
                 else
                 {
@@ -576,6 +578,8 @@ namespace Larvend
 
                     ChartManager.InitChart(true);
                 }
+
+                Global.IsDirectorySelected = true;
             }
             catch (Exception e)
             {
@@ -624,11 +628,9 @@ namespace Larvend
             {
                 clip = DownloadHandlerAudioClip.GetContent(uwr);
             }
-
-            // Global.song = clip;
+            
             Global.IsAudioLoaded = true;
             EditorManager.InitAudio(clip);
-            UIController.InitUI();
             NoteManager.RefreshAllNotes();
         }
     }

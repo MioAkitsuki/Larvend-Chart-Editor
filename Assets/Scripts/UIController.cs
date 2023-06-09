@@ -212,13 +212,44 @@ namespace Larvend.Gameplay
                 MsgBoxManager.ShowMessage(MsgType.Info, "Reset Preferences", Localization.GetString("ResetPrefsAttempt"), EditorManager.InitPlayerPrefs);
             });
 
-            titleInputField.onValueChanged.AddListener(value => isInfoEdited = true);
-            composerInputField.onValueChanged.AddListener(value => isInfoEdited = true);
-            arrangerInputField.onValueChanged.AddListener(value => isInfoEdited = true);
-            offsetInputField.onValueChanged.AddListener(value => isInfoEdited = true);
-            baseBpmInputField.onValueChanged.AddListener(value => isInfoEdited = true);
-            ratingInputField.onValueChanged.AddListener(value => isInfoEdited = true);
+            titleInputField.onValueChanged.AddListener(value =>
+            {
+                isInfoEdited = true;
+                Global.IsEditing = true;
+            });
+            titleInputField.onEndEdit.AddListener(value => Global.IsEditing = false);
+            composerInputField.onValueChanged.AddListener(value =>
+            {
+                isInfoEdited = true;
+                Global.IsEditing = true;
+            });
+            composerInputField.onEndEdit.AddListener(value => Global.IsEditing = false);
+            arrangerInputField.onValueChanged.AddListener(value =>
+            {
+                isInfoEdited = true;
+                Global.IsEditing = true;
+            });
+            arrangerInputField.onEndEdit.AddListener(value => Global.IsEditing = false);
+            offsetInputField.onValueChanged.AddListener(value =>
+            {
+                isInfoEdited = true;
+                Global.IsEditing = true;
+            });
+            offsetInputField.onEndEdit.AddListener(value => Global.IsEditing = false);
+            baseBpmInputField.onValueChanged.AddListener(value =>
+            {
+                isInfoEdited = true;
+                Global.IsEditing = true;
+            });
+            baseBpmInputField.onEndEdit.AddListener(value => Global.IsEditing = false);
+            ratingInputField.onValueChanged.AddListener(value =>
+            {
+                isInfoEdited = true;
+                Global.IsEditing = true;
+            });
+            ratingInputField.onEndEdit.AddListener(value => Global.IsEditing = false);
             baseBpmInputField.onSelect.AddListener(ModifyBaseBpmAttempt);
+            baseBpmInputField.onEndEdit.AddListener(value => Global.IsEditing = false);
 
             // UI under Left Toolbar
             createTapButton = this.gameObject.transform.Find("LeftToolbar").Find("CreateTap").GetComponent<Button>();
@@ -304,7 +335,11 @@ namespace Larvend.Gameplay
             posXInput.onSelect.AddListener((value) => Global.IsEditing = true);
             posYInput.onSelect.AddListener((value) => Global.IsEditing = true);
             endTimeInput.onSelect.AddListener((value) => Global.IsEditing = true);
-            closeNotePanel.onClick.AddListener(() => notePanel.gameObject.SetActive(false));
+            closeNotePanel.onClick.AddListener(() =>
+            {
+                notePanel.gameObject.SetActive(false);
+                Global.IsDialoging = false;
+            });
 
             // UI under Play Controller
             playSwitchButton = this.gameObject.transform.Find("PlayController").Find("PlaySwitch").GetComponent<Button>();
@@ -416,6 +451,7 @@ namespace Larvend.Gameplay
 
                     notePanel.position = panelPos;
                     notePanel.gameObject.SetActive(true);
+                    Global.IsDialoging = true;
                 }
             }
 
@@ -427,6 +463,8 @@ namespace Larvend.Gameplay
                     {
                         notePanel.gameObject.SetActive(false);
                         selectedNote = null;
+                        Global.IsDialoging = false;
+                        Global.IsEditing = false;
                     }
                 }
             }
@@ -577,7 +615,9 @@ namespace Larvend.Gameplay
             if (Global.IsAudioLoaded && !Global.IsDialoging)
             {
                 beatInfo.SetText($"{beatTick[0]}: 000");
-                EditorManager.AdjustPointer(beatTick[0] * 960);
+                beatTick[1] = 0;
+                EditorManager.AdjustPointer((beatTick[0] - 1) * 960);
+                NoteManager.RefreshAllNotes();
             }
         }
 
@@ -585,9 +625,11 @@ namespace Larvend.Gameplay
         {
             if (Global.IsAudioLoaded && !Global.IsDialoging)
             {
+                beatTick = new int[] {1, 0};
                 audioTime.SetText("0");
                 beatInfo.SetText("1: 000");
                 EditorManager.ResetAudio();
+                NoteManager.RefreshAllNotes();
             }
         }
 
@@ -682,7 +724,6 @@ namespace Larvend.Gameplay
             {
                 StopCoroutine("openSettingsPanelEnumerator");
                 StartCoroutine("closeSettingsPanelEnumerator");
-                Global.IsDialoging = false;
             }
             else
             {
@@ -699,7 +740,6 @@ namespace Larvend.Gameplay
                 settingsPanel.gameObject.SetActive(true);
                 StopCoroutine("closeSettingsPanelEnumerator");
                 StartCoroutine("openSettingsPanelEnumerator");
-                Global.IsDialoging = true;
             }
         }
 
@@ -710,6 +750,7 @@ namespace Larvend.Gameplay
             if (settingsPanel.alpha > 0.98f)
             {
                 settingsPanel.alpha = 1;
+                Global.IsDialoging = true;
                 yield break;
             }
 
@@ -725,6 +766,7 @@ namespace Larvend.Gameplay
             {
                 settingsPanel.alpha = 0;
                 settingsPanel.gameObject.SetActive(false);
+                Global.IsDialoging = false;
                 yield break;
             }
 
@@ -925,6 +967,7 @@ namespace Larvend.Gameplay
                 }
 
                 Global.IsSaved = false;
+                Global.IsEditing = false;
             }
 
             PlayerPrefs.SetString("Language", languageDictionary[languageSelector.value]);

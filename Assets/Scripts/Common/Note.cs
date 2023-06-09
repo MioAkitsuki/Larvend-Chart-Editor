@@ -35,6 +35,7 @@ namespace Larvend
             _animator.speed = 0;
 
             isDisplaying = false;
+            this.gameObject.SetActive(false);
             RefreshState();
         }
 
@@ -156,7 +157,7 @@ namespace Larvend
             int deltaTime = EditorManager.GetAudioPCMTime() - time;
             float proportion = deltaTime / 44100f / (60f / EditorManager.GetBPM());
 
-            if (proportion < -1 || proportion > 1)
+            if (proportion is < -1 or > 1)
             {
                 if (!isDisplaying)
                 {

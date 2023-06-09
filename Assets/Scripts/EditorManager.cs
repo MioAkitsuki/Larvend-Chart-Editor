@@ -59,7 +59,6 @@ namespace Larvend.Gameplay
             if (Input.GetKey(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing)
             {
                 deltaDspTime = (float) AudioSettings.dspTime - startDspTime + timePointer;
-                Debug.Log(deltaDspTime);
             }
             if (Input.GetKeyUp(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing)
             {
@@ -259,6 +258,7 @@ namespace Larvend.Gameplay
             tick = cortchet / 960f;
 
             ResetAudio();
+            UIController.InitUI();
         }
 
         public static float GetAudioLength()

@@ -50,6 +50,7 @@ namespace Larvend.Gameplay
             {
                 if ((EditorManager.GetAudioPCMTime() - note.time) / 44100f / (60f / EditorManager.GetBPM()) < -1)
                 {
+                    note.gameObject.SetActive(false);
                     continue;
                 }
 
@@ -60,6 +61,7 @@ namespace Larvend.Gameplay
             {
                 if ((EditorManager.GetAudioPCMTime() - note.time) / 44100f / (60f / EditorManager.GetBPM()) < -1)
                 {
+                    note.gameObject.SetActive(false);
                     continue;
                 }
 
@@ -70,6 +72,7 @@ namespace Larvend.Gameplay
             {
                 if ((EditorManager.GetAudioPCMTime() - note.time) / 44100f / (60f / EditorManager.GetBPM()) < -1)
                 {
+                    note.gameObject.SetActive(false);
                     continue;
                 }
 
@@ -93,6 +96,7 @@ namespace Larvend.Gameplay
 
                 var newPos = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
                 newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
+                newNote.GetComponent<Note>().RefreshState();
 
                 _instance.TapNotes.Add(newNote.GetComponent<Note>());
             }
@@ -103,6 +107,7 @@ namespace Larvend.Gameplay
 
                 var newPos = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
                 newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
+                newNote.GetComponent<Note>().RefreshState();
 
                 _instance.HoldNotes.Add(newNote.GetComponent<Note>());
             }
@@ -113,6 +118,7 @@ namespace Larvend.Gameplay
 
                 var newPos = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
                 newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
+                newNote.GetComponent<Note>().RefreshState();
 
                 _instance.FlickNotes.Add(newNote.GetComponent<Note>());
             }
@@ -134,6 +140,7 @@ namespace Larvend.Gameplay
 
                 var newPos = Camera.main.ViewportToWorldPoint(line.position);
                 newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
+                newNote.GetComponent<Note>().RefreshState();
 
                 _instance.TapNotes.Add(newNote.GetComponent<Note>());
             }
@@ -144,6 +151,7 @@ namespace Larvend.Gameplay
 
                 var newPos = Camera.main.ViewportToWorldPoint(line.position);
                 newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
+                newNote.GetComponent<Note>().RefreshState();
 
                 _instance.HoldNotes.Add(newNote.GetComponent<Note>());
             }
@@ -154,6 +162,7 @@ namespace Larvend.Gameplay
 
                 var newPos = Camera.main.ViewportToWorldPoint(line.position);
                 newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
+                newNote.GetComponent<Note>().RefreshState();
 
                 _instance.FlickNotes.Add(newNote.GetComponent<Note>());
             }
