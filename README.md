@@ -10,3 +10,7 @@ If you're also interested in rhythm game development / design. Don't hesitate to
 E-mail: <a href="mailto:k@ahympia.com"> k@ahympia.com </a>
 
 Twitter: <a href="https://twitter.com/MioAkitsuki" target="_blank"> @MioAkitsuki </a>
+
+----
+
+鸣谢 Schwarzer
