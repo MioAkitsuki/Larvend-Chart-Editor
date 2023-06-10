@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections;
-using System.Numerics;
 using Larvend.Gameplay;
-using Newtonsoft.Json.Linq;
 using UnityEngine;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
@@ -123,12 +121,23 @@ namespace Larvend
             endTime = _endTime;
         }
 
-        public void InitNote(Type _type, int _time, Vector2 _pos, float _targetBpm)
+        public IEnumerator StartPlay()
         {
-            type = _type;
-            time = _time;
-            position = _pos;
-            targetBpm = _targetBpm;
+            _animator.enabled = true;
+            _animator.speed = EditorManager.GetBPM() / 60f;
+
+            while (_animator.enabled)
+            {
+                if (_animator.GetCurrentAnimatorStateInfo(0).IsTag("Disappear") && _animator.GetCurrentAnimatorStateInfo(0).normalizedTime > 0.95)
+                {
+                    _animator.Play($"{Enum.GetName(typeof(Type), this.type)}_Disappear", 0, 1);
+                    _animator.speed = 0;
+                    _animator.enabled = false;
+                    this.gameObject.SetActive(false);
+                }
+
+                yield return new WaitForFixedUpdate();
+            }
         }
 
         public void RefreshState()
@@ -145,6 +154,7 @@ namespace Larvend
                     RefreshFlickState();
                     break;
             }
+            this.StopCoroutine("StartPlay");
         }
 
         private void RefreshTapState()

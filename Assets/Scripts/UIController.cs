@@ -474,6 +474,17 @@ namespace Larvend.Gameplay
         {
             Instance.audioTime.SetText(EditorManager.GetAudioPCMTime().ToString());
 
+            int ticks = EditorManager.GetAudioPCMTime();
+            int beat = ticks / EditorManager.Instance.BeatPCM + 1;
+            int tick = (int) Math.Round(ticks % EditorManager.Instance.BeatPCM / (EditorManager.Instance.BeatPCM / 960f));
+            if (tick == 960)
+            {
+                beat += 1;
+                tick = 0;
+            }
+            Instance.beatTick = new int[] { beat, tick };
+            Instance.beatInfo.SetText($"{beat}: {tick.ToString().PadLeft(3, '0')}");
+            
             if (Instance.notePanel.gameObject.activeSelf && Instance.selectedNote != null)
             {
                 Instance.timeInput.text = $"{Instance.selectedNote.time}";
@@ -546,36 +557,26 @@ namespace Larvend.Gameplay
             if (playSwitchButton.gameObject.GetComponent<Image>().sprite == playAndPause[0])
             {
                 playSwitchButton.gameObject.GetComponent<Image>().sprite = playAndPause[1];
+
+                NoteManager.Instance.PlayPreparation();
+                EditorManager.Play();
             }
             else
             {
                 playSwitchButton.gameObject.GetComponent<Image>().sprite = playAndPause[0];
+
+                EditorManager.Stop();
+
+                NoteManager.RefreshAllNotes();
+                Global.IsPrepared = false;
             }
         }
 
         private void StepBackward()
         {
-            if (!Global.IsAudioLoaded || EditorManager.isAudioPlaying)
+            if (!Global.IsAudioLoaded || Global.IsPlaying)
             {
                 return;
-            }
-
-            int ticks = Convert.ToInt32(3840 / Math.Pow(2, stepSelector.value) *
-                                        Math.Pow(2f / 3f, Convert.ToDouble(tripletToggle.isOn)) *
-                                        Math.Pow(3f / 2f, Convert.ToDouble(dottedToggle.isOn)));
-
-            if ((beatTick[0] - 1) * 960 + beatTick[1] - ticks <= 0)
-            {
-                beatInfo.SetText("1: 000");
-                beatTick[0] = 1;
-                beatTick[1] = 0;
-            }
-            else
-            {
-                int res = (beatTick[0] - 1) * 960 + beatTick[1] - ticks;
-                beatTick[0] = 1 + res / 960;
-                beatTick[1] = res % 960;
-                beatInfo.SetText($"{beatTick[0]}: {Convert.ToString(beatTick[1]).PadLeft(3, '0')}");
             }
 
             EditorManager.StepBackward();
@@ -584,27 +585,10 @@ namespace Larvend.Gameplay
 
         private void StepForward()
         {
-            if (!Global.IsAudioLoaded || EditorManager.isAudioPlaying)
+            if (!Global.IsAudioLoaded || Global.IsPlaying)
             {
                 return;
             }
-
-            int ticks = Convert.ToInt32(3840 / Math.Pow(2, stepSelector.value) *
-                                        Math.Pow(2f / 3f, Convert.ToDouble(tripletToggle.isOn)) *
-                                        Math.Pow(3f / 2f, Convert.ToDouble(dottedToggle.isOn)));
-
-            int res;
-            if ((beatTick[0] - 1) * 960 + beatTick[1] + ticks >= EditorManager.GetAudioPCMLength())
-            {
-                res = EditorManager.GetAudioPCMLength();
-            }
-            else
-            {
-                res = (beatTick[0] - 1) * 960 + beatTick[1] + ticks;
-            }
-            beatTick[0] = 1 + res / 960;
-            beatTick[1] = res % 960;
-            beatInfo.SetText($"{beatTick[0]}: {Convert.ToString(beatTick[1]).PadLeft(3, '0')}");
 
             EditorManager.StepForward();
             NoteManager.RefreshAllNotes();
@@ -612,18 +596,18 @@ namespace Larvend.Gameplay
 
         private void AdjustPointer()
         {
-            if (Global.IsAudioLoaded && !Global.IsDialoging)
+            if (Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsPlaying)
             {
-                beatInfo.SetText($"{beatTick[0]}: 000");
+                beatInfo.SetText($"{beatTick[0] - 1}: 000");
                 beatTick[1] = 0;
-                EditorManager.AdjustPointer((beatTick[0] - 1) * 960);
+                EditorManager.AdjustPointer(beatTick[0] - 1);
                 NoteManager.RefreshAllNotes();
             }
         }
 
         private void ResetPointer()
         {
-            if (Global.IsAudioLoaded && !Global.IsDialoging)
+            if (Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsPlaying)
             {
                 beatTick = new int[] {1, 0};
                 audioTime.SetText("0");
@@ -780,14 +764,12 @@ namespace Larvend.Gameplay
             {
                 StopCoroutine("openSpeedPanelEnumerator");
                 StartCoroutine("closeSpeedPanelEnumerator");
-                Global.IsDialoging = false;
             }
             else
             {
                 speedPanel.gameObject.SetActive(true);
                 StopCoroutine("closeSpeedPanelEnumerator");
                 StartCoroutine("openSpeedPanelEnumerator");
-                Global.IsDialoging = true;
             }
         }
 
@@ -798,6 +780,7 @@ namespace Larvend.Gameplay
             if (speedPanel.alpha > 0.98f)
             {
                 speedPanel.alpha = 1;
+                Global.IsDialoging = true;
                 yield break;
             }
 
@@ -813,6 +796,7 @@ namespace Larvend.Gameplay
             {
                 speedPanel.alpha = 0;
                 speedPanel.gameObject.SetActive(false);
+                Global.IsDialoging = false;
                 yield break;
             }
 
@@ -939,7 +923,13 @@ namespace Larvend.Gameplay
             Instance.currentBPMStatus.SetText(EditorManager.GetBPM().ToString());
 
             Instance.stepSelector.value = 2;
-            Instance.RefreshStep(1);
+            Instance.RefreshStep(true);
+        }
+
+        public static void UpdateBpmUI()
+        {
+            Instance.currentBPMStatus.SetText(EditorManager.GetBPM().ToString());
+            Instance.RefreshStep(true);
         }
 
         public static void InitAlbumCover(Sprite sprite)

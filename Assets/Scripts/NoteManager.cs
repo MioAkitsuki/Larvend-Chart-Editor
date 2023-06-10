@@ -2,13 +2,14 @@ using System;
 using Larvend;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 namespace Larvend.Gameplay
 {
     public class NoteManager : MonoBehaviour
     {
-        private static NoteManager _instance;
+        public static NoteManager Instance { get; set; }
 
         [SerializeField] private GameObject[] prefabs;
 
@@ -17,31 +18,131 @@ namespace Larvend.Gameplay
         public List<Note> FlickNotes { get; private set; }
         public Line BaseSpeed;
         public List<Line> SpeedAdjust = new();
+        public List<Note> UnplayedNotes { get; private set; }
+        public List<Line> UnplayedSpeedAdjusts;
 
         private void Awake()
         {
-            _instance = this;
+            Instance = this;
             TapNotes = new();
             HoldNotes = new();
             FlickNotes = new();
         }
 
-        public static NoteManager Instance
+        private void Update()
         {
-            get
+            if (Input.GetKeyDown(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing)
             {
-                _instance ??= new NoteManager();
-                return _instance;
+                PlayPreparation();
+                
+                EditorManager.Play();
             }
+            if (Global.IsPlaying)
+            {
+                if (UnplayedNotes.Count > 0)
+                {
+                    for (var i = 0; i < UnplayedNotes.Count; i++)
+                    {
+                        if (Math.Abs(UnplayedNotes[i].time - EditorManager.GetAudioPCMTime()) > EditorManager.Instance.BeatPCM)
+                        {
+                            break;
+                        }
+                    
+                        UnplayedNotes[i].gameObject.SetActive(true);
+                        UnplayedNotes[i].StartCoroutine("StartPlay");
+                        UnplayedNotes.RemoveAt(i);
+                        i--;
+                    }
+                }
+
+                if (UnplayedSpeedAdjusts.Count > 0)
+                {
+                    for (var i = 0; i < UnplayedSpeedAdjusts.Count; i++)
+                    {
+                        if (UnplayedSpeedAdjusts[i].time > EditorManager.GetAudioPCMTime())
+                        {
+                            break;
+                        }
+
+                        int endTime = UnplayedSpeedAdjusts[i].time + UnplayedSpeedAdjusts[i].endTime;
+                        EditorManager.Instance.LinearlyUpdateBPM(UnplayedSpeedAdjusts[i].time,
+                            UnplayedSpeedAdjusts[i].targetBpm, endTime);
+                        UnplayedSpeedAdjusts.RemoveAt(i);
+                        i--;
+                    }
+                }
+            }
+            if (Input.GetKeyUp(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing)
+            {
+                EditorManager.Stop();
+                RefreshAllNotes();
+                Global.IsPrepared = false;
+            }
+        }
+
+        public void PlayPreparation()
+        {
+            UnplayedNotes = new List<Note>();
+            UnplayedSpeedAdjusts = new List<Line>();
+
+            foreach (var note in TapNotes)
+            {
+                if (note.time > EditorManager.GetAudioPCMTime() - EditorManager.Instance.BeatPCM)
+                {
+                    UnplayedNotes.Add(note);
+                }
+            }
+            foreach (var note in HoldNotes)
+            {
+                if (note.endTime > EditorManager.GetAudioPCMTime() - EditorManager.Instance.BeatPCM)
+                {
+                    UnplayedNotes.Add(note);
+                }
+            }
+            foreach (var note in FlickNotes)
+            {
+                if (note.time > EditorManager.GetAudioPCMTime() - EditorManager.Instance.BeatPCM)
+                {
+                    UnplayedNotes.Add(note);
+                }
+            }
+
+            if (SpeedAdjust.Count > 0)
+            {
+                foreach (var line in SpeedAdjust)
+                {
+                    if (line.time > EditorManager.GetAudioPCMTime())
+                    {
+                        UnplayedSpeedAdjusts.Add(line);
+                        break;
+                    }
+                }
+            }
+
+            UnplayedNotes.Sort((p1, p2) =>
+            {
+                if (p1.time != p2.time)
+                {
+                    return p1.time.CompareTo(p2.time);
+                }
+                else return 0;
+            });
+
+            Global.IsPrepared = true;
         }
 
         public static void ClearAllNotes()
         {
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < Instance.transform.GetChild(i).childCount; j++)
+                {
+                    Destroy(Instance.transform.GetChild(i).GetChild(j).gameObject);
+                }
+            }
             Instance.TapNotes.Clear();
             Instance.HoldNotes.Clear();
             Instance.FlickNotes.Clear();
-            Instance.SpeedAdjust.Clear();
-            Instance.BaseSpeed = null;
         }
 
         public static void RefreshAllNotes()
@@ -91,36 +192,36 @@ namespace Larvend.Gameplay
 
             if (type == Type.Tap)
             {
-                var newNote = Instantiate(_instance.prefabs[0], _instance.transform.GetChild(0));
+                var newNote = Instantiate(Instance.prefabs[0], Instance.transform.GetChild(0));
                 newNote.GetComponent<Note>().InitNote(type, EditorManager.GetAudioPCMTime(), new Vector2(0.5f, 0.5f));
 
                 var newPos = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
                 newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
                 newNote.GetComponent<Note>().RefreshState();
 
-                _instance.TapNotes.Add(newNote.GetComponent<Note>());
+                Instance.TapNotes.Add(newNote.GetComponent<Note>());
             }
             else if (type == Type.Hold)
             {
-                var newNote = Instantiate(_instance.prefabs[1], _instance.transform.GetChild(1));
+                var newNote = Instantiate(Instance.prefabs[1], Instance.transform.GetChild(1));
                 newNote.GetComponent<Note>().InitNote(type, EditorManager.GetAudioPCMTime(), new Vector2(0.5f, 0.5f), EditorManager.GetAudioPCMTime());
 
                 var newPos = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
                 newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
                 newNote.GetComponent<Note>().RefreshState();
 
-                _instance.HoldNotes.Add(newNote.GetComponent<Note>());
+                Instance.HoldNotes.Add(newNote.GetComponent<Note>());
             }
             else if (type == Type.Flick)
             {
-                var newNote = Instantiate(_instance.prefabs[2], _instance.transform.GetChild(2));
+                var newNote = Instantiate(Instance.prefabs[2], Instance.transform.GetChild(2));
                 newNote.GetComponent<Note>().InitNote(type, EditorManager.GetAudioPCMTime(), new Vector2(0.5f, 0.5f));
 
                 var newPos = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
                 newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
                 newNote.GetComponent<Note>().RefreshState();
 
-                _instance.FlickNotes.Add(newNote.GetComponent<Note>());
+                Instance.FlickNotes.Add(newNote.GetComponent<Note>());
             }
 
             Global.IsSaved = false;
@@ -135,36 +236,36 @@ namespace Larvend.Gameplay
         {
             if (line.type == Type.Tap)
             {
-                var newNote = Instantiate(_instance.prefabs[0], _instance.transform.GetChild(0));
+                var newNote = Instantiate(Instance.prefabs[0], Instance.transform.GetChild(0));
                 newNote.GetComponent<Note>().InitNote(line.type, line.time, line.position);
 
                 var newPos = Camera.main.ViewportToWorldPoint(line.position);
                 newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
                 newNote.GetComponent<Note>().RefreshState();
 
-                _instance.TapNotes.Add(newNote.GetComponent<Note>());
+                Instance.TapNotes.Add(newNote.GetComponent<Note>());
             }
             else if (line.type == Type.Hold)
             {
-                var newNote = Instantiate(_instance.prefabs[1], _instance.transform.GetChild(1));
+                var newNote = Instantiate(Instance.prefabs[1], Instance.transform.GetChild(1));
                 newNote.GetComponent<Note>().InitNote(line.type, line.time, line.position, line.endTime);
 
                 var newPos = Camera.main.ViewportToWorldPoint(line.position);
                 newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
                 newNote.GetComponent<Note>().RefreshState();
 
-                _instance.HoldNotes.Add(newNote.GetComponent<Note>());
+                Instance.HoldNotes.Add(newNote.GetComponent<Note>());
             }
             else if (line.type == Type.Flick)
             {
-                var newNote = Instantiate(_instance.prefabs[2], _instance.transform.GetChild(2));
+                var newNote = Instantiate(Instance.prefabs[2], Instance.transform.GetChild(2));
                 newNote.GetComponent<Note>().InitNote(line.type, line.time, line.position);
 
                 var newPos = Camera.main.ViewportToWorldPoint(line.position);
                 newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
                 newNote.GetComponent<Note>().RefreshState();
 
-                _instance.FlickNotes.Add(newNote.GetComponent<Note>());
+                Instance.FlickNotes.Add(newNote.GetComponent<Note>());
             }
             else if (line.type == Type.SpeedAdjust)
             {
@@ -174,7 +275,7 @@ namespace Larvend.Gameplay
                     EditorManager.Instance.InitializeBPM(line.targetBpm);
                     return;
                 }
-                _instance.SpeedAdjust.Add(line);
+                Instance.SpeedAdjust.Add(line);
             }
         }
 
@@ -222,11 +323,15 @@ namespace Larvend.Gameplay
         {
             try
             {
-                _instance.SpeedAdjust.Clear();
+                Instance.SpeedAdjust.Clear();
                 foreach (var line in list)
                 {
+                    if (line == "")
+                    {
+                        continue;
+                    }
                     var note = ChartManager.ReadNote(line);
-                    _instance.SpeedAdjust.Add(note);
+                    Instance.SpeedAdjust.Add(note);
                 }
 
                 UIController.Instance.isSpeedInputChanged = false;

@@ -13,18 +13,15 @@ namespace Larvend.Gameplay
         private static DifficultyInfo difficultyInfo;
 
         private float BPM;
+        public int BeatPCM;
         public int offset;
         public int difficulty;
-
-        private float lastTimePointer;
         
-        private static float cortchet;
-        private static float step;
-        public static float tick;
-        private static float timePointer;
-
-        private float startDspTime;
-        private float deltaDspTime;
+        private int lastPcmPointer;
+        
+        private static int step;
+        private static int timePcmPointer;
+        
 
         public static bool isAudioPlaying;
 
@@ -34,11 +31,10 @@ namespace Larvend.Gameplay
             song = gameObject.GetComponent<AudioSource>();
             offset = 0;
             difficulty = 0;
-
-            timePointer = 0f;
+            
+            timePcmPointer = 0;
             BPM = 120f;
-            cortchet = 60f / BPM;
-            tick = cortchet / 960f;
+            BeatPCM = 22050;
             isAudioPlaying = false;
 
             Application.wantsToQuit += WantsToQuit;
@@ -49,24 +45,14 @@ namespace Larvend.Gameplay
         {
             if (Input.GetKeyDown(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing)
             {
-                song.time = timePointer;
-                lastTimePointer = timePointer;
-                startDspTime = (float) AudioSettings.dspTime;
-
-                isAudioPlaying = true;
-                song.Play();
-            }
-            if (Input.GetKey(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing)
-            {
-                deltaDspTime = (float) AudioSettings.dspTime - startDspTime + timePointer;
+                song.timeSamples = timePcmPointer;
+                Instance.lastPcmPointer = timePcmPointer;
             }
             if (Input.GetKeyUp(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing)
             {
-                timePointer = lastTimePointer;
-                song.time = lastTimePointer;
+                timePcmPointer = Instance.lastPcmPointer;
+                song.timeSamples = timePcmPointer;
                 UIController.RefreshUI();
-                isAudioPlaying = false;
-                song.Stop();
             }
         }
 
@@ -83,6 +69,23 @@ namespace Larvend.Gameplay
                 return false;
             }
             return true;
+        }
+
+        public static void Play()
+        {
+            if (Global.IsPrepared)
+            {
+                isAudioPlaying = true;
+                song.Play();
+                Global.IsPlaying = true;
+            }
+        }
+
+        public static void Stop()
+        {
+            isAudioPlaying = false;
+            song.Pause();
+            Global.IsPlaying = false;
         }
 
         public static void InitPlayerPrefs()
@@ -205,27 +208,79 @@ namespace Larvend.Gameplay
 
         public static void SetStep(double s)
         {
-            step = Convert.ToSingle( cortchet * s );
+            step = (int) (Instance.BeatPCM * s);
         }
 
         public static void StepForward()
         {
-            timePointer = timePointer + step > song.clip.samples ? song.clip.samples : timePointer + step;
-            song.time = timePointer;
+            if (NoteManager.Instance.SpeedAdjust.Count > 0)
+            {
+                if (GetAudioPCMTime() < NoteManager.Instance.SpeedAdjust[0].time)
+                {
+                    if ((GetBPM() - NoteManager.Instance.BaseSpeed.targetBpm) != 0)
+                    {
+                        UpdateBpm(NoteManager.Instance.BaseSpeed.targetBpm);
+                    }
+                }
+                else
+                {
+                    foreach (var line in NoteManager.Instance.SpeedAdjust)
+                    {
+                        if (GetAudioPCMTime() >= line.time + line.endTime)
+                        {
+                            UpdateBpm(line.targetBpm);
+                        }
+                        else if (GetAudioPCMTime() < line.time + line.endTime && GetAudioPCMTime() > line.time)
+                        {
+                            float proportion = (float)(GetAudioPCMTime() - line.time) / line.endTime;
+                            UpdateBpm((line.targetBpm - GetBPM()) * proportion + GetBPM());
+                        }
+                    }
+                }
+            }
+
+            timePcmPointer = timePcmPointer + step > song.clip.samples ? song.clip.samples : timePcmPointer + step;
+            song.timeSamples = timePcmPointer;
             UIController.RefreshUI();
         }
 
         public static void StepBackward()
         {
-            timePointer = timePointer - step < 0 ? 0 : timePointer - step;
-            song.time = timePointer;
+            if (NoteManager.Instance.SpeedAdjust.Count > 0)
+            {
+                if (GetAudioPCMTime() <= NoteManager.Instance.SpeedAdjust[0].time)
+                {
+                    if ((GetBPM() - NoteManager.Instance.BaseSpeed.targetBpm) != 0)
+                    {
+                        UpdateBpm(NoteManager.Instance.BaseSpeed.targetBpm);
+                    }
+                }
+                else
+                {
+                    foreach (var line in NoteManager.Instance.SpeedAdjust)
+                    {
+                        if (GetAudioPCMTime() > line.time + line.endTime)
+                        {
+                            UpdateBpm(line.targetBpm);
+                        }
+                        else if (GetAudioPCMTime() < line.time + line.endTime && GetAudioPCMTime() > line.time)
+                        {
+                            float proportion = (float)(GetAudioPCMTime() - line.time) / line.endTime;
+                            UpdateBpm((line.targetBpm - GetBPM()) * proportion + GetBPM());
+                        }
+                    }
+                }
+            }
+
+            timePcmPointer = timePcmPointer - step < 0 ? 0 : timePcmPointer - step;
+            song.timeSamples = timePcmPointer;
             UIController.RefreshUI();
         }
 
         public static void AdjustPointer(int pointer)
         {
-            timePointer  = pointer * tick;
-            song.time = timePointer;
+            timePcmPointer  = pointer * Instance.BeatPCM;
+            song.timeSamples = timePcmPointer;
             UIController.RefreshUI();
         }
 
@@ -245,8 +300,9 @@ namespace Larvend.Gameplay
         {
             if (Global.IsAudioLoaded)
             {
-                song.time = 0;
-                timePointer = 0;
+                song.timeSamples = 0;
+                timePcmPointer = 0;
+                UpdateBpm(NoteManager.Instance.BaseSpeed.targetBpm);
                 UIController.RefreshUI();
             }
         }
@@ -254,8 +310,7 @@ namespace Larvend.Gameplay
         public void InitializeBPM(float bpm)
         {
             BPM = bpm;
-            cortchet = 60f / bpm;
-            tick = cortchet / 960f;
+            BeatPCM = (int) (44100 * (60f / bpm));
 
             ResetAudio();
             UIController.InitUI();
@@ -278,18 +333,18 @@ namespace Larvend.Gameplay
         {
             return song.timeSamples;
         }
-        
-        /// <summary>
-        /// Deprecated.
-        /// </summary>
-        /// <param name="denominator"></param>
-        /// <param name="isTriplet"></param>
-        /// <param name="isDotted"></param>
-        public static void UpdateStep(int denominator, bool isTriplet, bool isDotted)
+
+        public static int GetTimePointer()
         {
-            step = cortchet * 4 / denominator;
-            step = isTriplet ? step * 2 / 3 : step;
-            step = isDotted ? step * 3 / 2 : step;
+            return timePcmPointer;
+        }
+
+        public static void UpdateBpm(float targetBpm)
+        {
+            Instance.BPM = targetBpm;
+            Instance.BeatPCM = (int)(44100 * (60f / targetBpm));
+
+            UIController.UpdateBpmUI();
         }
 
         /// <summary>
@@ -305,8 +360,9 @@ namespace Larvend.Gameplay
             if (deltaTime <= 0 || beginTime == endTime)
             {
                 BPM = targetBPM;
-                cortchet = 60f / BPM;
-                tick = cortchet / 960f;
+                BeatPCM = (int)(44100 * (60f / targetBPM));
+
+                UIController.UpdateBpmUI();
             }
             else
             {
@@ -315,20 +371,22 @@ namespace Larvend.Gameplay
         }
         private IEnumerator LinearlyUpdateBPM(int beginTime, float initialBPM, float targetBPM, int deltaTime)
         {
-            if (song.timeSamples > beginTime + deltaTime)
+            while (song.timeSamples < beginTime + deltaTime)
             {
-                BPM = targetBPM;
-                yield break;
+                int time = song.timeSamples - beginTime;
+
+                BPM = Mathf.Lerp(initialBPM, targetBPM, (float)time / deltaTime);
+                BeatPCM = (int)(44100 * (60f / BPM));
+
+                UIController.UpdateBpmUI();
+                yield return new WaitForFixedUpdate();
             }
 
-            int time = song.timeSamples - beginTime;
+            BPM = targetBPM;
+            BeatPCM = (int)(44100 * (60f / targetBPM));
 
-            BPM = Mathf.Lerp(initialBPM, targetBPM, (float)time / deltaTime);
-            cortchet = 60f / BPM;
-            tick = cortchet / 960f;
-
-            yield return new WaitForFixedUpdate();
-            StartCoroutine(LinearlyUpdateBPM(beginTime, initialBPM, targetBPM, deltaTime));
+            UIController.UpdateBpmUI();
+            yield break;
         }
     }
 

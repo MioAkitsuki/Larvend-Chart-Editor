@@ -17,6 +17,8 @@ namespace Larvend.Gameplay
         public static bool IsAudioLoaded;
         public static bool IsDialoging;
         public static bool IsEditing;
+        public static bool IsPrepared;
+        public static bool IsPlaying;
         public static bool IsAbsorption;
         public static bool IsSaved = true;
 
