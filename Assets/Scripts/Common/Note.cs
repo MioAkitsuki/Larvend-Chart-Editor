@@ -128,6 +128,11 @@ namespace Larvend
 
             while (_animator.enabled)
             {
+                if ((_animator.GetCurrentAnimatorStateInfo(0).IsTag("Appear") && this.type == Type.Hold && _animator.GetCurrentAnimatorStateInfo(0).normalizedTime > 0.95) ||
+                    _animator.GetCurrentAnimatorStateInfo(0).IsTag("Disappear") && this.type == Type.Hold && _animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 0.05)
+                {
+                    _animator.speed = EditorManager.GetBPM() / 60f / ((float) (endTime - time) / EditorManager.Instance.BeatPCM);
+                }
                 if (_animator.GetCurrentAnimatorStateInfo(0).IsTag("Disappear") && _animator.GetCurrentAnimatorStateInfo(0).normalizedTime > 0.95)
                 {
                     _animator.Play($"{Enum.GetName(typeof(Type), this.type)}_Disappear", 0, 1);

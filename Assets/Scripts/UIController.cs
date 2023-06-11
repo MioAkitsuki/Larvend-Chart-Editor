@@ -5,6 +5,7 @@ using Larvend;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEditor;
 
 namespace Larvend.Gameplay
 {
@@ -15,7 +16,6 @@ namespace Larvend.Gameplay
     {
         public static UIController Instance { get; private set; }
         public float[] vel;
-        private int[] beatTick;
 
         private GameObject gridPanel;
 
@@ -33,6 +33,8 @@ namespace Larvend.Gameplay
         private Button cancelSettings;
 
         private bool isInfoEdited;
+        private bool isOffsetEdited;
+        private bool isBaseBpmEdited;
         private TMP_InputField titleInputField;
         private TMP_InputField composerInputField;
         private TMP_InputField arrangerInputField;
@@ -101,8 +103,6 @@ namespace Larvend.Gameplay
         {
             Instance = this;
             vel = new float[2];
-            beatTick = new int[] {1, 0};
-
             
             gridPanel = this.gameObject.transform.Find("GridPanel").gameObject;
             gridPanel.SetActive(false);
@@ -233,12 +233,14 @@ namespace Larvend.Gameplay
             offsetInputField.onValueChanged.AddListener(value =>
             {
                 isInfoEdited = true;
+                isOffsetEdited = true;
                 Global.IsEditing = true;
             });
             offsetInputField.onEndEdit.AddListener(value => Global.IsEditing = false);
             baseBpmInputField.onValueChanged.AddListener(value =>
             {
                 isInfoEdited = true;
+                isBaseBpmEdited = true;
                 Global.IsEditing = true;
             });
             baseBpmInputField.onEndEdit.AddListener(value => Global.IsEditing = false);
@@ -363,11 +365,11 @@ namespace Larvend.Gameplay
             {
                 RefreshUI();
             }
-            if (Input.GetKeyUp(KeyCode.RightArrow) && Global.IsAudioLoaded && !EditorManager.isAudioPlaying && !Global.IsDialoging && !Global.IsEditing)
+            if ((Input.GetKeyUp(KeyCode.RightArrow) || Input.GetAxis("Mouse ScrollWheel") > 0) && Global.IsAudioLoaded && !EditorManager.isAudioPlaying && !Global.IsDialoging && !Global.IsEditing)
             {
                 StepForward();
             }
-            if (Input.GetKeyUp(KeyCode.LeftArrow) && Global.IsAudioLoaded && !EditorManager.isAudioPlaying && !Global.IsDialoging && !Global.IsEditing)
+            if ((Input.GetKeyUp(KeyCode.LeftArrow) || Input.GetAxis("Mouse ScrollWheel") < 0) && Global.IsAudioLoaded && !EditorManager.isAudioPlaying && !Global.IsDialoging && !Global.IsEditing)
             {
                 StepBackward();
             }
@@ -447,7 +449,11 @@ namespace Larvend.Gameplay
                     });
 
                     deleteNote.onClick.RemoveAllListeners();
-                    deleteNote.onClick.AddListener((() => { selectedNote.DeleteSelf(); notePanel.gameObject.SetActive(false); }));
+                    deleteNote.onClick.AddListener((() => {
+                        selectedNote.DeleteSelf();
+                        notePanel.gameObject.SetActive(false);
+                        Global.IsDialoging = false;
+                    }));
 
                     notePanel.position = panelPos;
                     notePanel.gameObject.SetActive(true);
@@ -474,23 +480,25 @@ namespace Larvend.Gameplay
         {
             Instance.audioTime.SetText(EditorManager.GetAudioPCMTime().ToString());
 
-            int ticks = EditorManager.GetAudioPCMTime();
-            int beat = ticks / EditorManager.Instance.BeatPCM + 1;
-            int tick = (int) Math.Round(ticks % EditorManager.Instance.BeatPCM / (EditorManager.Instance.BeatPCM / 960f));
-            if (tick == 960)
+            int currentPcm = EditorManager.GetTimePointer();
+            foreach (var item in NoteManager.Instance.PcmDict)
             {
-                beat += 1;
-                tick = 0;
+                if (item.Key.IsIn((float)currentPcm / item.Value + item.Key.start))
+                {
+                    int beat = currentPcm / item.Value + item.Key.start;
+                    int tick = currentPcm % item.Value * 960 / item.Value;
+                    EditorManager.Instance.beatTick = new int[] { beat , tick };
+                    Instance.beatInfo.SetText($"{beat}: {tick.ToString().PadLeft(3, '0')}");
+                    break;
+                }
+                currentPcm -= item.Key.range * item.Value;
             }
-            Instance.beatTick = new int[] { beat, tick };
-            Instance.beatInfo.SetText($"{beat}: {tick.ToString().PadLeft(3, '0')}");
-            
-            if (Instance.notePanel.gameObject.activeSelf && Instance.selectedNote != null)
-            {
-                Instance.timeInput.text = $"{Instance.selectedNote.time}";
-                Instance.posXInput.text = $"{Instance.selectedNote.position.x}";
-                Instance.posYInput.text = $"{Instance.selectedNote.position.y}";
-            }
+
+            if (!Instance.notePanel.gameObject.activeSelf || Instance.selectedNote == null) return;
+
+            Instance.timeInput.text = $"{Instance.selectedNote.time}";
+            Instance.posXInput.text = $"{Instance.selectedNote.position.x}";
+            Instance.posYInput.text = $"{Instance.selectedNote.position.y}";
         }
 
         private void ModifyBaseBpmAttempt(string value)
@@ -516,7 +524,6 @@ namespace Larvend.Gameplay
                 MsgBoxManager.ShowMessage(MsgType.Warning, "Warning", Localization.GetString("ModNoteTimeAttempt"),
                     delegate ()
                     {
-                        // Global.IsModifyTimeAllowed = true;
                         PlayerPrefs.SetInt("IsModifyNoteTimeAllowed", 1);
                         timeInput.onSelect.RemoveAllListeners();
                         timeInput.onSelect.AddListener((value) => Global.IsEditing = true);
@@ -579,8 +586,56 @@ namespace Larvend.Gameplay
                 return;
             }
 
-            EditorManager.StepBackward();
-            NoteManager.RefreshAllNotes();
+            int deltaTick = (int) Mathf.Floor( 4 / Mathf.Pow(2, stepSelector.value) * (tripletToggle.isOn ? 2/3 : 1) * (dottedToggle.isOn ? 3/2 : 1) * 960);
+            int targetTick = (EditorManager.GetBeatTick()[0] - 1) * 960 + EditorManager.GetBeatTick()[1] - deltaTick;
+
+            //if (targetTick <= 0)
+            //{
+            //    ResetPointer();
+            //    return;
+            //}
+
+            int[] targetBeatTick = new int[] { targetTick / 960 + 1, targetTick % 960 };
+            int deltaPcm = 0;
+            foreach (var item in NoteManager.Instance.PcmDict)
+            {
+                if (item.Key.IsBothIn(EditorManager.GetBeatTick()[0], targetBeatTick[0]))
+                {
+                    deltaPcm = deltaTick * item.Value / 960;
+                    EditorManager.Instance.beatTick = targetBeatTick;
+                    EditorManager.StepBackward(deltaPcm);
+                    
+                    NoteManager.RefreshAllNotes();
+                    return;
+                }
+            }
+
+            bool flag = false;
+            foreach (var item in NoteManager.Instance.PcmDict)
+            {
+                if (item.Key.IsIn(targetBeatTick[0]))
+                {
+                    deltaPcm += ((item.Key.end - targetBeatTick[0]) * 960 + (960 - targetBeatTick[1])) * item.Value / 960;
+                    flag = true;
+                    continue;
+                }
+                if (flag)
+                {
+                    if (item.Key.IsIn(EditorManager.GetBeatTick()[0]))
+                    {
+                        deltaPcm += ((EditorManager.GetBeatTick()[0] - item.Key.start) * 960 + EditorManager.GetBeatTick()[1]) * item.Value / 960;
+                        EditorManager.Instance.beatTick = targetBeatTick;
+                        EditorManager.StepBackward(deltaPcm);
+
+                        NoteManager.RefreshAllNotes();
+                        return;
+                    }
+                    else
+                    {
+                        deltaPcm += item.Key.range * item.Value * 960;
+                    }
+                }
+            }
         }
 
         private void StepForward()
@@ -590,18 +645,79 @@ namespace Larvend.Gameplay
                 return;
             }
 
-            EditorManager.StepForward();
-            NoteManager.RefreshAllNotes();
+            int deltaTick = (int)Mathf.Floor(4 / Mathf.Pow(2, stepSelector.value) * (tripletToggle.isOn ? 2 / 3 : 1) * (dottedToggle.isOn ? 3 / 2 : 1) * 960);
+            int targetTick = deltaTick + (EditorManager.GetBeatTick()[0] - 1) * 960 + EditorManager.GetBeatTick()[1];
+
+            int[] targetBeatTick = new int[] { targetTick / 960 + 1, targetTick % 960 };
+            
+            //if (targetTick >= EditorManager.GetAudioPCMLength())
+            //{
+            //    EditorManager.StepForward(EditorManager.GetAudioPCMLength() - EditorManager.GetAudioPCMTime());
+
+            //    NoteManager.RefreshAllNotes();
+            //    return;
+            //}
+
+            int deltaPcm = 0;
+            foreach (var item in NoteManager.Instance.PcmDict)
+            {
+                Debug.Log($"{item.Key.start}, {item.Key.end}, {targetBeatTick[0]}, {targetBeatTick[1]}");
+                if (item.Key.IsBothIn(EditorManager.GetBeatTick()[0], targetBeatTick[0]))
+                {
+                    deltaPcm = deltaTick * item.Value / 960;
+                    EditorManager.Instance.beatTick = targetBeatTick;
+                    EditorManager.StepForward(deltaPcm);
+
+                    NoteManager.RefreshAllNotes();
+                    return;
+                }
+            }
+
+            bool flag = false;
+            foreach (var item in NoteManager.Instance.PcmDict)
+            {
+                if (item.Key.IsIn(EditorManager.GetBeatTick()[0]))
+                {
+                    deltaPcm += ((item.Key.end - EditorManager.GetBeatTick()[0]) * 960 + (960 - EditorManager.GetBeatTick()[1])) * item.Value / 960;
+                    flag = true;
+                    continue;
+                }
+                if (flag)
+                {
+                    if (item.Key.IsIn(targetBeatTick[0]))
+                    {
+                        deltaPcm += ((targetBeatTick[0] - item.Key.start) * 960 + targetBeatTick[1]) * item.Value / 960;
+                        EditorManager.Instance.beatTick = targetBeatTick;
+                        EditorManager.StepForward(deltaPcm);
+
+                        NoteManager.RefreshAllNotes();
+                        return;
+                    }
+                    else
+                    {
+                        deltaPcm += item.Key.range * item.Value * 960;
+                    }
+                }
+            }
         }
 
         private void AdjustPointer()
         {
             if (Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsPlaying)
             {
-                beatInfo.SetText($"{beatTick[0] - 1}: 000");
-                beatTick[1] = 0;
-                EditorManager.AdjustPointer(beatTick[0] - 1);
-                NoteManager.RefreshAllNotes();
+                int totalPcm = 0;
+                foreach (var item in NoteManager.Instance.PcmDict)
+                {
+                    if (item.Key.IsIn(EditorManager.GetBeatTick()[0]))
+                    {
+                        totalPcm += (EditorManager.GetBeatTick()[0] - item.Key.start) * item.Value;
+                        EditorManager.SetTime(totalPcm);
+                        
+                        NoteManager.RefreshAllNotes();
+                        return;
+                    }
+                    totalPcm += item.Key.range * item.Value;
+                }
             }
         }
 
@@ -609,7 +725,7 @@ namespace Larvend.Gameplay
         {
             if (Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsPlaying)
             {
-                beatTick = new int[] {1, 0};
+                EditorManager.Instance.beatTick = new int[] {1, 0};
                 audioTime.SetText("0");
                 beatInfo.SetText("1: 000");
                 EditorManager.ResetAudio();
@@ -949,11 +1065,19 @@ namespace Larvend.Gameplay
             if (isInfoEdited)
             {
                 EditorManager.UpdateInfo(titleInputField.text, composerInputField.text, arrangerInputField.text, ratingInputField.text);
-                EditorManager.Instance.offset = Int32.Parse(offsetInputField.text);
-                if (Global.IsModifyBaseBpmAllowed)
+                if (Global.IsModifyBaseBpmAllowed && isBaseBpmEdited)
                 {
                     EditorManager.Instance.InitializeBPM(Single.Parse(baseBpmInputField.text));
                     NoteManager.Instance.BaseSpeed = new Line(Single.Parse(baseBpmInputField.text));
+                    isBaseBpmEdited = false;
+                }
+
+                if (isOffsetEdited)
+                {
+                    EditorManager.Instance.offset = Int32.Parse(offsetInputField.text);
+                    ResetPointer();
+                    audioTime.SetText(offsetInputField.text);
+                    isOffsetEdited = false;
                 }
 
                 Global.IsSaved = false;

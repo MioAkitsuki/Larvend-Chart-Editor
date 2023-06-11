@@ -17403,8 +17403,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f9c86da2968dfe46a417a2985cc9deb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  BeatPCM: 0
   offset: 0
   difficulty: 0
+  beatTick: 
 --- !u!1 &1582367897
 GameObject:
   m_ObjectHideFlags: 0
@@ -22184,9 +22186,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   prefabs:
-  - {fileID: 4371861312729581155, guid: 83df4fe60b24b9f4287b59772c918d87, type: 3}
-  - {fileID: 8806695195708476535, guid: 85972717b46f3e04ca16fc8218254456, type: 3}
-  - {fileID: 7062030594521437869, guid: fefd2aa2051795546b9479ac21db0a4d, type: 3}
+  - {fileID: 5002868951368934035, guid: dbbae9b572c470c48adef1142413b316, type: 3}
+  - {fileID: 827632966281326471, guid: 19309720d61df064fae3e91e563402e3, type: 3}
+  - {fileID: 4360741114837972110, guid: 11a7dcdf149cf5046b93d22c4c25d575, type: 3}
 --- !u!4 &2078504253
 Transform:
   m_ObjectHideFlags: 0

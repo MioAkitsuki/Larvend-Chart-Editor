@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 
 namespace Larvend.Gameplay
@@ -16,7 +17,8 @@ namespace Larvend.Gameplay
         public int BeatPCM;
         public int offset;
         public int difficulty;
-        
+        public int[] beatTick;
+
         private int lastPcmPointer;
         
         private static int step;
@@ -31,7 +33,9 @@ namespace Larvend.Gameplay
             song = gameObject.GetComponent<AudioSource>();
             offset = 0;
             difficulty = 0;
-            
+
+            beatTick = new int[] { 1, 0 };
+
             timePcmPointer = 0;
             BPM = 120f;
             BeatPCM = 22050;
@@ -45,13 +49,17 @@ namespace Larvend.Gameplay
         {
             if (Input.GetKeyDown(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing)
             {
-                song.timeSamples = timePcmPointer;
+                song.timeSamples = timePcmPointer + offset;
                 Instance.lastPcmPointer = timePcmPointer;
+            }
+            if (Global.IsPlaying)
+            {
+                timePcmPointer = song.timeSamples;
             }
             if (Input.GetKeyUp(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing)
             {
                 timePcmPointer = Instance.lastPcmPointer;
-                song.timeSamples = timePcmPointer;
+                song.timeSamples = timePcmPointer + offset;
                 UIController.RefreshUI();
             }
         }
@@ -211,76 +219,24 @@ namespace Larvend.Gameplay
             step = (int) (Instance.BeatPCM * s);
         }
 
-        public static void StepForward()
+        public static void SetTime(int target)
         {
-            if (NoteManager.Instance.SpeedAdjust.Count > 0)
-            {
-                if (GetAudioPCMTime() < NoteManager.Instance.SpeedAdjust[0].time)
-                {
-                    if ((GetBPM() - NoteManager.Instance.BaseSpeed.targetBpm) != 0)
-                    {
-                        UpdateBpm(NoteManager.Instance.BaseSpeed.targetBpm);
-                    }
-                }
-                else
-                {
-                    foreach (var line in NoteManager.Instance.SpeedAdjust)
-                    {
-                        if (GetAudioPCMTime() >= line.time + line.endTime)
-                        {
-                            UpdateBpm(line.targetBpm);
-                        }
-                        else if (GetAudioPCMTime() < line.time + line.endTime && GetAudioPCMTime() > line.time)
-                        {
-                            float proportion = (float)(GetAudioPCMTime() - line.time) / line.endTime;
-                            UpdateBpm((line.targetBpm - GetBPM()) * proportion + GetBPM());
-                        }
-                    }
-                }
-            }
-
-            timePcmPointer = timePcmPointer + step > song.clip.samples ? song.clip.samples : timePcmPointer + step;
-            song.timeSamples = timePcmPointer;
+            timePcmPointer = target;
+            song.timeSamples = timePcmPointer + Instance.offset;
             UIController.RefreshUI();
         }
 
-        public static void StepBackward()
+        public static void StepForward(int delta)
         {
-            if (NoteManager.Instance.SpeedAdjust.Count > 0)
-            {
-                if (GetAudioPCMTime() <= NoteManager.Instance.SpeedAdjust[0].time)
-                {
-                    if ((GetBPM() - NoteManager.Instance.BaseSpeed.targetBpm) != 0)
-                    {
-                        UpdateBpm(NoteManager.Instance.BaseSpeed.targetBpm);
-                    }
-                }
-                else
-                {
-                    foreach (var line in NoteManager.Instance.SpeedAdjust)
-                    {
-                        if (GetAudioPCMTime() > line.time + line.endTime)
-                        {
-                            UpdateBpm(line.targetBpm);
-                        }
-                        else if (GetAudioPCMTime() < line.time + line.endTime && GetAudioPCMTime() > line.time)
-                        {
-                            float proportion = (float)(GetAudioPCMTime() - line.time) / line.endTime;
-                            UpdateBpm((line.targetBpm - GetBPM()) * proportion + GetBPM());
-                        }
-                    }
-                }
-            }
-
-            timePcmPointer = timePcmPointer - step < 0 ? 0 : timePcmPointer - step;
-            song.timeSamples = timePcmPointer;
+            timePcmPointer = timePcmPointer + delta > song.clip.samples - Instance.offset ? song.clip.samples - Instance.offset : timePcmPointer + delta;
+            song.timeSamples = timePcmPointer + Instance.offset;
             UIController.RefreshUI();
         }
 
-        public static void AdjustPointer(int pointer)
+        public static void StepBackward(int delta)
         {
-            timePcmPointer  = pointer * Instance.BeatPCM;
-            song.timeSamples = timePcmPointer;
+            timePcmPointer = timePcmPointer - delta < 0 ? 0 : timePcmPointer - delta;
+            song.timeSamples = timePcmPointer + Instance.offset;
             UIController.RefreshUI();
         }
 
@@ -291,6 +247,7 @@ namespace Larvend.Gameplay
         public static void InitAudio(AudioClip clip)
         {
             song.clip = clip;
+            NoteManager.RefreshSpeed();
         }
 
         /// <summary>
@@ -300,7 +257,7 @@ namespace Larvend.Gameplay
         {
             if (Global.IsAudioLoaded)
             {
-                song.timeSamples = 0;
+                song.timeSamples = Instance.offset;
                 timePcmPointer = 0;
                 UpdateBpm(NoteManager.Instance.BaseSpeed.targetBpm);
                 UIController.RefreshUI();
@@ -337,6 +294,11 @@ namespace Larvend.Gameplay
         public static int GetTimePointer()
         {
             return timePcmPointer;
+        }
+
+        public static int[] GetBeatTick()
+        {
+            return Instance.beatTick;
         }
 
         public static void UpdateBpm(float targetBpm)

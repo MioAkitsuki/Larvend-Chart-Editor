@@ -7,6 +7,47 @@ using UnityEngine;
 
 namespace Larvend.Gameplay
 {
+    public class BeatRange
+    {
+        public int start;
+        public int end;
+        public int range;
+
+        public BeatRange(int _start, int _end)
+        {
+            start = _start;
+            end = _end;
+            range = _end - _start + 1;
+        }
+
+        public bool IsIn(int value)
+        {
+            if (value >= start && value <= end)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public bool IsIn(float value)
+        {
+            if (value >= start && value <= end)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public bool IsBothIn(int v1, int v2)
+        {
+            if (v1 >= start && v1 <= end && v2 >= start && v2 <= end)
+            {
+                return true;
+            }
+            return false;
+        }
+    }
+
     public class NoteManager : MonoBehaviour
     {
         public static NoteManager Instance { get; set; }
@@ -18,6 +59,7 @@ namespace Larvend.Gameplay
         public List<Note> FlickNotes { get; private set; }
         public Line BaseSpeed;
         public List<Line> SpeedAdjust = new();
+        public Dictionary<BeatRange, int> PcmDict = new Dictionary<BeatRange, int>();
         public List<Note> UnplayedNotes { get; private set; }
         public List<Line> UnplayedSpeedAdjusts;
 
@@ -179,6 +221,39 @@ namespace Larvend.Gameplay
 
                 note.RefreshState();
             }
+        }
+
+        public static void RefreshSpeed()
+        {
+            Instance.PcmDict = new();
+            if (Instance.SpeedAdjust.Count == 0)
+            {
+                int threshold = (int)Math.Floor(EditorManager.GetAudioPCMLength() / (44100 * (60f / Instance.BaseSpeed.targetBpm)));
+                Instance.PcmDict.Add(new BeatRange(1, threshold), (int)(44100 * (60f / Instance.BaseSpeed.targetBpm)));
+            }
+            else
+            {
+                int i;
+                int upper = 0, lower = 0;
+
+                for (i = 0; i < Instance.SpeedAdjust.Count; i++)
+                {
+                    if (i == 0)
+                    {
+                        upper = (int)Math.Floor(Instance.SpeedAdjust[i].time / (44100 * (60f / Instance.BaseSpeed.targetBpm)));
+                        Instance.PcmDict.Add(new BeatRange(1, upper), (int)(44100 * (60f / Instance.BaseSpeed.targetBpm)));
+                        lower = upper + 1;
+                        continue;
+                    }
+
+                    upper = (int)Math.Floor((Instance.SpeedAdjust[i].time - Instance.SpeedAdjust[i - 1].time) / (44100 * 60f / Instance.SpeedAdjust[i - 1].targetBpm)) + lower;
+                    Instance.PcmDict.Add(new BeatRange(lower, upper), (int)(44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm)));
+                    lower = upper + 1;
+                }
+
+                upper = (int)Math.Floor((EditorManager.GetAudioPCMLength() - Instance.SpeedAdjust[i - 1].time) / (44100 * 60f / Instance.SpeedAdjust[i - 1].targetBpm)) + lower;
+                Instance.PcmDict.Add(new BeatRange(lower, upper), (int)(44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm)));
+            }
 
             UIController.RefreshSpeedPanel(Instance.SpeedAdjust);
         }
@@ -204,7 +279,7 @@ namespace Larvend.Gameplay
             else if (type == Type.Hold)
             {
                 var newNote = Instantiate(Instance.prefabs[1], Instance.transform.GetChild(1));
-                newNote.GetComponent<Note>().InitNote(type, EditorManager.GetAudioPCMTime(), new Vector2(0.5f, 0.5f), EditorManager.GetAudioPCMTime());
+                newNote.GetComponent<Note>().InitNote(type, EditorManager.GetAudioPCMTime(), new Vector2(0.5f, 0.5f), EditorManager.GetAudioPCMTime() + EditorManager.Instance.BeatPCM);
 
                 var newPos = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
                 newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);

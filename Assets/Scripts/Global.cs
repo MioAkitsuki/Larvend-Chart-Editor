@@ -23,7 +23,6 @@ namespace Larvend.Gameplay
         public static bool IsSaved = true;
 
         public static bool IsModifyBaseBpmAllowed = false;
-        public static bool IsModifyTimeAllowed = false;
         
         public static string[] TimeFormat(float sec)
         {
