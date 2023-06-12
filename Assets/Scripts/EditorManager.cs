@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
 
 namespace Larvend.Gameplay
@@ -9,7 +8,7 @@ namespace Larvend.Gameplay
     public class EditorManager : MonoBehaviour
     {
         public static EditorManager Instance { get; private set; }
-        private static AudioSource song;
+        public static AudioSource song;
         private static Info info;
         private static DifficultyInfo difficultyInfo;
 
@@ -23,9 +22,6 @@ namespace Larvend.Gameplay
         
         private static int step;
         private static int timePcmPointer;
-        
-
-        public static bool isAudioPlaying;
 
         private void Awake()
         {
@@ -39,7 +35,7 @@ namespace Larvend.Gameplay
             timePcmPointer = 0;
             BPM = 120f;
             BeatPCM = 22050;
-            isAudioPlaying = false;
+            Global.IsPlaying = false;
 
             Application.wantsToQuit += WantsToQuit;
             InitPlayerPrefs();
@@ -83,7 +79,6 @@ namespace Larvend.Gameplay
         {
             if (Global.IsPrepared)
             {
-                isAudioPlaying = true;
                 song.Play();
                 Global.IsPlaying = true;
             }
@@ -91,9 +86,29 @@ namespace Larvend.Gameplay
 
         public static void Stop()
         {
-            isAudioPlaying = false;
             song.Pause();
             Global.IsPlaying = false;
+        }
+
+        public static void NewProject()
+        {
+            try
+            {
+                if (Global.IsSaved)
+                {
+                    string path = Schwarzer.Windows.Dialog.OpenFolderDialog("Select Folder", "/");
+                    if (path != null)
+                    {
+                        Global.FolderPath = path;
+                        DirectoryManager.InitDirectory();
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                MsgBoxManager.ShowMessage(MsgType.Error, "Error", e.Message);
+                throw;
+            }
         }
 
         public static void InitPlayerPrefs()
@@ -247,6 +262,7 @@ namespace Larvend.Gameplay
         public static void InitAudio(AudioClip clip)
         {
             song.clip = clip;
+            UIController.InitAudioState();
             NoteManager.RefreshSpeed();
         }
 
@@ -259,6 +275,7 @@ namespace Larvend.Gameplay
             {
                 song.timeSamples = Instance.offset;
                 timePcmPointer = 0;
+                Instance.beatTick = new int[] { 1, 0 };
                 UpdateBpm(NoteManager.Instance.BaseSpeed.targetBpm);
                 UIController.RefreshUI();
             }
@@ -270,7 +287,15 @@ namespace Larvend.Gameplay
             BeatPCM = (int) (44100 * (60f / bpm));
 
             ResetAudio();
-            UIController.InitUI();
+
+            NoteManager.RefreshSpeed();
+            UIController.InitBpmState();
+        }
+
+        public static void SetOffset(int value)
+        {
+            Instance.offset = value;
+            song.timeSamples = Instance.offset;
         }
 
         public static float GetAudioLength()

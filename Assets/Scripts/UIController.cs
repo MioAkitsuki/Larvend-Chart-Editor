@@ -115,37 +115,7 @@ namespace Larvend.Gameplay
             openSettings = this.gameObject.transform.Find("TopBar").Find("OpenSettings").GetComponent<Button>();
             deleteAllNotes = this.gameObject.transform.Find("TopBar").Find("DeleteAllNotes").GetComponent<Button>();
 
-            newProject.onClick.AddListener(() =>
-            {
-                if (!Global.IsSaved)
-                {
-                    MsgBoxManager.ShowMessage(MsgType.Warning, "Project Unsaved", Localization.GetString("UnsavedChart"),
-                        delegate()
-                        {
-                            EditorManager.SaveProject();
-                        },
-                        delegate()
-                        {
-                            Global.IsSaved = true;
-                            string path = SelectFolder();
-                            if (path != null)
-                            {
-                                Global.FolderPath = path;
-                                DirectoryManager.InitDirectory();
-                            }
-                        });
-                }
-                else
-                {
-                    Global.IsSaved = true;
-                    string path = SelectFolder();
-                    if (path != null)
-                    {
-                        Global.FolderPath = path;
-                        DirectoryManager.InitDirectory();
-                    }
-                }
-            });
+            newProject.onClick.AddListener(NewProjectAttempt);
             openProject.onClick.AddListener(() =>
             {
                 if (!Global.IsSaved)
@@ -204,7 +174,11 @@ namespace Larvend.Gameplay
             resetPlayerPrefs = this.gameObject.transform.Find("SettingsPanel").Find("ResetPlayerPrefs").GetComponent<Button>();
 
             saveSettings.onClick.AddListener(SaveSettings);
-            cancelSettings.onClick.AddListener(() => StartCoroutine("closeSettingsPanelEnumerator"));
+            cancelSettings.onClick.AddListener(() =>
+            {
+                StartCoroutine("closeSettingsPanelEnumerator");
+                Global.IsDialoging = false;
+            });
             settingsPanel.alpha = 0;
             settingsPanel.gameObject.SetActive(false);
             resetPlayerPrefs.onClick.AddListener(() =>
@@ -361,15 +335,28 @@ namespace Larvend.Gameplay
 
         private void Update()
         {
-            if (EditorManager.isAudioPlaying)
+            if (EditorManager.song.isPlaying)
             {
                 RefreshUI();
             }
-            if ((Input.GetKeyUp(KeyCode.RightArrow) || Input.GetAxis("Mouse ScrollWheel") > 0) && Global.IsAudioLoaded && !EditorManager.isAudioPlaying && !Global.IsDialoging && !Global.IsEditing)
+            else
+            {
+                if (Instance.playSwitchButton.gameObject.GetComponent<Image>().sprite == playAndPause[1])
+                {
+                    Instance.playSwitchButton.gameObject.GetComponent<Image>().sprite = playAndPause[0];
+                    Global.IsPlaying = false;
+                    
+                    ResetPointer();
+                    NoteManager.RefreshAllNotes();
+                    Global.IsPrepared = false;
+                }
+            }
+
+            if ((Input.GetKeyUp(KeyCode.RightArrow) || Input.GetAxis("Mouse ScrollWheel") > 0) && Global.IsAudioLoaded && !Global.IsPlaying && !Global.IsDialoging && !Global.IsEditing)
             {
                 StepForward();
             }
-            if ((Input.GetKeyUp(KeyCode.LeftArrow) || Input.GetAxis("Mouse ScrollWheel") < 0) && Global.IsAudioLoaded && !EditorManager.isAudioPlaying && !Global.IsDialoging && !Global.IsEditing)
+            if ((Input.GetKeyUp(KeyCode.LeftArrow) || Input.GetAxis("Mouse ScrollWheel") < 0) && Global.IsAudioLoaded && !Global.IsPlaying && !Global.IsDialoging && !Global.IsEditing)
             {
                 StepBackward();
             }
@@ -501,19 +488,42 @@ namespace Larvend.Gameplay
             Instance.posYInput.text = $"{Instance.selectedNote.position.y}";
         }
 
+        private void NewProjectAttempt()
+        {
+            if (!Global.IsSaved)
+            {
+                MsgBoxManager.ShowMessage(MsgType.Warning, "Project Unsaved", Localization.GetString("UnsavedChart"),
+                    delegate ()
+                    {
+                        EditorManager.SaveProject();
+                        Global.IsSaved = true;
+                        EditorManager.NewProject();
+                    },
+                    delegate ()
+                    {
+                        Global.IsSaved = true;
+                        EditorManager.NewProject();
+                    });
+            }
+            else
+            {
+                EditorManager.NewProject();
+            }
+        }
+
         private void ModifyBaseBpmAttempt(string value)
         {
-            if (Global.IsModifyBaseBpmAllowed)
+            if (!PlayerPrefs.HasKey("IsModifyBaseBpmAllowed"))
             {
-                return;
+                PlayerPrefs.SetInt("IsModifyBaseBpmAllowed", 0);
+                MsgBoxManager.ShowMessage(MsgType.Warning, "Warning", Localization.GetString("ModBaseBpmAttempt"),
+                    delegate ()
+                    {
+                        PlayerPrefs.SetInt("IsModifyBaseBpmAllowed", 1);
+                        baseBpmInputField.onSelect.RemoveAllListeners();
+                        baseBpmInputField.onSelect.AddListener((value) => Global.IsEditing = true);
+                    });
             }
-            MsgBoxManager.ShowMessage(MsgType.Warning, "Warning", Localization.GetString("ModBaseBpmAttempt"),
-                delegate()
-                {
-                    Global.IsModifyBaseBpmAllowed = true;
-                    baseBpmInputField.onSelect.RemoveAllListeners();
-                    baseBpmInputField.onSelect.AddListener(value => Global.IsEditing = true);
-                });
         }
 
         private void UpdateTimeAttempt(string value)
@@ -661,7 +671,6 @@ namespace Larvend.Gameplay
             int deltaPcm = 0;
             foreach (var item in NoteManager.Instance.PcmDict)
             {
-                Debug.Log($"{item.Key.start}, {item.Key.end}, {targetBeatTick[0]}, {targetBeatTick[1]}");
                 if (item.Key.IsBothIn(EditorManager.GetBeatTick()[0], targetBeatTick[0]))
                 {
                     deltaPcm = deltaTick * item.Value / 960;
@@ -725,9 +734,6 @@ namespace Larvend.Gameplay
         {
             if (Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsPlaying)
             {
-                EditorManager.Instance.beatTick = new int[] {1, 0};
-                audioTime.SetText("0");
-                beatInfo.SetText("1: 000");
                 EditorManager.ResetAudio();
                 NoteManager.RefreshAllNotes();
             }
@@ -816,7 +822,7 @@ namespace Larvend.Gameplay
 
         private void ToggleSettingsPanel()
         {
-            if (!Global.IsDirectorySelected)
+            if (!Global.IsDirectorySelected || Global.IsDialoging)
             {
                 return;
             }
@@ -837,6 +843,7 @@ namespace Larvend.Gameplay
                 baseBpmInputField.text = NoteManager.Instance.BaseSpeed.targetBpm.ToString();
                 ratingInputField.text = diffInfo.rating;
 
+                settingsPanel.alpha = 0;
                 settingsPanel.gameObject.SetActive(true);
                 StopCoroutine("closeSettingsPanelEnumerator");
                 StartCoroutine("openSettingsPanelEnumerator");
@@ -845,33 +852,27 @@ namespace Larvend.Gameplay
 
         IEnumerator openSettingsPanelEnumerator()
         {
-            settingsPanel.alpha = Mathf.Lerp(settingsPanel.alpha, 1f, 0.2f);
-
-            if (settingsPanel.alpha > 0.98f)
+            while (settingsPanel.alpha < 0.98f)
             {
-                settingsPanel.alpha = 1;
-                Global.IsDialoging = true;
-                yield break;
+                settingsPanel.alpha = Mathf.Lerp(settingsPanel.alpha, 1f, 0.2f);
+                yield return new WaitForFixedUpdate();
             }
 
-            yield return new WaitForFixedUpdate();
-            StartCoroutine("openSettingsPanelEnumerator");
+            settingsPanel.alpha = 1;
+            Global.IsDialoging = true;
         }
 
         IEnumerator closeSettingsPanelEnumerator()
         {
-            settingsPanel.alpha = Mathf.Lerp(settingsPanel.alpha, 0f, 0.2f);
-
-            if (settingsPanel.alpha < 0.02f)
+            while (settingsPanel.alpha > 0.02f)
             {
-                settingsPanel.alpha = 0;
-                settingsPanel.gameObject.SetActive(false);
-                Global.IsDialoging = false;
-                yield break;
+                settingsPanel.alpha = Mathf.Lerp(settingsPanel.alpha, 0f, 0.2f);
+                yield return new WaitForFixedUpdate();
             }
 
-            yield return new WaitForFixedUpdate();
-            StartCoroutine("closeSettingsPanelEnumerator");
+            settingsPanel.alpha = 0;
+            settingsPanel.gameObject.SetActive(false);
+            Global.IsDialoging = false;
         }
 
         private void ToggleSpeedPanel()
@@ -1032,10 +1033,14 @@ namespace Larvend.Gameplay
             Instance.speedInput.text = res;
         }
 
-        public static void InitUI()
+        public static void InitAudioState()
         {
-            Instance.audioTime.SetText("0");
-            Instance.beatInfo.SetText("1: 000");
+            Instance.audioTime.SetText(Global.IsAudioLoaded ? EditorManager.Instance.offset.ToString() : "0");
+            Instance.beatInfo.SetText(Global.IsAudioLoaded ? "1: 000" : "Audio Unloaded");
+        }
+
+        public static void InitBpmState()
+        {
             Instance.currentBPMStatus.SetText(EditorManager.GetBPM().ToString());
 
             Instance.stepSelector.value = 2;
@@ -1065,20 +1070,22 @@ namespace Larvend.Gameplay
             if (isInfoEdited)
             {
                 EditorManager.UpdateInfo(titleInputField.text, composerInputField.text, arrangerInputField.text, ratingInputField.text);
-                if (Global.IsModifyBaseBpmAllowed && isBaseBpmEdited)
+                if (isBaseBpmEdited)
                 {
-                    EditorManager.Instance.InitializeBPM(Single.Parse(baseBpmInputField.text));
                     NoteManager.Instance.BaseSpeed = new Line(Single.Parse(baseBpmInputField.text));
+                    EditorManager.Instance.InitializeBPM(Single.Parse(baseBpmInputField.text));
                     isBaseBpmEdited = false;
                 }
 
                 if (isOffsetEdited)
                 {
                     EditorManager.Instance.offset = Int32.Parse(offsetInputField.text);
-                    ResetPointer();
-                    audioTime.SetText(offsetInputField.text);
+                    Instance.ResetPointer();
+                    Instance.audioTime.SetText(offsetInputField.text);
                     isOffsetEdited = false;
                 }
+                Instance.songName.text = titleInputField.text;
+                Instance.artistName.text = $"Artist: {composerInputField.text}";
 
                 Global.IsSaved = false;
                 Global.IsEditing = false;

@@ -141,35 +141,27 @@ namespace Larvend.Gameplay
 
         IEnumerator DialogBoxFadeIn()
         {
-            this.GetComponent<CanvasGroup>().alpha = Mathf.Lerp(this.GetComponent<CanvasGroup>().alpha, 1f, 0.2f);
-
-            if (this.GetComponent<CanvasGroup>().alpha > 0.98f)
+            while (this.GetComponent<CanvasGroup>().alpha < 0.98f)
             {
-                this.GetComponent<CanvasGroup>().alpha = 1;
-                MsgBoxManager.isDisplaying = true;
-                Global.IsDialoging = true;
-                yield break;
+                this.GetComponent<CanvasGroup>().alpha = Mathf.Lerp(this.GetComponent<CanvasGroup>().alpha, 1f, 0.25f);
+                yield return new WaitForFixedUpdate();
             }
-
-            yield return new WaitForFixedUpdate();
-            StartCoroutine("DialogBoxFadeIn");
+            this.GetComponent<CanvasGroup>().alpha = 1;
+            MsgBoxManager.isDisplaying = true;
+            Global.IsDialoging = true;
         }
 
         IEnumerator DialogBoxFadeOut()
         {
-            this.GetComponent<CanvasGroup>().alpha = Mathf.Lerp(this.GetComponent<CanvasGroup>().alpha, 0f, 0.2f);
-
-            if (this.GetComponent<CanvasGroup>().alpha < 0.02f)
+            while (this.GetComponent<CanvasGroup>().alpha > 0.02f)
             {
-                this.GetComponent<CanvasGroup>().alpha = 0;
-                this.gameObject.SetActive(false);
-                MsgBoxManager.DialogClosed();
-                Destroy(this);
-                yield break;
+                this.GetComponent<CanvasGroup>().alpha = Mathf.Lerp(this.GetComponent<CanvasGroup>().alpha, 0f, 0.25f);
+                yield return new WaitForFixedUpdate();
             }
-
-            yield return new WaitForFixedUpdate();
-            StartCoroutine("DialogBoxFadeOut");
+            this.GetComponent<CanvasGroup>().alpha = 0;
+            this.gameObject.SetActive(false);
+            MsgBoxManager.DialogClosed();
+            Destroy(this);
         }
     }
 

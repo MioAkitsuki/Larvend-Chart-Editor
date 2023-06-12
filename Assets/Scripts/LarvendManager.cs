@@ -95,7 +95,7 @@ namespace Larvend
 
                     if (line.Contains("offset="))
                     {
-                        EditorManager.Instance.offset = Int32.Parse(line.Replace("offset=", ""));
+                        EditorManager.SetOffset(Int32.Parse(line.Replace("offset=", "")));
                         continue;
                     }
 
@@ -254,6 +254,10 @@ namespace Larvend
 
                         System.Diagnostics.Process.Start(Global.FolderPath);
                         Global.IsDirectorySelected = true;
+                        Global.IsFileSelected = true;
+
+                        EditorManager.Instance.StartCoroutine(AudioManager.LoadAudio());
+                        EditorManager.Instance.StartCoroutine(ImageManager.LoadImg());
                     }
                     else
                     {
@@ -558,6 +562,8 @@ namespace Larvend
 
                 if (Directory.GetFiles(Global.FolderPath).Length > 0)
                 {
+                    DirectoryInfo dir = new DirectoryInfo(Global.FolderPath);
+                    FileInfo[] files = dir.GetFiles();
                     MsgBoxManager.ShowMessage(MsgType.Warning, "Directory Not Empty", Localization.GetString("InitNonEmptyDirectoryAttempt"),
                         delegate
                         {
@@ -571,6 +577,8 @@ namespace Larvend
                 }
                 else
                 {
+                    AudioManager.SelectAudio();
+
                     EditorManager.UpdateInfo(new Info());
                     EditorManager.AddDifficulty();
                     EditorManager.Instance.difficulty = 0;
@@ -610,10 +618,42 @@ namespace Larvend
 
     public class AudioManager
     {
+        public static void SelectAudio()
+        {
+            try
+            {
+                string audioPath = Schwarzer.Windows.Dialog.OpenFileDialog("Select Audio", "base.ogg", "/", "ogg");
+                if (File.Exists(audioPath))
+                {
+                    string fileName, destFile;
+                    if (audioPath[^3..] == "ogg")
+                    {
+                        fileName = Path.GetFileName(audioPath);
+                        destFile = Path.Combine(Global.FolderPath, "base.ogg");
+                        File.Copy(audioPath, destFile, true);
+                        EditorManager.Instance.StartCoroutine(LoadAudio());
+                    }
+                    else
+                    {
+                        throw new Exception("Unsupported Format.");
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
         public static IEnumerator LoadAudio()
         {
             AudioClip clip = null;
             string path = Path.Combine(Global.FolderPath, "base.ogg");
+
+            if (!File.Exists(path))
+            {
+                yield break;
+            }
 
             UnityWebRequest uwr = UnityWebRequestMultimedia.GetAudioClip(path, AudioType.OGGVORBIS);
             yield return uwr.SendWebRequest();
@@ -641,6 +681,11 @@ namespace Larvend
         {
             Texture2D texture = null;
             string path = Path.Combine(Global.FolderPath, "base.jpg");
+
+            if (!File.Exists(path))
+            {
+                yield break;
+            }
 
             UnityWebRequest uwr = UnityWebRequestTexture.GetTexture(path);
             yield return uwr.SendWebRequest();
