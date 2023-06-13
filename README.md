@@ -1,16 +1,23 @@
 # Larvend-Chart-Editor
-Chart Editor for Larvend: Kanata
 
-为全屏式音乐游戏《Larvend·彼方》开发的制谱器
+Chart Editor for Larvend: Kanata
 
 If you're also interested in rhythm game development / design. Don't hesitate to contact me via e-mail or twitter.
 
-若您也对开发/设计音游感兴趣，您可随时通过邮箱或Twitter PM我
+Unauthorized use of assets in this repo is strictly prohibited.
 
-E-mail: <a href="mailto:k@ahympia.com"> k@ahympia.com </a>
+## Environment
 
-Twitter: <a href="https://twitter.com/MioAkitsuki" target="_blank"> @MioAkitsuki </a>
+- Unity 2021.3.17f1
 
-----
+- Visual Studio 2022
 
-鸣谢 Schwarzer
+## Contact
+
+- E-mail: <a href="mailto:k@ahympia.com"> k@ahympia.com </a>
+
+- Twitter: <a href="https://twitter.com/MioAkitsuki" target="_blank"> @MioAkitsuki </a>
+
+---
+
+Special thanks to Schwarzer.

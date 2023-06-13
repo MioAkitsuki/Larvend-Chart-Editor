@@ -82,3 +82,6 @@ crashlytics-build.properties
 
 # Large Assets
 /[Aa]ssets/[Ff]onts/*
+/[Aa]ssets/[Ff]onts.meta
+/[Aa]ssets/[Rr]esources/*
+/[Aa]ssets/[Rr]esources.meta
