@@ -53,13 +53,13 @@ namespace Larvend
                 if (Global.IsAbsorption)
                 {
                     Vector3 absRes = Camera.main.WorldToViewportPoint(res);
-                    if (Math.Abs(Mathf.Floor(absRes.x * 10) - absRes.x * 10) < 0.1)
+                    if (Math.Abs(Mathf.Round(absRes.x * 10) - absRes.x * 10) < 0.1)
                     {
-                        absRes.x = Mathf.Floor(absRes.x * 10) / 10f;
+                        absRes.x = Mathf.Round(absRes.x * 10) / 10f;
                     }
-                    if (Math.Abs(Mathf.Floor(absRes.y * 10) - absRes.y * 10) < 0.1)
+                    if (Math.Abs(Mathf.Round(absRes.y * 10) - absRes.y * 10) < 0.1)
                     {
-                        absRes.y = Mathf.Floor(absRes.y * 10) / 10f;
+                        absRes.y = Mathf.Round(absRes.y * 10) / 10f;
                     }
 
                     transform.position = Camera.main.ViewportToWorldPoint(absRes);

@@ -73,7 +73,7 @@ namespace Larvend.Gameplay
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing)
+            if (Input.GetKeyDown(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing && !Global.IsPlaying)
             {
                 PlayPreparation();
             }
@@ -112,7 +112,7 @@ namespace Larvend.Gameplay
                     }
                 }
             }
-            if (Input.GetKeyUp(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing)
+            if (Input.GetKeyUp(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing && Global.IsPlaying)
             {
                 EditorManager.Stop();
                 RefreshAllNotes();

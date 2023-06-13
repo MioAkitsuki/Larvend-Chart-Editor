@@ -98,6 +98,9 @@ namespace Larvend.Gameplay
         private Button backToBeginningButton;
         private Button adjustPointerButton;
         private TMP_Text beatInfo;
+        private TMP_Text currentPos;
+        private Slider progressBar;
+        private TMP_Text totalLength;
 
         void Start()
         {
@@ -324,18 +327,21 @@ namespace Larvend.Gameplay
             backToBeginningButton = this.gameObject.transform.Find("PlayController").Find("BackToBeginning").GetComponent<Button>();
             adjustPointerButton = this.gameObject.transform.Find("PlayController").Find("AdjustPointer").GetComponent<Button>();
             beatInfo = this.gameObject.transform.Find("BeatInfo").Find("CurrentBeat").GetComponent<TMP_Text>();
+            currentPos = this.gameObject.transform.Find("ProgressInfo").Find("CurrentPos").GetComponent<TMP_Text>();
+            progressBar = this.gameObject.transform.Find("ProgressInfo").Find("Slider").GetComponent<Slider>();
+            totalLength = this.gameObject.transform.Find("ProgressInfo").Find("TotalLength").GetComponent<TMP_Text>();
 
             playSwitchButton.onClick.AddListener(PlaySwitch);
             stepBackwardButton.onClick.AddListener(StepBackward);
             stepForwardButton.onClick.AddListener(StepForward);
             backToBeginningButton.onClick.AddListener(ResetPointer);
             adjustPointerButton.onClick.AddListener(AdjustPointer);
-            beatInfo.SetText("Audio Unloaded");
+            progressBar.onValueChanged.AddListener(value => SetPointer(value));
         }
 
         private void Update()
         {
-            if (EditorManager.song.isPlaying)
+            if (Global.IsPlaying)
             {
                 RefreshUI();
             }
@@ -466,8 +472,13 @@ namespace Larvend.Gameplay
         public static void RefreshUI()
         {
             Instance.audioTime.SetText(EditorManager.GetAudioPCMTime().ToString());
+            Instance.currentPos.SetText(FormatTime(EditorManager.GetTimePointer()));
+            if (Global.IsPlaying)
+            {
+                Instance.progressBar.value = (EditorManager.GetTimePointer() / EditorManager.GetAudioLength());
+            }
 
-            int currentPcm = EditorManager.GetTimePointer();
+            int currentPcm = EditorManager.GetTimePcmPointer();
             foreach (var item in NoteManager.Instance.PcmDict)
             {
                 if (item.Key.IsIn((float)currentPcm / item.Value + item.Key.start))
@@ -486,6 +497,44 @@ namespace Larvend.Gameplay
             Instance.timeInput.text = $"{Instance.selectedNote.time}";
             Instance.posXInput.text = $"{Instance.selectedNote.position.x}";
             Instance.posYInput.text = $"{Instance.selectedNote.position.y}";
+        }
+
+        private void SetPointer(float value)
+        {
+            if (!Global.IsPlaying && Global.IsAudioLoaded)
+            {
+                EditorManager.SetTime(Instance.progressBar.value * EditorManager.GetAudioLength());
+                Instance.currentPos.SetText(FormatTime(Instance.progressBar.value * EditorManager.GetAudioLength()));
+                NoteManager.RefreshAllNotes();
+            }
+        }
+
+        public static string FormatTime(float sec)
+        {
+            string[] formattedTime = new string[3];
+            formattedTime.Initialize();
+
+            int itg = (int)Math.Truncate(sec);
+            int dec = (int)((sec - itg) * 1000);
+
+            switch (dec)
+            {
+                case < 10:
+                    formattedTime.SetValue($"00{dec}", 2);
+                    break;
+                case < 100:
+                    formattedTime.SetValue($"0{dec}", 2);
+                    break;
+                default:
+                    formattedTime.SetValue($"{dec}", 2);
+                    break;
+            }
+
+            formattedTime.SetValue(itg % 60 < 10 ? $"0{itg % 60}" : $"{itg % 60}", 1);
+
+            formattedTime.SetValue(itg / 60 < 10 ? $"0{itg / 60}" : $"{itg / 60}", 0);
+
+            return $"{formattedTime[0]} : {formattedTime[1]}";
         }
 
         private void NewProjectAttempt()
@@ -582,7 +631,7 @@ namespace Larvend.Gameplay
             {
                 playSwitchButton.gameObject.GetComponent<Image>().sprite = playAndPause[0];
 
-                EditorManager.Stop();
+                EditorManager.Pause();
 
                 NoteManager.RefreshAllNotes();
                 Global.IsPrepared = false;
@@ -596,14 +645,8 @@ namespace Larvend.Gameplay
                 return;
             }
 
-            int deltaTick = (int) Mathf.Floor( 4 / Mathf.Pow(2, stepSelector.value) * (tripletToggle.isOn ? 2/3 : 1) * (dottedToggle.isOn ? 3/2 : 1) * 960);
+            int deltaTick = Mathf.RoundToInt( 4 / Mathf.Pow(2, stepSelector.value) * (tripletToggle.isOn ? 2/3 : 1) * (dottedToggle.isOn ? 3/2 : 1) * 960);
             int targetTick = (EditorManager.GetBeatTick()[0] - 1) * 960 + EditorManager.GetBeatTick()[1] - deltaTick;
-
-            //if (targetTick <= 0)
-            //{
-            //    ResetPointer();
-            //    return;
-            //}
 
             int[] targetBeatTick = new int[] { targetTick / 960 + 1, targetTick % 960 };
             int deltaPcm = 0;
@@ -616,6 +659,7 @@ namespace Larvend.Gameplay
                     EditorManager.StepBackward(deltaPcm);
                     
                     NoteManager.RefreshAllNotes();
+                    Instance.progressBar.value = (EditorManager.GetTimePointer() / EditorManager.GetAudioLength());
                     return;
                 }
             }
@@ -638,6 +682,7 @@ namespace Larvend.Gameplay
                         EditorManager.StepBackward(deltaPcm);
 
                         NoteManager.RefreshAllNotes();
+                        Instance.progressBar.value = (EditorManager.GetTimePointer() / EditorManager.GetAudioLength());
                         return;
                     }
                     else
@@ -655,18 +700,10 @@ namespace Larvend.Gameplay
                 return;
             }
 
-            int deltaTick = (int)Mathf.Floor(4 / Mathf.Pow(2, stepSelector.value) * (tripletToggle.isOn ? 2 / 3 : 1) * (dottedToggle.isOn ? 3 / 2 : 1) * 960);
+            int deltaTick = Mathf.RoundToInt(4 / Mathf.Pow(2, stepSelector.value) * (tripletToggle.isOn ? 2 / 3 : 1) * (dottedToggle.isOn ? 3 / 2 : 1) * 960);
             int targetTick = deltaTick + (EditorManager.GetBeatTick()[0] - 1) * 960 + EditorManager.GetBeatTick()[1];
 
             int[] targetBeatTick = new int[] { targetTick / 960 + 1, targetTick % 960 };
-            
-            //if (targetTick >= EditorManager.GetAudioPCMLength())
-            //{
-            //    EditorManager.StepForward(EditorManager.GetAudioPCMLength() - EditorManager.GetAudioPCMTime());
-
-            //    NoteManager.RefreshAllNotes();
-            //    return;
-            //}
 
             int deltaPcm = 0;
             foreach (var item in NoteManager.Instance.PcmDict)
@@ -678,6 +715,7 @@ namespace Larvend.Gameplay
                     EditorManager.StepForward(deltaPcm);
 
                     NoteManager.RefreshAllNotes();
+                    Instance.progressBar.value = (EditorManager.GetTimePointer() / EditorManager.GetAudioLength());
                     return;
                 }
             }
@@ -700,6 +738,7 @@ namespace Larvend.Gameplay
                         EditorManager.StepForward(deltaPcm);
 
                         NoteManager.RefreshAllNotes();
+                        Instance.progressBar.value = (EditorManager.GetTimePointer() / EditorManager.GetAudioLength());
                         return;
                     }
                     else
@@ -723,6 +762,7 @@ namespace Larvend.Gameplay
                         EditorManager.SetTime(totalPcm);
                         
                         NoteManager.RefreshAllNotes();
+                        Instance.progressBar.value = (EditorManager.GetTimePointer() / EditorManager.GetAudioLength());
                         return;
                     }
                     totalPcm += item.Key.range * item.Value;
@@ -735,6 +775,7 @@ namespace Larvend.Gameplay
             if (Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsPlaying)
             {
                 EditorManager.ResetAudio();
+                Instance.progressBar.value = 0;
                 NoteManager.RefreshAllNotes();
             }
         }
@@ -1037,6 +1078,9 @@ namespace Larvend.Gameplay
         {
             Instance.audioTime.SetText(Global.IsAudioLoaded ? EditorManager.Instance.offset.ToString() : "0");
             Instance.beatInfo.SetText(Global.IsAudioLoaded ? "1: 000" : "Audio Unloaded");
+            Instance.currentPos.SetText("00 : 00");
+            Instance.totalLength.SetText(Global.IsAudioLoaded ? FormatTime(EditorManager.GetAudioLength()) : "00 : 00");
+            Instance.progressBar.SetValueWithoutNotify(0);
         }
 
         public static void InitBpmState()

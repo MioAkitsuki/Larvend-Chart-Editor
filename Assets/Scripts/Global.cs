@@ -21,33 +21,5 @@ namespace Larvend.Gameplay
         public static bool IsPlaying;
         public static bool IsAbsorption;
         public static bool IsSaved = true;
-        
-        public static string[] TimeFormat(float sec)
-        {
-            string[] formattedTime = new string[3];
-            formattedTime.Initialize();
-
-            int itg = (int)Math.Truncate(sec);
-            int dec = (int)((sec - itg) * 1000);
-
-            switch (dec)
-            {
-                case < 10:
-                    formattedTime.SetValue($"00{dec}", 2);
-                    break;
-                case < 100:
-                    formattedTime.SetValue($"0{dec}", 2);
-                    break;
-                default:
-                    formattedTime.SetValue($"{dec}", 2);
-                    break;
-            }
-
-            formattedTime.SetValue(itg % 60 < 10 ? $"0{itg % 60}" : $"{itg % 60}", 1);
-
-            formattedTime.SetValue(itg / 60 < 10 ? $"0{itg / 60}" : $"{itg / 60}", 0);
-
-            return formattedTime;
-        }
     }
 }

@@ -547,6 +547,7 @@ namespace Larvend
             catch (Exception e)
             {
                 MsgBoxManager.ShowMessage(MsgType.Error, "Load Directory Failed", e.Message);
+                Debug.LogException(e);
                 Global.IsDirectorySelected = false;
             }
         }

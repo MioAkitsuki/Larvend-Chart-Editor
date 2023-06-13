@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEngine;
 
 namespace Larvend.Gameplay
@@ -8,7 +9,7 @@ namespace Larvend.Gameplay
     public class EditorManager : MonoBehaviour
     {
         public static EditorManager Instance { get; private set; }
-        public static AudioSource song;
+        private static AudioSource song;
         private static Info info;
         private static DifficultyInfo difficultyInfo;
 
@@ -31,7 +32,7 @@ namespace Larvend.Gameplay
             difficulty = 0;
 
             beatTick = new int[] { 1, 0 };
-
+            
             timePcmPointer = 0;
             BPM = 120f;
             BeatPCM = 22050;
@@ -43,7 +44,7 @@ namespace Larvend.Gameplay
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing)
+            if (Input.GetKeyDown(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing && !Global.IsPlaying)
             {
                 song.timeSamples = timePcmPointer + offset;
                 Instance.lastPcmPointer = timePcmPointer;
@@ -52,7 +53,7 @@ namespace Larvend.Gameplay
             {
                 timePcmPointer = song.timeSamples;
             }
-            if (Input.GetKeyUp(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing)
+            if (Input.GetKeyUp(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing && Global.IsPlaying)
             {
                 timePcmPointer = Instance.lastPcmPointer;
                 song.timeSamples = timePcmPointer + offset;
@@ -87,6 +88,15 @@ namespace Larvend.Gameplay
         public static void Stop()
         {
             song.Pause();
+
+            Global.IsPlaying = false;
+        }
+
+        public static void Pause()
+        {
+            song.Pause();
+            song.timeSamples = timePcmPointer + Instance.offset;
+            
             Global.IsPlaying = false;
         }
 
@@ -241,6 +251,14 @@ namespace Larvend.Gameplay
             UIController.RefreshUI();
         }
 
+        public static void SetTime(float target)
+        {
+            song.time = target;
+            song.timeSamples += Instance.offset;
+            timePcmPointer = song.timeSamples;
+            UIController.RefreshUI();
+        }
+
         public static void StepForward(int delta)
         {
             timePcmPointer = timePcmPointer + delta > song.clip.samples - Instance.offset ? song.clip.samples - Instance.offset : timePcmPointer + delta;
@@ -316,7 +334,11 @@ namespace Larvend.Gameplay
             return song.timeSamples;
         }
 
-        public static int GetTimePointer()
+        public static float GetTimePointer()
+        {
+            return timePcmPointer / 44100f;
+        }
+        public static int GetTimePcmPointer()
         {
             return timePcmPointer;
         }
