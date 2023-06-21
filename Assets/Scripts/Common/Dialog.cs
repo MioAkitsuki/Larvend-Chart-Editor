@@ -238,6 +238,10 @@ namespace Schwarzer.Windows
     }
     public static class Dialog
     {
+#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
+        [DllImport("OpenFinderForUnity", CharSet = CharSet.Auto)]
+        private static extern string getFilePath();
+#endif
         [DllImport("Comdlg32.dll", CharSet = CharSet.Auto)]
         private static extern bool GetOpenFileName([In, Out] OpenFileName ofn);
         [DllImport("Comdlg32.dll", CharSet = CharSet.Auto, SetLastError = true)]
@@ -248,6 +252,8 @@ namespace Schwarzer.Windows
         {
 #if UNITY_EDITOR
             return EditorUtility.OpenFilePanel(Title, InitPath, Filter);
+#elif UNITY_STANDALONE_OSX
+            return getFilePath();
 #endif
             string filename = (Filename ?? "") + new string(new char[1024]);
             OpenFileName ofn = new OpenFileName

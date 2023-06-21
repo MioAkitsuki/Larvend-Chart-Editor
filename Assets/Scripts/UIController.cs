@@ -863,7 +863,7 @@ namespace Larvend.Gameplay
 
         private void ToggleSettingsPanel()
         {
-            if (!Global.IsDirectorySelected || Global.IsDialoging)
+            if (!Global.IsDirectorySelected)
             {
                 return;
             }
@@ -886,6 +886,9 @@ namespace Larvend.Gameplay
 
                 settingsPanel.alpha = 0;
                 settingsPanel.gameObject.SetActive(true);
+                
+                Global.IsEditing = false;
+                isInfoEdited = false;
                 StopCoroutine("closeSettingsPanelEnumerator");
                 StartCoroutine("openSettingsPanelEnumerator");
             }
