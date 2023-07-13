@@ -1,3 +1,5 @@
+using System.Net;
+using System.Globalization;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -131,6 +133,10 @@ namespace Larvend.Gameplay
                         delegate ()
                         {
                             Global.IsSaved = true;
+                            NoteManager.ClearAllNotes();
+
+                            Global.IsDirectorySelected = false;
+                            Global.IsFileSelected = false;
                             string path = SelectFolder();
                             if (path != null)
                             {
@@ -144,6 +150,11 @@ namespace Larvend.Gameplay
                     string path = SelectFolder();
                     if (path != null)
                     {
+                        NoteManager.ClearAllNotes();
+
+                        Global.IsDirectorySelected = false;
+                        Global.IsFileSelected = false;
+
                         Global.FolderPath = path;
                         DirectoryManager.ReadFolder();
                     }

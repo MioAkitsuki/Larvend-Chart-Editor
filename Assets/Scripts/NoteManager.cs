@@ -184,6 +184,7 @@ namespace Larvend.Gameplay
             Instance.TapNotes.Clear();
             Instance.HoldNotes.Clear();
             Instance.FlickNotes.Clear();
+            Instance.BaseSpeed = null;
         }
 
         public static void RefreshAllNotes()
