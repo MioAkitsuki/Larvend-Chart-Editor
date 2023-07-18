@@ -2,6 +2,8 @@
 
 Chart Editor for Larvend: Kanata
 
+![alt Preview of Editor](./Preview.png)
+
 If you're also interested in rhythm game development / design. Don't hesitate to contact me via e-mail or twitter.
 
 Unauthorized use of assets in this repo is strictly prohibited.
