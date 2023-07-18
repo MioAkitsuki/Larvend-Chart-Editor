@@ -29,6 +29,10 @@
 # Visual Studio cache directory
 .vs/
 
+# Visual Studio Code cache directory
+.vscode/
+.vsconfig
+
 # Gradle cache directory
 .gradle/
 
@@ -81,7 +85,20 @@ crashlytics-build.properties
 # End of https://www.toptal.com/developers/gitignore/api/unity
 
 # Large Assets
-/[Aa]ssets/[Ff]onts/*
+/[Aa]ssets/[Aa]rt/
+/[Aa]ssets/[Aa]rt.meta
+/[Aa]ssets/[Qq]Framework/
+/[Aa]ssets/[Qq]Framework.meta
+/[Aa]ssets/[Qq]FrameworkData/
+/[Aa]ssets/[Qq]FrameworkData.meta
+/[Aa]ssets/[Ff]onts/
 /[Aa]ssets/[Ff]onts.meta
-/[Aa]ssets/[Rr]esources/*
+/[Aa]ssets/[Rr]esources/
 /[Aa]ssets/[Rr]esources.meta
+/[Aa]ssets/.qframework/
+/[Aa]ssets/.qframework.meta
+
+# AssetBundles
+/[Aa]ssetBundles/
+/[Aa]ssets/[Ss]treamingAssets
+/[Aa]ssets/[Ss]treamingAssets.meta
