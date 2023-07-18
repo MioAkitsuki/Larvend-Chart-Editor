@@ -9,24 +9,25 @@ namespace Larvend.Gameplay
 {
     public class BeatRange
     {
-        public int start;
-        public int end;
-        public int range;
+        public float start;
+        public float end;
+        public float range;
+        public bool IsLinearlyChanging = false;
 
-        public BeatRange(int _start, int _end)
+        public BeatRange(float _start, float _end)
         {
             start = _start;
             end = _end;
             range = _end - _start + 1;
+            IsLinearlyChanging = false;
         }
 
-        public bool IsIn(int value)
+        public BeatRange(float _start, float _end, bool flag)
         {
-            if (value >= start && value <= end)
-            {
-                return true;
-            }
-            return false;
+            start = _start;
+            end = _end;
+            range = _end - _start + 1;
+            IsLinearlyChanging = flag;
         }
 
         public bool IsIn(float value)
@@ -38,7 +39,7 @@ namespace Larvend.Gameplay
             return false;
         }
 
-        public bool IsBothIn(int v1, int v2)
+        public bool IsBothIn(float v1, float v2)
         {
             if (v1 >= start && v1 <= end && v2 >= start && v2 <= end)
             {
@@ -223,6 +224,7 @@ namespace Larvend.Gameplay
             }
         }
 
+        // Very disgusting code. I really suggest you do not modify it.
         public static void RefreshSpeed()
         {
             if (Global.IsAudioLoaded && Global.IsFileSelected)
@@ -230,31 +232,63 @@ namespace Larvend.Gameplay
                 Instance.PcmDict = new();
                 if (Instance.SpeedAdjust.Count == 0)
                 {
-                    int threshold = (int)Math.Floor(EditorManager.GetAudioPCMLength() / (44100 * (60f / Instance.BaseSpeed.targetBpm)));
-                    Instance.PcmDict.Add(new BeatRange(1, threshold), (int)(44100 * (60f / Instance.BaseSpeed.targetBpm)));
+                    // The happiest thing - No Speed Change!
+                    // (44100 * (60f / Instance.BaseSpeed.targetBpm)) - The Pcm Samples Per Beat
+                    float threshold = (EditorManager.GetAudioPCMLength() - EditorManager.Instance.offset) / (44100 * (60f / Instance.BaseSpeed.targetBpm)) + 1;
+                    Instance.PcmDict.Add(new BeatRange(1, threshold), (int) (44100 * (60f / Instance.BaseSpeed.targetBpm)));
+                    Debug.Log($"0. ({1}, {threshold}, {(int) (44100 * (60f / Instance.BaseSpeed.targetBpm))})");
                 }
                 else
                 {
+                    // And then here comes the fucking speed change.
                     int i;
-                    int upper = 0, lower = 0;
+                    float upper = 0, lower = 0;
 
                     for (i = 0; i < Instance.SpeedAdjust.Count; i++)
                     {
                         if (i == 0)
                         {
-                            upper = (int)Math.Floor(Instance.SpeedAdjust[i].time / (44100 * (60f / Instance.BaseSpeed.targetBpm)));
-                            Instance.PcmDict.Add(new BeatRange(1, upper), (int)(44100 * (60f / Instance.BaseSpeed.targetBpm)));
-                            lower = upper + 1;
+                            // Writing Base Bpm Item
+                            upper = (Instance.SpeedAdjust[i].time - EditorManager.Instance.offset) / (44100 * (60f / Instance.BaseSpeed.targetBpm)) + 1;
+                            Instance.PcmDict.Add(new BeatRange(1, upper), (int) (44100 * (60f / Instance.BaseSpeed.targetBpm)));
+                            lower = upper;
+                            Debug.Log($"0. ({1}, {upper}, {(int) (44100 * (60f / Instance.BaseSpeed.targetBpm))})");
                             continue;
                         }
 
-                        upper = (int)Math.Floor((Instance.SpeedAdjust[i].time - Instance.SpeedAdjust[i - 1].time) / (44100 * 60f / Instance.SpeedAdjust[i - 1].targetBpm)) + lower;
-                        Instance.PcmDict.Add(new BeatRange(lower, upper), (int)(44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm)));
-                        lower = upper + 1;
+                        if (Instance.SpeedAdjust[i].time == Instance.SpeedAdjust[i].endTime)
+                        {
+                            upper = (Instance.SpeedAdjust[i].time - Instance.SpeedAdjust[i - 1].endTime) / (44100 * 60f / Instance.SpeedAdjust[i - 1].targetBpm) + lower;
+                            Instance.PcmDict.Add(new BeatRange(lower, upper), (int)(44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm)));
+                            Debug.Log($"{i}. ({lower}, {upper}, {(int) (44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm))})");
+                            lower = upper;
+                        }
+                        else
+                        {
+                            // I'll fuck them into only 1 beat.
+                            upper = lower + 1;
+                            Instance.PcmDict.Add(new BeatRange(lower, upper, true), Instance.SpeedAdjust[i].endTime - Instance.SpeedAdjust[i].time);
+                            Debug.Log($"{i}. ({lower}, {upper}, {Instance.SpeedAdjust[i].endTime - Instance.SpeedAdjust[i].time})");
+                            lower = upper;
+                        }
+                        
                     }
 
-                    upper = (int)Math.Floor((EditorManager.GetAudioPCMLength() - Instance.SpeedAdjust[i - 1].time) / (44100 * 60f / Instance.SpeedAdjust[i - 1].targetBpm)) + lower;
-                    Instance.PcmDict.Add(new BeatRange(lower, upper), (int)(44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm)));
+                    if (Instance.SpeedAdjust[i - 1].time == Instance.SpeedAdjust[i - 1].endTime)
+                    {
+                        upper = (EditorManager.GetAudioPCMLength() - Instance.SpeedAdjust[i - 1].endTime) / (44100 * 60f / Instance.SpeedAdjust[i - 1].targetBpm) + lower;
+                        Instance.PcmDict.Add(new BeatRange(lower, upper), (int)(44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm)));
+                        Debug.Log($"{i}. ({lower}, {upper}, {(int) (44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm))})");
+                    }
+                    else
+                    {
+                        Instance.PcmDict.Add(new BeatRange(lower, lower + 1, true), Instance.SpeedAdjust[i - 1].endTime - Instance.SpeedAdjust[i - 1].time);
+                        Debug.Log($"{i}. ({lower}, {lower+1}, {Instance.SpeedAdjust[i - 1].endTime - Instance.SpeedAdjust[i - 1].time})");
+
+                        upper = (EditorManager.GetAudioPCMLength() - Instance.SpeedAdjust[i - 1].endTime) / (44100 * 60f / Instance.SpeedAdjust[i - 1].targetBpm) + lower + 1;
+                        Instance.PcmDict.Add(new BeatRange(lower + 1, upper), (int)(44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm)));
+                        Debug.Log($"{i+1}. ({lower+1}, {upper}, {(int) (44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm))})");
+                    }
                 }
 
                 UIController.RefreshSpeedPanel(Instance.SpeedAdjust);

@@ -1,5 +1,6 @@
-using System.Net;
-using System.Globalization;
+using System.ComponentModel.DataAnnotations;
+using System.Text.RegularExpressions;
+using System.IO;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -489,19 +490,8 @@ namespace Larvend.Gameplay
                 Instance.progressBar.value = (EditorManager.GetTimePointer() / EditorManager.GetAudioLength());
             }
 
-            int currentPcm = EditorManager.GetTimePcmPointer();
-            foreach (var item in NoteManager.Instance.PcmDict)
-            {
-                if (item.Key.IsIn((float)currentPcm / item.Value + item.Key.start))
-                {
-                    int beat = currentPcm / item.Value + item.Key.start;
-                    int tick = currentPcm % item.Value * 960 / item.Value;
-                    EditorManager.Instance.beatTick = new int[] { beat , tick };
-                    Instance.beatInfo.SetText($"{beat}: {tick.ToString().PadLeft(3, '0')}");
-                    break;
-                }
-                currentPcm -= item.Key.range * item.Value;
-            }
+            int[] currentBeatTick = Instance.GetBeatTick(EditorManager.GetAudioPCMTime() - EditorManager.Instance.offset);
+            Instance.beatInfo.SetText($"{currentBeatTick[0]}: {currentBeatTick[1].ToString().PadLeft(3, '0')}");
 
             if (!Instance.notePanel.gameObject.activeSelf || Instance.selectedNote == null) return;
 
@@ -649,135 +639,91 @@ namespace Larvend.Gameplay
             }
         }
 
+        private void SetTime(int[] targetBeatTick)
+        {
+            int targetPcm = 0;
+            foreach (var item in NoteManager.Instance.PcmDict)
+            {
+                if (item.Key.IsIn(targetBeatTick[0] + targetBeatTick[1] / 960f))
+                {
+                    targetPcm += (int) Math.Floor(((targetBeatTick[0] + targetBeatTick[1] / 960f) - item.Key.start) * item.Value);
+                    break;
+                }
+                else
+                {
+                    targetPcm += (int) Math.Floor(item.Key.range * item.Value);
+                }
+            }
+
+            EditorManager.Instance.beatTick = targetBeatTick;
+            EditorManager.SetTime(targetPcm);
+
+            NoteManager.RefreshAllNotes();
+            Instance.progressBar.value = (EditorManager.GetTimePointer() / EditorManager.GetAudioLength());
+        }
+
+        private int[] GetBeatTick(int pcmTime)
+        {
+            int[] result = new int[] { 1, 0 };
+            foreach (var item in NoteManager.Instance.PcmDict)
+            {
+                if (pcmTime - item.Key.range * item.Value < 0)
+                {
+                    result[0] = (int) Math.Floor(item.Key.start + pcmTime / item.Value);
+                    result[1] = (pcmTime % item.Value) * 960 / item.Value;
+                    break;
+                }
+                else
+                {
+                    pcmTime -= (int) Math.Floor(item.Key.range * item.Value);
+                }
+            }
+
+            return result;
+        }
+        
         private void StepBackward()
         {
-            if (!Global.IsAudioLoaded || Global.IsPlaying)
+            if (!Global.IsAudioLoaded || Global.IsPlaying || Global.IsDialoging)
             {
                 return;
             }
 
             int deltaTick = Mathf.RoundToInt( 4 / Mathf.Pow(2, stepSelector.value) * (tripletToggle.isOn ? 2/3 : 1) * (dottedToggle.isOn ? 3/2 : 1) * 960);
             int targetTick = (EditorManager.GetBeatTick()[0] - 1) * 960 + EditorManager.GetBeatTick()[1] - deltaTick;
+            if (targetTick < 0)
+            {
+                return;
+            }
 
             int[] targetBeatTick = new int[] { targetTick / 960 + 1, targetTick % 960 };
-            int deltaPcm = 0;
-            foreach (var item in NoteManager.Instance.PcmDict)
-            {
-                if (item.Key.IsBothIn(EditorManager.GetBeatTick()[0], targetBeatTick[0]))
-                {
-                    deltaPcm = deltaTick * item.Value / 960;
-                    EditorManager.Instance.beatTick = targetBeatTick;
-                    EditorManager.StepBackward(deltaPcm);
-                    
-                    NoteManager.RefreshAllNotes();
-                    Instance.progressBar.value = (EditorManager.GetTimePointer() / EditorManager.GetAudioLength());
-                    return;
-                }
-            }
-
-            bool flag = false;
-            foreach (var item in NoteManager.Instance.PcmDict)
-            {
-                if (item.Key.IsIn(targetBeatTick[0]))
-                {
-                    deltaPcm += ((item.Key.end - targetBeatTick[0]) * 960 + (960 - targetBeatTick[1])) * item.Value / 960;
-                    flag = true;
-                    continue;
-                }
-                if (flag)
-                {
-                    if (item.Key.IsIn(EditorManager.GetBeatTick()[0]))
-                    {
-                        deltaPcm += ((EditorManager.GetBeatTick()[0] - item.Key.start) * 960 + EditorManager.GetBeatTick()[1]) * item.Value / 960;
-                        EditorManager.Instance.beatTick = targetBeatTick;
-                        EditorManager.StepBackward(deltaPcm);
-
-                        NoteManager.RefreshAllNotes();
-                        Instance.progressBar.value = (EditorManager.GetTimePointer() / EditorManager.GetAudioLength());
-                        return;
-                    }
-                    else
-                    {
-                        deltaPcm += item.Key.range * item.Value * 960;
-                    }
-                }
-            }
+            SetTime(targetBeatTick);
         }
 
         private void StepForward()
         {
-            if (!Global.IsAudioLoaded || Global.IsPlaying)
+            if (!Global.IsAudioLoaded || Global.IsPlaying || Global.IsDialoging)
             {
                 return;
             }
 
             int deltaTick = Mathf.RoundToInt(4 / Mathf.Pow(2, stepSelector.value) * (tripletToggle.isOn ? 2 / 3 : 1) * (dottedToggle.isOn ? 3 / 2 : 1) * 960);
             int targetTick = deltaTick + (EditorManager.GetBeatTick()[0] - 1) * 960 + EditorManager.GetBeatTick()[1];
+            if (targetTick > EditorManager.GetAudioPCMLength())
+            {
+                return;
+            }
 
             int[] targetBeatTick = new int[] { targetTick / 960 + 1, targetTick % 960 };
-
-            int deltaPcm = 0;
-            foreach (var item in NoteManager.Instance.PcmDict)
-            {
-                if (item.Key.IsBothIn(EditorManager.GetBeatTick()[0], targetBeatTick[0]))
-                {
-                    deltaPcm = deltaTick * item.Value / 960;
-                    EditorManager.Instance.beatTick = targetBeatTick;
-                    EditorManager.StepForward(deltaPcm);
-
-                    NoteManager.RefreshAllNotes();
-                    Instance.progressBar.value = (EditorManager.GetTimePointer() / EditorManager.GetAudioLength());
-                    return;
-                }
-            }
-
-            bool flag = false;
-            foreach (var item in NoteManager.Instance.PcmDict)
-            {
-                if (item.Key.IsIn(EditorManager.GetBeatTick()[0]))
-                {
-                    deltaPcm += ((item.Key.end - EditorManager.GetBeatTick()[0]) * 960 + (960 - EditorManager.GetBeatTick()[1])) * item.Value / 960;
-                    flag = true;
-                    continue;
-                }
-                if (flag)
-                {
-                    if (item.Key.IsIn(targetBeatTick[0]))
-                    {
-                        deltaPcm += ((targetBeatTick[0] - item.Key.start) * 960 + targetBeatTick[1]) * item.Value / 960;
-                        EditorManager.Instance.beatTick = targetBeatTick;
-                        EditorManager.StepForward(deltaPcm);
-
-                        NoteManager.RefreshAllNotes();
-                        Instance.progressBar.value = (EditorManager.GetTimePointer() / EditorManager.GetAudioLength());
-                        return;
-                    }
-                    else
-                    {
-                        deltaPcm += item.Key.range * item.Value * 960;
-                    }
-                }
-            }
+            SetTime(targetBeatTick);
         }
 
         private void AdjustPointer()
         {
             if (Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsPlaying)
             {
-                int totalPcm = 0;
-                foreach (var item in NoteManager.Instance.PcmDict)
-                {
-                    if (item.Key.IsIn(EditorManager.GetBeatTick()[0]))
-                    {
-                        totalPcm += (EditorManager.GetBeatTick()[0] - item.Key.start) * item.Value;
-                        EditorManager.SetTime(totalPcm);
-                        
-                        NoteManager.RefreshAllNotes();
-                        Instance.progressBar.value = (EditorManager.GetTimePointer() / EditorManager.GetAudioLength());
-                        return;
-                    }
-                    totalPcm += item.Key.range * item.Value;
-                }
+                int[] targetBeatTick = new int[] { EditorManager.GetBeatTick()[0], 0 };
+                SetTime(targetBeatTick);
             }
         }
 
