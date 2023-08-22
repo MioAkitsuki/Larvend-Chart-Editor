@@ -294,7 +294,10 @@ namespace Larvend.Gameplay
                 song.timeSamples = Instance.offset;
                 timePcmPointer = 0;
                 Instance.beatTick = new int[] { 1, 0 };
-                UpdateBpm(NoteManager.Instance.BaseSpeed.targetBpm);
+                if (NoteManager.Instance.BaseSpeed != null)
+                {
+                    UpdateBpm(NoteManager.Instance.BaseSpeed.targetBpm);
+                }
                 UIController.RefreshUI();
             }
         }

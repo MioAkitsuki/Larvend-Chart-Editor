@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using Larvend.Gameplay;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -61,7 +60,7 @@ namespace Larvend
 
         public static void ReadChart(int difficulty)
         {
-            path = Global.FolderPath + $"/{difficulty}.lff";
+            path = Global.FolderPath + $"/{(Difficulties)difficulty}.bytes";
             notes = new();
             isNotesReading = false;
             isBaseBpmReading = false;
@@ -180,8 +179,13 @@ namespace Larvend
 
         public static void WriteChart(int difficulty)
         {
-            path = Global.FolderPath + $"/{difficulty}.lff";
+            path = Global.FolderPath + $"/{(Difficulties)difficulty}.bytes";
             notes = NoteManager.GetAllNotes();
+
+            if (!File.Exists(path))
+            {
+                File.Create(path).Dispose();
+            }
 
             try
             {
@@ -196,7 +200,10 @@ namespace Larvend
                 chartWriter.WriteLine("[NOTES]");
                 chartWriter.WriteLine($"speed(0,{NoteManager.Instance.BaseSpeed.targetBpm},0)");
 
-                WriteNotes(chartWriter);
+                if (notes.Count > 0)
+                {
+                    WriteNotes(chartWriter);
+                }
 
                 chartWriter.WriteLine("[END]");
                 chartWriter.Close();
@@ -240,10 +247,8 @@ namespace Larvend
             {
                 MsgBoxManager.ShowInputDialog("Initialize Chart", "Please Set Base BPM", delegate(string value)
                 {
-                    EditorManager.Instance.InitializeBPM(Single.Parse(value));
                     NoteManager.Instance.BaseSpeed = new Line(Single.Parse(value));
-
-                    WriteChart(EditorManager.Instance.difficulty);
+                    EditorManager.Instance.InitializeBPM(Single.Parse(value));
 
                     if (param.Length > 0)
                     {
@@ -264,6 +269,8 @@ namespace Larvend
                         MsgBoxManager.ShowMessage(MsgType.Info, "Initialize Success",
                             Localization.GetString("InitializeChartSuccess"));
                     }
+
+                    WriteChart(EditorManager.Instance.difficulty);
                 }, AbortInitChart);
             }
             catch (Exception e)
@@ -493,24 +500,24 @@ namespace Larvend
                     {
                         switch (file.Name)
                         {
-                            case "0.lff":
+                            case "Light.bytes":
                                 isChartExist = true;
                                 continue;
-                            case "1.lff":
+                            case "Order.bytes":
                                 isChartExist = true;
                                 continue;
-                            case "2.lff":
+                            case "Chaos.bytes":
                                 isChartExist = true;
                                 continue;
-                            case "3.lff":
+                            case "Error.bytes":
                                 isChartExist = true;
                                 continue;
-                            case "base.ogg":
+                            case "full.ogg":
                                 EditorManager.Instance.StartCoroutine(AudioManager.LoadAudio());
                                 continue;
-                            case "preview.mp3":
+                            case "preview.ogg":
                                 continue;
-                            case "base.jpg":
+                            case "cover.jpg":
                                 EditorManager.Instance.StartCoroutine(ImageManager.LoadImg());
                                 continue;
                             case "info.json":
@@ -523,6 +530,7 @@ namespace Larvend
 
                     if (!isProjectExist)
                     {
+                        InfoManager.WriteInfo();
                         throw new Exception(Localization.GetString("ProjectNotFound"));
                     }
 
@@ -599,15 +607,18 @@ namespace Larvend
 
         public static void CreateChart(int difficulty)
         {
-            FileInfo chart = new FileInfo($"{Global.FolderPath}/{difficulty}.lff");
+            string path = $"{Global.FolderPath}/{(Difficulties)difficulty}.bytes";
 
-            if (chart.Exists)
+            if (File.Exists(path))
             {
-                MsgBoxManager.ShowMessage(MsgType.Error, "Error", "Already exist a chart.\n文件夹下已存在相应难度谱面。");
+                MsgBoxManager.ShowMessage(MsgType.Warning, "Already Exists", "Already exist a chart in this difficulty. Do you want to replace it?",
+                    delegate()
+                    {
+                        ChartManager.InitChart();
+                    });
             }
             else
             {
-                chart.Create();
                 MsgBoxManager.ShowMessage(MsgType.Info, "Created Successfully", Localization.GetString("CreateChartSuccess"),
                     delegate()
                     {
@@ -623,14 +634,14 @@ namespace Larvend
         {
             try
             {
-                string audioPath = Schwarzer.Windows.Dialog.OpenFileDialog("Select Audio", "base.ogg", "/", "ogg");
+                string audioPath = Schwarzer.Windows.Dialog.OpenFileDialog("Select Audio", "full.ogg", "/", "ogg");
                 if (File.Exists(audioPath))
                 {
                     string fileName, destFile;
                     if (audioPath[^3..] == "ogg")
                     {
                         fileName = Path.GetFileName(audioPath);
-                        destFile = Path.Combine(Global.FolderPath, "base.ogg");
+                        destFile = Path.Combine(Global.FolderPath, "full.ogg");
                         File.Copy(audioPath, destFile, true);
                         EditorManager.Instance.StartCoroutine(LoadAudio());
                     }
@@ -649,7 +660,7 @@ namespace Larvend
         public static IEnumerator LoadAudio()
         {
             AudioClip clip = null;
-            string path = Path.Combine(Global.FolderPath, "base.ogg");
+            string path = Path.Combine(Global.FolderPath, "full.ogg");
 
             if (!File.Exists(path))
             {
@@ -681,7 +692,7 @@ namespace Larvend
         public static IEnumerator LoadImg()
         {
             Texture2D texture = null;
-            string path = Path.Combine(Global.FolderPath, "base.jpg");
+            string path = Path.Combine(Global.FolderPath, "cover.jpg");
 
             if (!File.Exists(path))
             {

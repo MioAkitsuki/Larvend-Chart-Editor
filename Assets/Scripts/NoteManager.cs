@@ -305,7 +305,7 @@ namespace Larvend.Gameplay
             if (type == Type.Tap)
             {
                 var newNote = Instantiate(Instance.prefabs[0], Instance.transform.GetChild(0));
-                newNote.GetComponent<Note>().InitNote(type, EditorManager.GetAudioPCMTime(), new Vector2(0.5f, 0.5f));
+                newNote.GetComponent<Note>().InitNote(type, EditorManager.GetAudioPCMTime(), new Vector3(0.5f, 0.5f, EditorManager.GetAudioPCMTime() / 10000f));
 
                 var newPos = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
                 newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
@@ -316,7 +316,7 @@ namespace Larvend.Gameplay
             else if (type == Type.Hold)
             {
                 var newNote = Instantiate(Instance.prefabs[1], Instance.transform.GetChild(1));
-                newNote.GetComponent<Note>().InitNote(type, EditorManager.GetAudioPCMTime(), new Vector2(0.5f, 0.5f), EditorManager.GetAudioPCMTime() + EditorManager.Instance.BeatPCM);
+                newNote.GetComponent<Note>().InitNote(type, EditorManager.GetAudioPCMTime(), new Vector3(0.5f, 0.5f, EditorManager.GetAudioPCMTime() / 10000f), EditorManager.GetAudioPCMTime() + EditorManager.Instance.BeatPCM);
 
                 var newPos = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
                 newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
@@ -327,7 +327,7 @@ namespace Larvend.Gameplay
             else if (type == Type.Flick)
             {
                 var newNote = Instantiate(Instance.prefabs[2], Instance.transform.GetChild(2));
-                newNote.GetComponent<Note>().InitNote(type, EditorManager.GetAudioPCMTime(), new Vector2(0.5f, 0.5f));
+                newNote.GetComponent<Note>().InitNote(type, EditorManager.GetAudioPCMTime(), new Vector3(0.5f, 0.5f, EditorManager.GetAudioPCMTime() / 10000f));
 
                 var newPos = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
                 newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
@@ -352,7 +352,7 @@ namespace Larvend.Gameplay
                 newNote.GetComponent<Note>().InitNote(line.type, line.time, line.position);
 
                 var newPos = Camera.main.ViewportToWorldPoint(line.position);
-                newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
+                newNote.transform.position = new Vector3(newPos.x, newPos.y, line.time / 10000);
                 newNote.GetComponent<Note>().RefreshState();
 
                 Instance.TapNotes.Add(newNote.GetComponent<Note>());
@@ -363,7 +363,7 @@ namespace Larvend.Gameplay
                 newNote.GetComponent<Note>().InitNote(line.type, line.time, line.position, line.endTime);
 
                 var newPos = Camera.main.ViewportToWorldPoint(line.position);
-                newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
+                newNote.transform.position = new Vector3(newPos.x, newPos.y, line.time / 10000);
                 newNote.GetComponent<Note>().RefreshState();
 
                 Instance.HoldNotes.Add(newNote.GetComponent<Note>());
@@ -374,7 +374,7 @@ namespace Larvend.Gameplay
                 newNote.GetComponent<Note>().InitNote(line.type, line.time, line.position);
 
                 var newPos = Camera.main.ViewportToWorldPoint(line.position);
-                newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
+                newNote.transform.position = new Vector3(newPos.x, newPos.y, line.time / 10000);
                 newNote.GetComponent<Note>().RefreshState();
 
                 Instance.FlickNotes.Add(newNote.GetComponent<Note>());
@@ -393,7 +393,8 @@ namespace Larvend.Gameplay
 
         public static List<Line> GetAllNotes()
         {
-            List<Note> allNotes = Instance.TapNotes;
+            List<Note> allNotes = new List<Note>();
+            allNotes.AddRange(Instance.TapNotes);
             allNotes.AddRange(Instance.HoldNotes);
             allNotes.AddRange(Instance.FlickNotes);
             

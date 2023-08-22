@@ -3,6 +3,13 @@ using System.Collections.Generic;
 
 namespace Larvend
 {
+    public enum Difficulties
+    {
+        Light,
+        Order,
+        Chaos,
+        Error
+    }
     public class Chart
     {
         public string title;
@@ -11,14 +18,6 @@ namespace Larvend
         public float bpm;
         public float offset;
         public int count;
-
-        public enum Difficulties
-        {
-            Light,
-            Order,
-            Chaos,
-            Error
-        }
 
         public List<Note> notes;
 

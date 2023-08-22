@@ -970,15 +970,15 @@ namespace Larvend.Gameplay
                     {
                         EditorManager.SaveProject();
                         EditorManager.SwitchDifficulty(diff);
-                        difficultySelector.options[diff].text = Enum.GetName(typeof(Chart.Difficulties), diff);
-                        difficultySelector.gameObject.transform.Find("Label").GetComponent<TMP_Text>().text = Enum.GetName(typeof(Chart.Difficulties), diff);
+                        difficultySelector.options[diff].text = Enum.GetName(typeof(Difficulties), diff);
+                        difficultySelector.gameObject.transform.Find("Label").GetComponent<TMP_Text>().text = Enum.GetName(typeof(Difficulties), diff);
                     });
             }
             else
             {
                 EditorManager.SwitchDifficulty(diff);
-                difficultySelector.options[diff].text = Enum.GetName(typeof(Chart.Difficulties), diff);
-                difficultySelector.gameObject.transform.Find("Label").GetComponent<TMP_Text>().text = Enum.GetName(typeof(Chart.Difficulties), diff);
+                difficultySelector.options[diff].text = Enum.GetName(typeof(Difficulties), diff);
+                difficultySelector.gameObject.transform.Find("Label").GetComponent<TMP_Text>().text = Enum.GetName(typeof(Difficulties), diff);
             }
         }
 
@@ -998,11 +998,11 @@ namespace Larvend.Gameplay
                 
                 if (diffBools[i])
                 {
-                    op.text = Enum.GetName(typeof(Chart.Difficulties), i);
+                    op.text = Enum.GetName(typeof(Difficulties), i);
                     difficultySelector.options.Add(op);
                     if (!Global.IsFileSelected)
                     {
-                        difficultySelector.GetComponentInChildren<TMP_Text>().text = Enum.GetName(typeof(Chart.Difficulties), i);
+                        difficultySelector.GetComponentInChildren<TMP_Text>().text = Enum.GetName(typeof(Difficulties), i);
                         difficultySelector.value = i;
                         EditorManager.SwitchDifficulty(i);
                         Global.IsFileSelected = true;
@@ -1010,7 +1010,7 @@ namespace Larvend.Gameplay
                 }
                 else
                 {
-                    op.text = "Create " + Enum.GetName(typeof(Chart.Difficulties), i);
+                    op.text = "Create " + Enum.GetName(typeof(Difficulties), i);
                     difficultySelector.options.Add(op);
                 }
             }
