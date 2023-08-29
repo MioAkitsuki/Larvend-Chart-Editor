@@ -1,6 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-using System.Text.RegularExpressions;
-using System.IO;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,7 +5,6 @@ using Larvend;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using UnityEditor;
 
 namespace Larvend.Gameplay
 {
@@ -29,6 +25,7 @@ namespace Larvend.Gameplay
         private Button saveProject;
         private Button openSettings;
         private Button deleteAllNotes;
+        private Button triangle;
 
         // UI under Settings Panel
         private CanvasGroup settingsPanel;
@@ -114,12 +111,13 @@ namespace Larvend.Gameplay
             gridPanel.SetActive(false);
 
             // UI under Top Bar
-            audioTime = this.gameObject.transform.Find("TopBar").Find("AudioTime").Find("AudioTimeText").GetComponent<TMP_Text>();
-            newProject = this.gameObject.transform.Find("TopBar").Find("NewProject").GetComponent<Button>();
-            openProject = this.gameObject.transform.Find("TopBar").Find("OpenProject").GetComponent<Button>();
-            saveProject = this.gameObject.transform.Find("TopBar").Find("SaveProject").GetComponent<Button>();
-            openSettings = this.gameObject.transform.Find("TopBar").Find("OpenSettings").GetComponent<Button>();
-            deleteAllNotes = this.gameObject.transform.Find("TopBar").Find("DeleteAllNotes").GetComponent<Button>();
+            audioTime = this.gameObject.transform.Find("TopBar/AudioTime/AudioTimeText").GetComponent<TMP_Text>();
+            newProject = this.gameObject.transform.Find("TopBar/NewProject").GetComponent<Button>();
+            openProject = this.gameObject.transform.Find("TopBar/OpenProject").GetComponent<Button>();
+            saveProject = this.gameObject.transform.Find("TopBar/SaveProject").GetComponent<Button>();
+            openSettings = this.gameObject.transform.Find("TopBar/OpenSettings").GetComponent<Button>();
+            deleteAllNotes = this.gameObject.transform.Find("TopBar/DeleteAllNotes").GetComponent<Button>();
+            triangle = this.gameObject.transform.Find("TopBar/Triangle").GetComponent<Button>();
 
             newProject.onClick.AddListener(NewProjectAttempt);
             openProject.onClick.AddListener(() =>
@@ -171,6 +169,11 @@ namespace Larvend.Gameplay
                         Localization.GetString("DeleteAllNotesAlert"), NoteManager.ClearAllNotes);
                 }
             }));
+
+            triangle.onClick.AddListener(() => {
+                GUIUtility.systemCopyBuffer = audioTime.text;
+                MsgBoxManager.ShowMessage(MsgType.Info, "Copy to Clipboard", Localization.GetString("CopyToClipboard"));
+            });
 
             // UI under Settings Panel
             settingsPanel = this.gameObject.transform.Find("SettingsPanel").GetComponent<CanvasGroup>();
@@ -487,7 +490,7 @@ namespace Larvend.Gameplay
             Instance.currentPos.SetText(FormatTime(EditorManager.GetTimePointer()));
             if (Global.IsPlaying)
             {
-                Instance.progressBar.value = (EditorManager.GetTimePointer() / EditorManager.GetAudioLength());
+                Instance.progressBar.SetValueWithoutNotify(EditorManager.GetTimePointer() / EditorManager.GetAudioLength());
             }
 
             int[] currentBeatTick = Instance.GetBeatTick(EditorManager.GetAudioPCMTime() - EditorManager.Instance.offset);
@@ -500,6 +503,7 @@ namespace Larvend.Gameplay
             Instance.posYInput.text = $"{Instance.selectedNote.position.y}";
         }
 
+        // Manually set pointer
         private void SetPointer(float value)
         {
             if (!Global.IsPlaying && Global.IsAudioLoaded)
@@ -507,6 +511,9 @@ namespace Larvend.Gameplay
                 EditorManager.SetTime(Instance.progressBar.value * EditorManager.GetAudioLength());
                 Instance.currentPos.SetText(FormatTime(Instance.progressBar.value * EditorManager.GetAudioLength()));
                 NoteManager.RefreshAllNotes();
+
+                int[] currentBeatTick = Instance.GetBeatTick(EditorManager.GetAudioPCMTime() - EditorManager.Instance.offset);
+                EditorManager.Instance.beatTick = currentBeatTick;
             }
         }
 
@@ -625,7 +632,7 @@ namespace Larvend.Gameplay
             {
                 playSwitchButton.gameObject.GetComponent<Image>().sprite = playAndPause[1];
 
-                NoteManager.Instance.PlayPreparation();
+                NoteManager.Instance.NotePreparation();
                 EditorManager.Play();
             }
             else
@@ -636,6 +643,9 @@ namespace Larvend.Gameplay
 
                 NoteManager.RefreshAllNotes();
                 Global.IsPrepared = false;
+
+                int[] currentBeatTick = Instance.GetBeatTick(EditorManager.GetAudioPCMTime() - EditorManager.Instance.offset);
+                EditorManager.Instance.beatTick = currentBeatTick;
             }
         }
 
@@ -646,7 +656,7 @@ namespace Larvend.Gameplay
             {
                 if (item.Key.IsIn(targetBeatTick[0] + targetBeatTick[1] / 960f))
                 {
-                    targetPcm += (int) Math.Floor(((targetBeatTick[0] + targetBeatTick[1] / 960f) - item.Key.start) * item.Value);
+                    targetPcm += (int) Math.Floor((targetBeatTick[0] + targetBeatTick[1] / 960f - item.Key.start) * item.Value);
                     break;
                 }
                 else
@@ -659,7 +669,7 @@ namespace Larvend.Gameplay
             EditorManager.SetTime(targetPcm);
 
             NoteManager.RefreshAllNotes();
-            Instance.progressBar.value = (EditorManager.GetTimePointer() / EditorManager.GetAudioLength());
+            Instance.progressBar.SetValueWithoutNotify(EditorManager.GetTimePointer() / EditorManager.GetAudioLength());
         }
 
         private int[] GetBeatTick(int pcmTime)
@@ -709,7 +719,7 @@ namespace Larvend.Gameplay
 
             int deltaTick = Mathf.RoundToInt(4 / Mathf.Pow(2, stepSelector.value) * (tripletToggle.isOn ? 2 / 3 : 1) * (dottedToggle.isOn ? 3 / 2 : 1) * 960);
             int targetTick = deltaTick + (EditorManager.GetBeatTick()[0] - 1) * 960 + EditorManager.GetBeatTick()[1];
-            if (targetTick > EditorManager.GetAudioPCMLength())
+            if (targetTick > EditorManager.GetMaxTicks())
             {
                 return;
             }
@@ -1076,7 +1086,7 @@ namespace Larvend.Gameplay
                 EditorManager.UpdateInfo(titleInputField.text, composerInputField.text, arrangerInputField.text, ratingInputField.text);
                 if (isBaseBpmEdited)
                 {
-                    NoteManager.Instance.BaseSpeed = new Line(Single.Parse(baseBpmInputField.text));
+                    NoteManager.UpdateBaseBpm(Single.Parse(baseBpmInputField.text));
                     EditorManager.Instance.InitializeBPM(Single.Parse(baseBpmInputField.text));
                     isBaseBpmEdited = false;
                 }

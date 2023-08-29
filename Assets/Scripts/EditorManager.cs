@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEngine;
 
 namespace Larvend.Gameplay
@@ -24,12 +23,16 @@ namespace Larvend.Gameplay
         private static int step;
         private static int timePcmPointer;
 
+        private int maxTicks;
+
         private void Awake()
         {
             Instance = this;
             song = gameObject.GetComponent<AudioSource>();
             offset = 0;
             difficulty = 0;
+
+            maxTicks = 0;
 
             beatTick = new int[] { 1, 0 };
             
@@ -116,7 +119,7 @@ namespace Larvend.Gameplay
             }
             catch (Exception e)
             {
-                MsgBoxManager.ShowMessage(MsgType.Error, "Error", e.Message);
+                Debug.LogError(e);
                 throw;
             }
         }
@@ -239,6 +242,11 @@ namespace Larvend.Gameplay
             return Instance.BPM;
         }
 
+        public static int GetMaxTicks()
+        {
+            return Instance.maxTicks;
+        }
+
         public static void SetStep(double s)
         {
             step = (int) (Instance.BeatPCM * s);
@@ -281,7 +289,6 @@ namespace Larvend.Gameplay
         {
             song.clip = clip;
             UIController.InitAudioState();
-            NoteManager.RefreshSpeed();
         }
 
         /// <summary>
@@ -309,8 +316,12 @@ namespace Larvend.Gameplay
 
             ResetAudio();
 
-            NoteManager.RefreshSpeed();
             UIController.InitBpmState();
+        }
+
+        public static void SetMaxTicks(int value)
+        {
+            Instance.maxTicks = value;
         }
 
         public static void SetOffset(int value)

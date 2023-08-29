@@ -16,4 +16,5 @@
   <UnknownNoteType>Unknown note type. Please check the input.</UnknownNoteType>
   <ProjectNotFound>Didn't find any projects under the directory.</ProjectNotFound>
   <BaseBpmNonexistent>Chart Load Failed: Base BPM setting does not exist.\nPlease check the file integrity.</BaseBpmNonexistent>
+  <CopyToClipboard>Time copied successfully.</CopyToClipboard>
 </Localization>

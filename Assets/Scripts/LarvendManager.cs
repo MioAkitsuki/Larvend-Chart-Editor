@@ -65,6 +65,12 @@ namespace Larvend
             isNotesReading = false;
             isBaseBpmReading = false;
 
+            if (!File.Exists(path))
+            {
+                InitChart();
+                return;
+            }
+
             NoteManager.ClearAllNotes();
             try
             {
@@ -136,10 +142,12 @@ namespace Larvend
                         notes.Add(ReadNote(line));
                     }
                 }
+
                 foreach (var note in notes)
                 {
                     NoteManager.LoadNote(note);
                 }
+                NoteManager.Instance.StartCoroutine(NoteManager.Instance.RefreshSpeedEnumerator());
                 
                 MsgBoxManager.ShowMessage(MsgType.Info, "Event Load Complete", Localization.GetString("EventLoadSuccess"));
             }
@@ -192,7 +200,7 @@ namespace Larvend
                 StreamWriter chartWriter = new StreamWriter(path);
 
                 if (isNotesWriting)
-                    throw (new Exception("There was an unfinished writing process."));
+                    throw new Exception("There was an unfinished writing process.");
 
                 chartWriter.WriteLine($"version={Global.ChartVersion}");
                 chartWriter.WriteLine($"offset={EditorManager.Instance.offset}\n");
@@ -211,6 +219,7 @@ namespace Larvend
             catch (Exception e)
             {
                 MsgBoxManager.ShowMessage(MsgType.Error, "Written Failed", e.Message);
+                Debug.LogError(e);
             }
         }
 
@@ -240,6 +249,17 @@ namespace Larvend
             isNotesWriting = false;
         }
 
+        public static void InitProject()
+        {
+            UIController.Instance.InitDifficultySelector();
+
+            System.Diagnostics.Process.Start(Global.FolderPath);
+            Global.IsDirectorySelected = true;
+            Global.IsFileSelected = true;
+
+            EditorManager.Instance.StartCoroutine(ImageManager.LoadImg());
+        }
+
         public static void InitChart(params bool[] param)
         {
             NoteManager.ClearAllNotes();
@@ -247,21 +267,17 @@ namespace Larvend
             {
                 MsgBoxManager.ShowInputDialog("Initialize Chart", "Please Set Base BPM", delegate(string value)
                 {
-                    NoteManager.Instance.BaseSpeed = new Line(Single.Parse(value));
+                    NoteManager.UpdateBaseBpm(Single.Parse(value));
                     EditorManager.Instance.InitializeBPM(Single.Parse(value));
 
-                    if (param.Length > 0)
+                    if (param.Length > 0 && param[0])
                     {
-                        MsgBoxManager.ShowMessage(MsgType.Info, "Initialize Directory Successfully",
-                            Localization.GetString("InitDirectorySuccess"));
-
                         UIController.Instance.InitDifficultySelector();
 
                         System.Diagnostics.Process.Start(Global.FolderPath);
                         Global.IsDirectorySelected = true;
                         Global.IsFileSelected = true;
 
-                        EditorManager.Instance.StartCoroutine(AudioManager.LoadAudio());
                         EditorManager.Instance.StartCoroutine(ImageManager.LoadImg());
                     }
                     else
@@ -276,8 +292,10 @@ namespace Larvend
             catch (Exception e)
             {
                 MsgBoxManager.ShowMessage(MsgType.Error, "Error in Initializing Chart", e.Message);
-                throw;
+                Debug.LogError(e);
             }
+            MsgBoxManager.ShowMessage(MsgType.Info, "Initialize Directory Successfully",
+                Localization.GetString("InitDirectorySuccess"));
         }
 
         public static void AbortInitChart()
@@ -581,7 +599,7 @@ namespace Larvend
                             EditorManager.Instance.difficulty = 0;
                             UIController.InitSongInfo();
 
-                            ChartManager.InitChart(true);
+                            ChartManager.InitProject();
                         }, () => Global.IsDirectorySelected = false);
                 }
                 else
@@ -593,14 +611,14 @@ namespace Larvend
                     EditorManager.Instance.difficulty = 0;
                     UIController.InitSongInfo();
 
-                    ChartManager.InitChart(true);
+                    ChartManager.InitProject();
                 }
 
                 Global.IsDirectorySelected = true;
             }
             catch (Exception e)
             {
-                MsgBoxManager.ShowMessage(MsgType.Error, "Init Directory Failed", e.Message);
+                Debug.LogError(e);
                 Global.IsDirectorySelected = false;
             }
         }
