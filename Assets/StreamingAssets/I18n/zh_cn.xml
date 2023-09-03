@@ -17,4 +17,5 @@
   <NoChartInDirectory>未在所选文件夹下找到谱面文件，是否要在该文件夹下新建默认难度谱面？</NoChartInDirectory>
   <BaseBpmNonexistent>谱面加载失败：未找到基准BPM设置行\n请检查文件完整性</BaseBpmNonexistent>
   <CopyToClipboard>已成功复制当前时间</CopyToClipboard>
+  <ChartVersionNotExpected>当前正在读取的谱面版本与程序默认的谱面版本有差异\n请仔细检查无异常后再保存谱面</ChartVersionNotExpected>
 </Localization>

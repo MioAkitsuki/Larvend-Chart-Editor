@@ -16,7 +16,7 @@ namespace Larvend.Gameplay
         {
             start = _start;
             end = _end;
-            range = _end - _start + 1;
+            range = _end - _start;
             IsLinearlyChanging = false;
         }
 
@@ -24,7 +24,7 @@ namespace Larvend.Gameplay
         {
             start = _start;
             end = _end;
-            range = _end - _start + 1;
+            range = _end - _start;
             IsLinearlyChanging = flag;
         }
 
@@ -259,26 +259,26 @@ namespace Larvend.Gameplay
                     if (i == 0)
                     {
                         // Writing Base Bpm Item
-                        upper = (Instance.SpeedAdjust[i].time - EditorManager.Instance.offset) / (44100 * (60f / Instance.BaseSpeed.targetBpm)) + 1;
-                        Instance.PcmDict.Add(new BeatRange(1, upper), (int) (44100 * (60f / Instance.BaseSpeed.targetBpm)));
-                        lower = upper;
+                        upper = Mathf.RoundToInt((Instance.SpeedAdjust[i].time - EditorManager.Instance.offset) / (44100 * (60f / Instance.BaseSpeed.targetBpm))) + 1;
+                        Instance.PcmDict.Add(new BeatRange(1, upper + 1), (int) (44100 * (60f / Instance.BaseSpeed.targetBpm)));
+                        lower = upper + 1;
                         Debug.Log($"0. ({1}, {upper}, {(int) (44100 * (60f / Instance.BaseSpeed.targetBpm))})");
                         continue;
                     }
 
                     if (Instance.SpeedAdjust[i].time == Instance.SpeedAdjust[i].endTime)
                     {
-                        upper = (Instance.SpeedAdjust[i].time - Instance.SpeedAdjust[i - 1].endTime) / (44100 * 60f / Instance.SpeedAdjust[i - 1].targetBpm) + lower;
-                        Instance.PcmDict.Add(new BeatRange(lower, upper), (int)(44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm)));
+                        upper = Mathf.RoundToInt((Instance.SpeedAdjust[i].time - Instance.SpeedAdjust[i - 1].endTime) / (44100 * 60f / Instance.SpeedAdjust[i - 1].targetBpm)) + lower;
+                        Instance.PcmDict.Add(new BeatRange(lower, upper + 1), (int)(44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm)));
                         Debug.Log($"{i}. ({lower}, {upper}, {(int) (44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm))})");
-                        lower = upper;
+                        lower = upper + 1;
                     }
                     else
                     {
                         upper = lower + 1;
-                        Instance.PcmDict.Add(new BeatRange(lower, upper, true), Instance.SpeedAdjust[i].endTime - Instance.SpeedAdjust[i].time);
+                        Instance.PcmDict.Add(new BeatRange(lower, upper + 1, true), Instance.SpeedAdjust[i].endTime - Instance.SpeedAdjust[i].time);
                         Debug.Log($"{i}. ({lower}, {upper}, {Instance.SpeedAdjust[i].endTime - Instance.SpeedAdjust[i].time})");
-                        lower = upper;
+                        lower = upper + 1;
                     }
                     
                 }
@@ -286,7 +286,7 @@ namespace Larvend.Gameplay
                 if (Instance.SpeedAdjust[i - 1].time == Instance.SpeedAdjust[i - 1].endTime)
                 {
                     upper = (EditorManager.GetAudioPCMLength() - Instance.SpeedAdjust[i - 1].endTime) / (44100 * 60f / Instance.SpeedAdjust[i - 1].targetBpm) + lower;
-                    Instance.PcmDict.Add(new BeatRange(lower, upper), (int)(44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm)));
+                    Instance.PcmDict.Add(new BeatRange(lower, upper + 1), (int)(44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm)));
                     Debug.Log($"{i}. ({lower}, {upper}, {(int) (44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm))})");
                 }
                 else
@@ -295,7 +295,7 @@ namespace Larvend.Gameplay
                     Debug.Log($"{i}. ({lower}, {lower+1}, {Instance.SpeedAdjust[i - 1].endTime - Instance.SpeedAdjust[i - 1].time})");
 
                     upper = (EditorManager.GetAudioPCMLength() - Instance.SpeedAdjust[i - 1].endTime) / (44100 * 60f / Instance.SpeedAdjust[i - 1].targetBpm) + lower + 1;
-                    Instance.PcmDict.Add(new BeatRange(lower + 1, upper), (int)(44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm)));
+                    Instance.PcmDict.Add(new BeatRange(lower + 1, upper + 1), (int)(44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm)));
                     Debug.Log($"{i+1}. ({lower+1}, {upper}, {(int) (44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm))})");
                 }
 
@@ -303,7 +303,7 @@ namespace Larvend.Gameplay
             }
 
             UIController.RefreshSpeedPanel(Instance.SpeedAdjust);
-            Debug.Log(EditorManager.GetMaxTicks());
+            EditorManager.ResetAudio();
         }
 
         public static void CreateNote(Type type)
@@ -420,13 +420,13 @@ namespace Larvend.Gameplay
                 switch (note.type)
                 {
                     case Type.Tap:
-                        allLines.Add(new Line(note.type, note.time, note.position));
+                        allLines.Add(new Line(note.type, note.time, note.position, note.scale));
                         break;
                     case Type.Hold:
-                        allLines.Add(new Line(note.type, note.time, note.position, note.endTime));
+                        allLines.Add(new Line(note.type, note.time, note.position, note.endTime, note.scale));
                         break;
                     case Type.Flick:
-                        allLines.Add(new Line(note.type, note.time, note.position));
+                        allLines.Add(new Line(note.type, note.time, note.position, note.scale));
                         break;
                 }
             }
@@ -464,6 +464,7 @@ namespace Larvend.Gameplay
                 }
 
                 UIController.Instance.isSpeedInputChanged = false;
+                RefreshSpeed();
             }
             catch (Exception e)
             {

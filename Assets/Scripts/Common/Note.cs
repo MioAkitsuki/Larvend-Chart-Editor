@@ -22,6 +22,7 @@ namespace Larvend
         public Vector2 position;
         public int endTime;
         public float targetBpm;
+        public float scale;
 
         private Animator _animator;
         public bool isDisplaying;
@@ -111,6 +112,7 @@ namespace Larvend
             type = _type;
             time = _time;
             position = _pos;
+            scale = 1f;
         }
 
         public void InitNote(Type _type, int _time, Vector2 _pos, int _endTime)
@@ -119,6 +121,24 @@ namespace Larvend
             time = _time;
             position = _pos;
             endTime = _endTime;
+            scale = 1f;
+        }
+
+        public void InitNote(Type _type, int _time, Vector2 _pos, float _scale)
+        {
+            type = _type;
+            time = _time;
+            position = _pos;
+            scale = _scale;
+        }
+
+        public void InitNote(Type _type, int _time, Vector2 _pos, int _endTime, float _scale)
+        {
+            type = _type;
+            time = _time;
+            position = _pos;
+            endTime = _endTime;
+            scale = _scale;
         }
 
         public IEnumerator StartPlay()
@@ -159,6 +179,7 @@ namespace Larvend
                     RefreshFlickState();
                     break;
             }
+            transform.localScale = new Vector3(scale, scale, 1);
             this.StopCoroutine("StartPlay");
         }
 
@@ -374,6 +395,25 @@ namespace Larvend
 
                 var newPos = Camera.main.ViewportToWorldPoint(this.position);
                 this.transform.position = new Vector3(newPos.x, newPos.y, 1f);
+
+                UIController.RefreshUI();
+            }
+            catch (Exception e)
+            {
+                MsgBoxManager.ShowMessage(MsgType.Error, "Error", e.Message);
+            }
+        }
+
+        public void UpdateScale(string value)
+        {
+            try
+            {
+                float newValue = Single.Parse(value);
+                if (newValue is >=0.5f and <=1f)
+                {
+                    this.scale = newValue;
+                    this.transform.localScale = new Vector3(this.scale, this.scale, 1f);
+                }
 
                 UIController.RefreshUI();
             }

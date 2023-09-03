@@ -87,6 +87,7 @@ namespace Larvend.Gameplay
         private TMP_InputField posXInput;
         private TMP_InputField posYInput;
         private TMP_InputField endTimeInput;
+        private TMP_InputField scaleInput;
         private Button deleteNote;
         private Button closeNotePanel;
 
@@ -312,6 +313,7 @@ namespace Larvend.Gameplay
             posXInput = this.gameObject.transform.Find("NotePanel").Find("PosXInput").GetComponent<TMP_InputField>();
             posYInput = this.gameObject.transform.Find("NotePanel").Find("PosYInput").GetComponent<TMP_InputField>();
             endTimeInput = this.gameObject.transform.Find("NotePanel").Find("EndTimeInput").GetComponent<TMP_InputField>();
+            scaleInput = this.gameObject.transform.Find("NotePanel").Find("ScaleInput").GetComponent<TMP_InputField>();
             deleteNote = this.gameObject.transform.Find("NotePanel").Find("DeleteNote").GetComponent<Button>();
             closeNotePanel = this.gameObject.transform.Find("NotePanel").Find("CloseButton").GetComponent<Button>();
 
@@ -329,6 +331,7 @@ namespace Larvend.Gameplay
             posXInput.onSelect.AddListener((value) => Global.IsEditing = true);
             posYInput.onSelect.AddListener((value) => Global.IsEditing = true);
             endTimeInput.onSelect.AddListener((value) => Global.IsEditing = true);
+            scaleInput.onSelect.AddListener((value) => Global.IsEditing = true);
             closeNotePanel.onClick.AddListener(() =>
             {
                 notePanel.gameObject.SetActive(false);
@@ -398,6 +401,7 @@ namespace Larvend.Gameplay
                     timeInput.text = $"{selectedNote.time}";
                     posXInput.text = $"{selectedNote.position.x:N2}";
                     posYInput.text = $"{selectedNote.position.y:N2}";
+                    scaleInput.text = $"{selectedNote.scale:N2}";
 
                     if (selectedNote.type == Type.Hold)
                     {
@@ -453,6 +457,12 @@ namespace Larvend.Gameplay
                     endTimeInput.onEndEdit.AddListener(value =>
                     {
                         selectedNote.UpdateEndTime(value);
+                        Global.IsEditing = false;
+                    });
+                    scaleInput.onEndEdit.RemoveAllListeners();
+                    scaleInput.onEndEdit.AddListener(value =>
+                    {
+                        selectedNote.UpdateScale(value);
                         Global.IsEditing = false;
                     });
 
@@ -656,12 +666,12 @@ namespace Larvend.Gameplay
             {
                 if (item.Key.IsIn(targetBeatTick[0] + targetBeatTick[1] / 960f))
                 {
-                    targetPcm += (int) Math.Floor((targetBeatTick[0] + targetBeatTick[1] / 960f - item.Key.start) * item.Value);
+                    targetPcm += Mathf.RoundToInt((targetBeatTick[0] + targetBeatTick[1] / 960f - item.Key.start) * item.Value);
                     break;
                 }
                 else
                 {
-                    targetPcm += (int) Math.Floor(item.Key.range * item.Value);
+                    targetPcm += Mathf.RoundToInt(item.Key.range * item.Value);
                 }
             }
 
@@ -677,15 +687,15 @@ namespace Larvend.Gameplay
             int[] result = new int[] { 1, 0 };
             foreach (var item in NoteManager.Instance.PcmDict)
             {
-                if (pcmTime - item.Key.range * item.Value < 0)
+                if (pcmTime - item.Key.range * item.Value <= 0)
                 {
-                    result[0] = (int) Math.Floor(item.Key.start + pcmTime / item.Value);
+                    result[0] = Mathf.RoundToInt(item.Key.start + pcmTime / item.Value);
                     result[1] = (pcmTime % item.Value) * 960 / item.Value;
                     break;
                 }
                 else
                 {
-                    pcmTime -= (int) Math.Floor(item.Key.range * item.Value);
+                    pcmTime -= Mathf.RoundToInt(item.Key.range * item.Value);
                 }
             }
 

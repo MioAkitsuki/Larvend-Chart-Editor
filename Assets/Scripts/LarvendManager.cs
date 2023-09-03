@@ -15,6 +15,8 @@ namespace Larvend
         internal Vector2 position;
         internal int endTime;
         internal float targetBpm;
+        internal float scale;
+        internal float sustainSection;
 
         internal Line(float bpm)
         {
@@ -22,6 +24,7 @@ namespace Larvend
             time = 0;
             endTime = 0;
             targetBpm = bpm;
+            scale = 1f;
         }
 
         internal Line(Type type, int time, Vector2 pos)
@@ -29,6 +32,7 @@ namespace Larvend
             this.type = type;
             this.time = time;
             this.position = pos;
+            scale = 1f;
         }
 
         internal Line(Type type, int time, Vector2 pos, int endTime)
@@ -37,6 +41,7 @@ namespace Larvend
             this.time = time;
             this.position = pos;
             this.endTime = endTime;
+            scale = 1f;
         }
 
         internal Line(Type type, int time, float targetBpm, int endTime)
@@ -45,9 +50,36 @@ namespace Larvend
             this.time = time;
             this.targetBpm = targetBpm;
             this.endTime = endTime;
+            sustainSection = 1;
+        }
+
+        internal Line(Type type, int time, float targetBpm, int endTime, int sustainSection)
+        {
+            this.type = type;
+            this.time = time;
+            this.targetBpm = targetBpm;
+            this.endTime = endTime;
+            this.sustainSection = sustainSection;
+        }
+
+        internal Line(Type type, int time, Vector2 pos, float scale)
+        {
+            this.type = type;
+            this.time = time;
+            this.position = pos;
+            this.scale = scale;
+        }
+
+        internal Line(Type type, int time, Vector2 pos, int endTime, float scale)
+        {
+            this.type = type;
+            this.time = time;
+            this.position = pos;
+            this.endTime = endTime;
+            this.scale = scale;
         }
     }
-
+    
     public class ChartManager
     {
         private static string path;
@@ -92,7 +124,7 @@ namespace Larvend
                     {
                         if (!line.EndsWith(Global.ChartVersion))
                         {
-                            throw new Exception("Unexpected version of the chart.");
+                            MsgBoxManager.ShowMessage(MsgType.Warning, "Warning", Localization.GetString("ChartVersionNotExpected"));
                         }
 
                         continue;
@@ -163,23 +195,38 @@ namespace Larvend
             float x, y; 
             int endTime;
             float targetBpm;
+            int sustainSection;
+            float scale;
 
             string[] splitedLine = line.Split(new [] { '(', ')' });
+            string[] lineInfo = splitedLine[1].Split(',');
 
             switch (splitedLine[0]) 
             { 
-                case "tap":
+                case "tap" when lineInfo.Length == 3:
                     LineDivider(splitedLine[1], out time, out x, out y);
                     return new Line(Type.Tap, time, new Vector2(x, y));
-                case "hold":
+                case "tap" when lineInfo.Length == 4:
+                    LineDivider(splitedLine[1], out time, out x, out y, out scale);
+                    return new Line(Type.Tap, time, new Vector2(x, y), scale);
+                case "hold" when lineInfo.Length == 4:
                     LineDivider(splitedLine[1], out time, out x, out y, out endTime);
                     return new Line(Type.Hold, time, new Vector2(x, y), endTime);
-                case "flick":
+                case "hold" when lineInfo.Length == 5:
+                    LineDivider(splitedLine[1], out time, out x, out y, out endTime, out scale);
+                    return new Line(Type.Hold, time, new Vector2(x, y), endTime, scale);
+                case "flick" when lineInfo.Length == 3:
                     LineDivider(splitedLine[1], out time, out x, out y);
                     return new Line(Type.Flick, time, new Vector2(x, y));
-                case "speed":
+                case "flick" when lineInfo.Length == 4:
+                    LineDivider(splitedLine[1], out time, out x, out y, out scale);
+                    return new Line(Type.Flick, time, new Vector2(x, y), scale);
+                case "speed" when lineInfo.Length == 3:
                     LineDivider(splitedLine[1], out time, out targetBpm, out endTime);
                     return new Line(Type.SpeedAdjust, time, targetBpm, endTime);
+                case "speed" when lineInfo.Length == 4:
+                    LineDivider(splitedLine[1], out time, out targetBpm, out endTime, out sustainSection);
+                    return new Line(Type.SpeedAdjust, time, targetBpm, endTime, sustainSection);
                 default:
                     throw new Exception(Localization.GetString("UnknownNoteType") + $"\n{line}");
             }
@@ -206,7 +253,7 @@ namespace Larvend
                 chartWriter.WriteLine($"offset={EditorManager.Instance.offset}\n");
 
                 chartWriter.WriteLine("[NOTES]");
-                chartWriter.WriteLine($"speed(0,{NoteManager.Instance.BaseSpeed.targetBpm},0)");
+                chartWriter.WriteLine($"speed(0,{NoteManager.Instance.BaseSpeed.targetBpm},0,1)");
 
                 if (notes.Count > 0)
                 {
@@ -232,16 +279,16 @@ namespace Larvend
                 switch (note.type)
                 {
                     case Type.Tap:
-                        chartWriter.WriteLine($"tap({note.time},{note.position.x:N2},{note.position.y:N2})");
+                        chartWriter.WriteLine($"tap({note.time},{note.position.x:N2},{note.position.y:N2},{note.scale:N2})");
                         continue;
                     case Type.Hold:
-                        chartWriter.WriteLine($"hold({note.time},{note.position.x:N2},{note.position.y:N2},{note.endTime})");
+                        chartWriter.WriteLine($"hold({note.time},{note.position.x:N2},{note.position.y:N2},{note.endTime},{note.scale:N2})");
                         continue;
                     case Type.Flick:
-                        chartWriter.WriteLine($"flick({note.time},{note.position.x:N2},{note.position.y:N2})");
+                        chartWriter.WriteLine($"flick({note.time},{note.position.x:N2},{note.position.y:N2},{note.scale:N2})");
                         continue;
                     case Type.SpeedAdjust:
-                        chartWriter.WriteLine($"speed({note.time},{note.targetBpm:N2},{note.endTime})");
+                        chartWriter.WriteLine($"speed({note.time},{note.targetBpm:N2},{note.endTime},{note.sustainSection})");
                         continue;
                 }
             }
@@ -319,6 +366,15 @@ namespace Larvend
             arg3 = int.Parse(splitedLine[2]);
         }
 
+        private static void LineDivider(string line, out int arg1, out float arg2, out int arg3, out int arg4)
+        {
+            string[] splitedLine = line.Split(',');
+            arg1 = int.Parse(splitedLine[0]);
+            arg2 = float.Parse(splitedLine[1]);
+            arg3 = int.Parse(splitedLine[2]);
+            arg4 = int.Parse(splitedLine[3]);
+        }
+
         private static void LineDivider(string line, out int arg1, out float arg2, out float arg3, out int arg4)
         {
             string[] splitedLine = line.Split(',');
@@ -326,6 +382,25 @@ namespace Larvend
             arg2 = float.Parse(splitedLine[1]);
             arg3 = float.Parse(splitedLine[2]);
             arg4 = int.Parse(splitedLine[3]);
+        }
+
+        private static void LineDivider(string line, out int arg1, out float arg2, out float arg3, out float arg4)
+        {
+            string[] splitedLine = line.Split(',');
+            arg1 = int.Parse(splitedLine[0]);
+            arg2 = float.Parse(splitedLine[1]);
+            arg3 = float.Parse(splitedLine[2]);
+            arg4 = float.Parse(splitedLine[3]);
+        }
+
+        private static void LineDivider(string line, out int arg1, out float arg2, out float arg3, out int arg4, out float arg5)
+        {
+            string[] splitedLine = line.Split(',');
+            arg1 = int.Parse(splitedLine[0]);
+            arg2 = float.Parse(splitedLine[1]);
+            arg3 = float.Parse(splitedLine[2]);
+            arg4 = int.Parse(splitedLine[3]);
+            arg5 = float.Parse(splitedLine[4]);
         }
     }
 

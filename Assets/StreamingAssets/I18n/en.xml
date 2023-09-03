@@ -17,4 +17,5 @@
   <ProjectNotFound>Didn't find any projects under the directory.</ProjectNotFound>
   <BaseBpmNonexistent>Chart Load Failed: Base BPM setting does not exist.\nPlease check the file integrity.</BaseBpmNonexistent>
   <CopyToClipboard>Time copied successfully.</CopyToClipboard>
+  <ChartVersionNotExpected>There is a difference between the version of chart and expected.\nPlease ensure it is normally working before saving.</ChartVersionNotExpected>
 </Localization>
