@@ -54,6 +54,9 @@ namespace Larvend.Gameplay
         private Button showGridButton;
         private Button enableAbsorptionButton;
         private Button openStepPanelButton;
+        private Button eventTrackToggle;
+        private RectTransform eventTrackPanel;
+        private ScrollRect eventTrack;
         private bool isStepPanelOpen;
 
         // UI under SongPanel
@@ -65,9 +68,9 @@ namespace Larvend.Gameplay
 
         // UI under StepPanel
         private RectTransform stepPanel;
-        private TMP_Dropdown stepSelector;
-        private Toggle tripletToggle;
-        private Toggle dottedToggle;
+        public TMP_InputField stepInputField;
+        private string previousStep;
+        private TMP_Dropdown speedSelector;
         private TMP_Text currentStepStatus;
         private TMP_Text currentBPMStatus;
 
@@ -106,7 +109,7 @@ namespace Larvend.Gameplay
         void Start()
         {
             Instance = this;
-            vel = new float[2];
+            vel = new float[5];
             
             gridPanel = this.gameObject.transform.Find("GridPanel").gameObject;
             gridPanel.SetActive(false);
@@ -247,14 +250,16 @@ namespace Larvend.Gameplay
             baseBpmInputField.onEndEdit.AddListener(value => Global.IsEditing = false);
 
             // UI under Left Toolbar
-            createTapButton = this.gameObject.transform.Find("LeftToolbar").Find("CreateTap").GetComponent<Button>();
-            createHoldButton = this.gameObject.transform.Find("LeftToolbar").Find("CreateHold").GetComponent<Button>();
-            createFlickButton = this.gameObject.transform.Find("LeftToolbar").Find("CreateFlick").GetComponent<Button>();
-            showSpeedPanelButton = this.gameObject.transform.Find("LeftToolbar").Find("OpenSpeedPanel").GetComponent<Button>();
-            showGridButton = this.gameObject.transform.Find("LeftToolbar").Find("ShowGrid").GetComponent<Button>();
-            enableAbsorptionButton = this.gameObject.transform.Find("LeftToolbar").Find("EnableAbsorption").GetComponent<Button>();
-            openStepPanelButton = this.gameObject.transform.Find("LeftToolbar").Find("OpenStepPanel")
-                .GetComponent<Button>();
+            createTapButton = transform.Find("LeftToolbar/CreateTap").GetComponent<Button>();
+            createHoldButton = transform.Find("LeftToolbar/CreateHold").GetComponent<Button>();
+            createFlickButton = transform.Find("LeftToolbar/CreateFlick").GetComponent<Button>();
+            showSpeedPanelButton = transform.Find("LeftToolbar/OpenSpeedPanel").GetComponent<Button>();
+            showGridButton = transform.Find("LeftToolbar/ShowGrid").GetComponent<Button>();
+            enableAbsorptionButton = transform.Find("LeftToolbar/EnableAbsorption").GetComponent<Button>();
+            openStepPanelButton = transform.Find("LeftToolbar/OpenStepPanel").GetComponent<Button>();
+            eventTrackToggle = transform.Find("LeftToolbar/EventTrackToggle").GetComponent<Button>();
+            eventTrackPanel = transform.Find("EventEditor").GetComponent<RectTransform>();
+            eventTrack = transform.Find("EventEditor/Scroll View").GetComponent<ScrollRect>();
 
             createTapButton.onClick.AddListener((() => NoteManager.CreateNote(Type.Tap)));
             createHoldButton.onClick.AddListener((() => NoteManager.CreateNote(Type.Hold)));
@@ -263,6 +268,24 @@ namespace Larvend.Gameplay
             showGridButton.onClick.AddListener(SwitchGridStatus);
             enableAbsorptionButton.onClick.AddListener(SwitchAbsorptionStatus);
             openStepPanelButton.onClick.AddListener(ToggleStepPanel);
+
+            eventTrackToggle.onClick.AddListener(ToggleEventTrackPanel);
+            eventTrackPanel.GetComponent<CanvasGroup>().blocksRaycasts = false;
+            Global.IsEventTrackOn = false;
+
+            eventTrack.normalizedPosition = new Vector2(0, 1);
+            // eventTrack.onValueChanged.AddListener((value) => {
+            //     int[] currentBeatTick = Instance.GetBeatTick(EditorManager.GetAudioPCMTime() - EditorManager.Instance.offset);
+            //     if (value.y < 1 - ((currentBeatTick[0] - 1) * 960 + currentBeatTick[1]) / (float) EventTrack.Instance.MaxTick)
+            //     {
+            //         StepForward(Mathf.RoundToInt(960f / Int32.Parse(stepInputField.text)));
+            //     }
+            //     else
+            //     {
+            //         StepBackward(Mathf.RoundToInt(960f / Int32.Parse(stepInputField.text)));
+            //     }
+            // });
+
             showGridButton.gameObject.GetComponent<Image>().color = Color.white;
             enableAbsorptionButton.gameObject.GetComponent<Image>().color = Color.white;
             enableAbsorptionButton.interactable = false;
@@ -277,22 +300,27 @@ namespace Larvend.Gameplay
 
             // UI under StepPanel
             stepPanel = this.gameObject.transform.Find("StepPanel").GetComponent<RectTransform>();
-            stepSelector = this.gameObject.transform.Find("StepPanel").Find("StepSelector")
-                .GetComponent<TMP_Dropdown>();
-            tripletToggle = this.gameObject.transform.Find("StepPanel").Find("TripletToggle").GetComponent<Toggle>();
-            dottedToggle = this.gameObject.transform.Find("StepPanel").Find("DottedToggle").GetComponent<Toggle>();
+            stepInputField = transform.Find("StepPanel/StepInput").GetComponent<TMP_InputField>();
+            speedSelector = transform.Find("StepPanel/SpeedSelector").GetComponent<TMP_Dropdown>();
             currentStepStatus = this.gameObject.transform.Find("StepPanel").Find("CurrentStepStatus")
                 .GetComponent<TMP_Text>();
             currentBPMStatus = this.gameObject.transform.Find("StepPanel").Find("CurrentBPMStatus")
                 .GetComponent<TMP_Text>();
 
-            stepSelector.onValueChanged.AddListener(RefreshStep);
-            tripletToggle.onValueChanged.AddListener(RefreshStep);
-            dottedToggle.onValueChanged.AddListener(RefreshStep);
+            stepInputField.onSelect.AddListener(value => {previousStep = value;});
+            stepInputField.onEndEdit.AddListener(value => {
+                if (Int32.TryParse(value, out int result) && !Global.IsPlaying)
+                {
+                    RefreshStep(result);
+                }
+                else
+                {
+                    stepInputField.text = previousStep;
+                }
+            });
+            speedSelector.onValueChanged.AddListener(value => RefreshSpeed(value));
             currentStepStatus.SetText($"1 Step = 1.000 Beat(s)");
             currentBPMStatus.SetText("Chart Unloaded");
-            tripletToggle.isOn = false;
-            dottedToggle.isOn = false;
 
             // UI under SpeedPanel
             speedPanel = this.gameObject.transform.Find("SpeedPanel").GetComponent<CanvasGroup>();
@@ -378,14 +406,19 @@ namespace Larvend.Gameplay
 
             if ((Input.GetKeyUp(KeyCode.RightArrow) || Input.GetAxis("Mouse ScrollWheel") > 0) && Global.IsAudioLoaded && !Global.IsPlaying && !Global.IsDialoging && !Global.IsEditing)
             {
-                StepForward();
+                StepForward(Mathf.RoundToInt(960f / Int32.Parse(stepInputField.text)));
             }
             if ((Input.GetKeyUp(KeyCode.LeftArrow) || Input.GetAxis("Mouse ScrollWheel") < 0) && Global.IsAudioLoaded && !Global.IsPlaying && !Global.IsDialoging && !Global.IsEditing)
             {
-                StepBackward();
+                StepBackward(Mathf.RoundToInt(960f / Int32.Parse(stepInputField.text)));
+            }
+
+            if (Input.GetKeyUp(KeyCode.S) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing)
+            {
+                PlaySwitch();
             }
             
-            if (Input.GetMouseButtonUp(1))
+            if (Input.GetMouseButtonUp(1) && !Global.IsEventTrackOn)
             {
                 Collider2D col = Physics2D.OverlapPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition), LayerMask.GetMask("Note"));
 
@@ -505,6 +538,7 @@ namespace Larvend.Gameplay
 
             int[] currentBeatTick = Instance.GetBeatTick(EditorManager.GetAudioPCMTime() - EditorManager.Instance.offset);
             Instance.beatInfo.SetText($"{currentBeatTick[0]}: {currentBeatTick[1].ToString().PadLeft(3, '0')}");
+            Instance.eventTrack.normalizedPosition = new Vector2(0, 1 - ((currentBeatTick[0] - 1) * 960 + currentBeatTick[1]) / (float) EventTrack.Instance.MaxTick);
 
             if (!Instance.notePanel.gameObject.activeSelf || Instance.selectedNote == null) return;
 
@@ -610,22 +644,40 @@ namespace Larvend.Gameplay
 
         private void RefreshStep(int value)
         {
-            double step = 4.0 / Math.Pow(2, stepSelector.value) *
-                          Math.Pow(2f / 3f, Convert.ToDouble(tripletToggle.isOn)) *
-                          Math.Pow(3f / 2f, Convert.ToDouble(dottedToggle.isOn));
-            string res = String.Format("1 Step = {0:N3} Beat(s)", step);
+            float step = 4f / value;
+            string res = $"1 Step = {step:N3} Beat(s)";
             Instance.currentStepStatus.SetText(res);
-            EditorManager.SetStep(step);
+
+            EventTrack.RefreshPanel();
         }
 
         private void RefreshStep(bool value)
         {
-            double step = 4.0 / Math.Pow(2, stepSelector.value) *
-                          Math.Pow(2f / 3f, Convert.ToDouble(tripletToggle.isOn)) *
-                          Math.Pow(3f / 2f, Convert.ToDouble(dottedToggle.isOn));
-            string res = String.Format("1 Step = {0:N3} Beat(s)", step);
+            float step = 4f / Int32.Parse(stepInputField.text);
+            string res = $"1 Step = {step:N3} Beat(s)";
             Instance.currentStepStatus.SetText(res);
-            EditorManager.SetStep(step);
+        }
+
+        private void RefreshSpeed(int value)
+        {
+            switch (value)
+            {
+                case 0:
+                    EditorManager.song.pitch = 0.5f;
+                    break;
+                case 1:
+                    EditorManager.song.pitch = 0.75f;
+                    break;
+                case 2:
+                    EditorManager.song.pitch = 1f;
+                    break;
+                case 3:
+                    EditorManager.song.pitch = 1.25f;
+                    break;
+                case 4:
+                    EditorManager.song.pitch = 1.5f;
+                    break;
+            }
         }
 
         /// <summary>
@@ -709,8 +761,25 @@ namespace Larvend.Gameplay
                 return;
             }
 
-            int deltaTick = Mathf.RoundToInt( 4 / Mathf.Pow(2, stepSelector.value) * (tripletToggle.isOn ? 2/3 : 1) * (dottedToggle.isOn ? 3/2 : 1) * 960);
-            int targetTick = (EditorManager.GetBeatTick()[0] - 1) * 960 + EditorManager.GetBeatTick()[1] - deltaTick;
+            // int deltaTick = Mathf.RoundToInt( 4  * 960 / Int32.Parse(stepInputField.text));
+            int targetTick = (EditorManager.GetBeatTick()[0] - 1) * 960 + EditorManager.GetBeatTick()[1] - 960;
+            if (targetTick < 0)
+            {
+                return;
+            }
+
+            int[] targetBeatTick = new int[] { targetTick / 960 + 1, targetTick % 960 };
+            SetTime(targetBeatTick);
+        }
+
+        private void StepBackward(int ticks)
+        {
+            if (!Global.IsAudioLoaded || Global.IsPlaying || Global.IsDialoging)
+            {
+                return;
+            }
+
+            int targetTick = (EditorManager.GetBeatTick()[0] - 1) * 960 + EditorManager.GetBeatTick()[1] - ticks;
             if (targetTick < 0)
             {
                 return;
@@ -727,8 +796,25 @@ namespace Larvend.Gameplay
                 return;
             }
 
-            int deltaTick = Mathf.RoundToInt(4 / Mathf.Pow(2, stepSelector.value) * (tripletToggle.isOn ? 2 / 3 : 1) * (dottedToggle.isOn ? 3 / 2 : 1) * 960);
-            int targetTick = deltaTick + (EditorManager.GetBeatTick()[0] - 1) * 960 + EditorManager.GetBeatTick()[1];
+            // int deltaTick = Mathf.RoundToInt( 4  * 960 / Int32.Parse(stepInputField.text));
+            int targetTick = 960 + (EditorManager.GetBeatTick()[0] - 1) * 960 + EditorManager.GetBeatTick()[1];
+            if (targetTick > EditorManager.GetMaxTicks())
+            {
+                return;
+            }
+
+            int[] targetBeatTick = new int[] { targetTick / 960 + 1, targetTick % 960 };
+            SetTime(targetBeatTick);
+        }
+
+        private void StepForward(int ticks)
+        {
+            if (!Global.IsAudioLoaded || Global.IsPlaying || Global.IsDialoging)
+            {
+                return;
+            }
+
+            int targetTick = ticks + (EditorManager.GetBeatTick()[0] - 1) * 960 + EditorManager.GetBeatTick()[1];
             if (targetTick > EditorManager.GetMaxTicks())
             {
                 return;
@@ -796,6 +882,50 @@ namespace Larvend.Gameplay
                 enableAbsorptionButton.gameObject.GetComponent<Image>().color = Color.white;
                 Global.IsAbsorption = false;
             }
+        }
+
+        private void ToggleEventTrackPanel()
+        {
+            if (Global.IsEventTrackOn)
+            {
+                StopCoroutine("openEventTrackEnumerator");
+                StartCoroutine("closeEventTrackEnumerator");
+            }
+            else
+            {
+                StopCoroutine("closeEventTrackEnumerator");
+                StartCoroutine("openEventTrackEnumerator");
+            }
+        }
+
+        IEnumerator openEventTrackEnumerator()
+        {
+            while (!Mathf.Approximately(eventTrackPanel.localPosition.x, 710f))
+            {
+                float x = Mathf.SmoothDamp(eventTrackPanel.localPosition.x, 710f, ref vel[2], 0.1f, 10000f);
+                Vector3 updatePos = new Vector3(x, eventTrackPanel.localPosition.y, 0);
+                eventTrackPanel.localPosition = updatePos;
+
+                yield return new WaitForFixedUpdate();
+            }
+
+            Global.IsEventTrackOn = true;
+            eventTrackPanel.GetComponent<CanvasGroup>().blocksRaycasts = true;
+        }
+
+        IEnumerator closeEventTrackEnumerator()
+        {
+            while (!Mathf.Approximately(eventTrackPanel.localPosition.x, 1210f))
+            {
+                float x = Mathf.SmoothDamp(eventTrackPanel.localPosition.x, 1210f, ref vel[2], 0.1f, 10000f);
+                Vector3 updatePos = new Vector3(x, eventTrackPanel.localPosition.y, 0);
+                eventTrackPanel.localPosition = updatePos;
+
+                yield return new WaitForFixedUpdate();
+            }
+
+            Global.IsEventTrackOn = false;
+            eventTrackPanel.GetComponent<CanvasGroup>().blocksRaycasts = false;
         }
 
         private void ToggleStepPanel()
@@ -1067,14 +1197,14 @@ namespace Larvend.Gameplay
         {
             Instance.currentBPMStatus.SetText(EditorManager.GetBPM().ToString());
 
-            Instance.stepSelector.value = 2;
+            Instance.stepInputField.text = "4";
+            
             Instance.RefreshStep(true);
         }
 
         public static void UpdateBpmUI()
         {
             Instance.currentBPMStatus.SetText(EditorManager.GetBPM().ToString());
-            Instance.RefreshStep(true);
         }
 
         public static void InitAlbumCover(Sprite sprite)

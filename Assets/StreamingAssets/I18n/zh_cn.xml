@@ -5,7 +5,7 @@
   <EventLoadSuccess>已成功完成谱面的加载</EventLoadSuccess>
   <CreateChartSuccess>已成功创建新谱面，需要将其初始化吗？\n若您不清楚，请选“是”</CreateChartSuccess>
   <InitializeChartSuccess>已成功初始化谱面</InitializeChartSuccess>
-  <InitDirectorySuccess>已成功初始化文件夹\n请手动将音频文件与专辑封面图片分别重命名为 base\n并转换为 .ogg 与 .jpg 格式后拖入工程文件夹</InitDirectorySuccess>
+  <InitDirectorySuccess>已成功初始化文件夹\n请手动将专辑封面图片重命名为 cover\n并转换为 .jpg 格式后拖入工程文件夹</InitDirectorySuccess>
   <SaveChartSuccess>已成功保存谱面及其相关信息</SaveChartSuccess>
   <LoadEmptyChartAttempt>您所读取的谱面无内容，是否需要初始化该谱面？</LoadEmptyChartAttempt>
   <LoadEmptyDirectoryAttempt>所选文件夹为空，是否要初始化该文件夹？</LoadEmptyDirectoryAttempt>

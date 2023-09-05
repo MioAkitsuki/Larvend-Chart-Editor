@@ -144,10 +144,10 @@ PolygonCollider2D:
   m_AutoTiling: 0
   m_Points:
     m_Paths:
-    - - {x: 0.65, y: 0}
-      - {x: 0, y: 0.65}
-      - {x: -0.65, y: 0}
-      - {x: 0, y: -0.65}
+    - - {x: 0.8, y: 0}
+      - {x: 0, y: 0.8}
+      - {x: -0.8, y: 0}
+      - {x: 0, y: -0.8}
 --- !u!95 &6810895745790282339
 Animator:
   serializedVersion: 5
@@ -185,4 +185,6 @@ MonoBehaviour:
   position: {x: 0, y: 0}
   endTime: 0
   targetBpm: 0
+  scale: 0
+  eventButtons: []
   isDisplaying: 0

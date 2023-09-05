@@ -1,5 +1,7 @@
-﻿using System;
+﻿using System.Numerics;
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using Larvend.Gameplay;
 using UnityEngine;
 using Vector2 = UnityEngine.Vector2;
@@ -24,6 +26,8 @@ namespace Larvend
         public float targetBpm;
         public float scale;
 
+        public List<EventButton> eventButtons;
+
         private Animator _animator;
         public bool isDisplaying;
 
@@ -32,6 +36,8 @@ namespace Larvend
             _animator = this.GetComponent<Animator>();
             _animator.enabled = true;
             _animator.speed = 0;
+
+            eventButtons = new List<EventButton>();
 
             isDisplaying = false;
             this.gameObject.SetActive(false);
@@ -102,7 +108,7 @@ namespace Larvend
 
             if (flag)
             {
-                transform.position = Camera.main.ViewportToWorldPoint(new Vector3(position.x, position.y, 1f));
+                transform.position = Camera.main.ViewportToWorldPoint(new Vector3(position.x, position.y, time / 10000f));
                 yield return new WaitForFixedUpdate();
             }
         }
@@ -144,14 +150,14 @@ namespace Larvend
         public IEnumerator StartPlay()
         {
             _animator.enabled = true;
-            _animator.speed = EditorManager.GetBPM() / 60f;
+            _animator.speed = EditorManager.GetBPM() / 60f * EditorManager.song.pitch;
 
             while (_animator.enabled)
             {
                 if ((_animator.GetCurrentAnimatorStateInfo(0).IsTag("Appear") && this.type == Type.Hold && _animator.GetCurrentAnimatorStateInfo(0).normalizedTime > 0.95) ||
                     _animator.GetCurrentAnimatorStateInfo(0).IsTag("Disappear") && this.type == Type.Hold && _animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 0.05)
                 {
-                    _animator.speed = EditorManager.GetBPM() / 60f / ((float) (endTime - time) / EditorManager.Instance.BeatPCM);
+                    _animator.speed = EditorManager.GetBPM() / 60f / ((float) (endTime - time) / EditorManager.Instance.BeatPCM) * EditorManager.song.pitch;
                 }
                 if (_animator.GetCurrentAnimatorStateInfo(0).IsTag("Disappear") && _animator.GetCurrentAnimatorStateInfo(0).normalizedTime > 0.95)
                 {
@@ -163,6 +169,171 @@ namespace Larvend
 
                 yield return new WaitForFixedUpdate();
             }
+        }
+
+        public void Relate(EventButton btn, BtnType type)
+        {
+            eventButtons.Add(btn);
+            btn.type = type;
+            btn.note = this;
+
+            btn.Refresh();
+        }
+
+        public void Relate()
+        {
+            if (type is Type.Tap or Type.Flick)
+            {
+                foreach (var group in EventTrack.Instance.eventGroups)
+                {
+                    if (Math.Abs(group.Pcm + EditorManager.Instance.offset - this.time) <= 10)
+                    {
+                        var btn = group.FindFirstEmptyButton() ?? throw new Exception("Too many event in a time");
+                        eventButtons.Add(btn);
+                        switch (type)
+                        {
+                            case Type.Tap:
+                                btn.type = BtnType.Tap;
+                                break;
+                            case Type.Flick:
+                                btn.type = BtnType.Flick;
+                                break;
+                        }
+                        btn.note = this;
+
+                        btn.Refresh();
+                        break;
+                    }
+                    else if (group.Pcm + EditorManager.Instance.offset - this.time > 10)
+                    {
+                        var btn = EventTrack.Instance.eventGroups[group.Id - 1].FindFirstEmptyButton() ?? throw new Exception("Too many event in a time");
+                        eventButtons.Add(btn);
+                        switch (type)
+                        {
+                            case Type.Tap:
+                                btn.type = BtnType.TapInIt;
+                                break;
+                            case Type.Flick:
+                                btn.type = BtnType.FlickInIt;
+                                break;
+                        }
+                        btn.note = this;
+
+                        btn.Refresh();
+                        break;
+                    }
+                }
+                return;
+            }
+
+            if (time == endTime)
+            {
+                foreach (var group in EventTrack.Instance.eventGroups)
+                {
+                    if (Math.Abs(group.Pcm + EditorManager.Instance.offset - this.time) <= 10)
+                    {
+                        var note = group.FindFirstEmptyButton() ?? throw new Exception("Too many event in a time");
+                        eventButtons.Add(note);
+                        note.type = BtnType.Hold;
+                        note.note = this;
+
+                        note.Refresh();
+                        break;
+                    }
+                    else if (group.Pcm + EditorManager.Instance.offset - this.time > 10)
+                    {
+                        var note = EventTrack.Instance.eventGroups[group.Id - 1].FindFirstEmptyButton() ?? throw new Exception("Too many event in a time");
+                        eventButtons.Add(note);
+                        note.type = BtnType.HoldInIt;
+                        note.note = this;
+
+                        note.Refresh();
+                        break;
+                    }
+                }
+                return;
+            }
+
+            EventButton start = null;
+            
+            foreach (var group in EventTrack.Instance.eventGroups)
+            {
+                if (Math.Abs(group.Pcm + EditorManager.Instance.offset - this.time) <= 10 && start == null)
+                {
+                    start = group.FindFirstEmptyButton() ?? throw new Exception("Too many event in a time");
+                    eventButtons.Add(start);
+                    start.type = BtnType.Hold;
+                    start.note = this;
+
+                    start.Refresh();
+                    continue;
+                }
+                else if (group.Pcm + EditorManager.Instance.offset - this.time > 10 && start == null)
+                {
+                    start = EventTrack.Instance.eventGroups[group.Id - 1].FindFirstEmptyButton() ?? throw new Exception("Too many event in a time");
+                    eventButtons.Add(start);
+                    start.type = BtnType.HoldInIt;
+                    start.note = this;
+
+                    start.Refresh();
+                    continue;
+                }
+
+                if (Math.Abs(group.Pcm + EditorManager.Instance.offset - this.endTime) <= 10 && start != null)
+                {
+                    var end = group.FindButtonById(start.Id) ?? throw new Exception("Too many event in a time");
+                    EventTrack.PaintHold(this, start, end);
+                    break;
+                }
+                else if (group.Pcm + EditorManager.Instance.offset - this.endTime > 10 && start != null)
+                {
+                    var end = EventTrack.Instance.eventGroups[group.Id - 1].FindButtonById(start.Id) ?? throw new Exception("Too many event in a time");
+                    EventTrack.PaintHold(this, start, end);
+                    break;
+                }
+            }
+        }
+
+        public void CancelRelation()
+        {
+            foreach (var btn in eventButtons)
+            {
+                btn.type = BtnType.None;
+                btn.Refresh();
+            }
+            eventButtons.Clear();
+        }
+
+        public Note Inherit(Note oldNote)
+        {
+            this.position = oldNote.position;
+            this.scale = oldNote.scale;
+
+            RefreshState();
+
+            oldNote.DeleteSelf();
+
+            return this;
+        }
+
+        public Note Copy(Note note)
+        {
+            this.position = note.position;
+            this.scale = note.scale;
+
+            RefreshState();
+
+            return this;
+        }
+
+        public Note InverseCopy(Note note)
+        {
+            this.position = new Vector2(1 - note.position.x, 1 - note.position.y);
+            this.scale = note.scale;
+
+            RefreshState();
+
+            return this;
         }
 
         public void RefreshState()
@@ -179,7 +350,11 @@ namespace Larvend
                     RefreshFlickState();
                     break;
             }
+
+            var newPos = Camera.main.ViewportToWorldPoint(this.position);
+            transform.position = new Vector3(newPos.x, newPos.y, time / 10000f);
             transform.localScale = new Vector3(scale, scale, 1);
+
             this.StopCoroutine("StartPlay");
         }
 
@@ -319,6 +494,33 @@ namespace Larvend
             }
         }
 
+        public void UpdateEndTime(int value)
+        {
+            if (type != Type.Hold)
+            {
+                return;
+            }
+            try
+            {
+                int newTime = value;
+                if (newTime >= time)
+                {
+                    endTime = newTime;
+                }
+                else
+                {
+                    endTime = time;
+                }
+                UIController.RefreshUI();
+
+                RefreshState();
+            }
+            catch (Exception e)
+            {
+                MsgBoxManager.ShowMessage(MsgType.Error, "Error", e.Message);
+            }
+        }
+
         public void UpdateEndTime(string value)
         {
             if (type != Type.Hold)
@@ -365,7 +567,7 @@ namespace Larvend
                 }
 
                 var newPos = Camera.main.ViewportToWorldPoint(this.position);
-                this.transform.position = new Vector3(newPos.x, newPos.y, 1f);
+                this.transform.position = new Vector3(newPos.x, newPos.y, time / 10000f);
 
                 UIController.RefreshUI();
             }
@@ -394,7 +596,7 @@ namespace Larvend
                 }
 
                 var newPos = Camera.main.ViewportToWorldPoint(this.position);
-                this.transform.position = new Vector3(newPos.x, newPos.y, 1f);
+                this.transform.position = new Vector3(newPos.x, newPos.y, time / 10000f);
 
                 UIController.RefreshUI();
             }
@@ -448,6 +650,7 @@ namespace Larvend
                     NoteManager.Instance.FlickNotes.Remove(this);
                     break;
             }
+            CancelRelation();
             Destroy(this.gameObject);
         }
     }

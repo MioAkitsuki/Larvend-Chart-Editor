@@ -8,7 +8,7 @@ namespace Larvend.Gameplay
     public class EditorManager : MonoBehaviour
     {
         public static EditorManager Instance { get; private set; }
-        private static AudioSource song;
+        public static AudioSource song;
         private static Info info;
         private static DifficultyInfo difficultyInfo;
 
@@ -20,7 +20,6 @@ namespace Larvend.Gameplay
 
         private int lastPcmPointer;
         
-        private static int step;
         private static int timePcmPointer;
 
         private int maxTicks;
@@ -42,6 +41,7 @@ namespace Larvend.Gameplay
             Global.IsPlaying = false;
 
             Application.wantsToQuit += WantsToQuit;
+            Application.targetFrameRate = 60;
             InitPlayerPrefs();
         }
 
@@ -245,11 +245,6 @@ namespace Larvend.Gameplay
         public static int GetMaxTicks()
         {
             return Instance.maxTicks;
-        }
-
-        public static void SetStep(double s)
-        {
-            step = (int) (Instance.BeatPCM * s);
         }
 
         public static void SetTime(int target)

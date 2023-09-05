@@ -5,7 +5,7 @@
   <EventLoadSuccess>Chart was loaded successfully.</EventLoadSuccess>
   <CreateChartSuccess>New chart has been created successfully.\nDo you want to initialize it?</CreateChartSuccess>
   <InitializeChartSuccess>Chart has been initialized successfully.</InitializeChartSuccess>
-  <InitDirectorySuccess>Directory has been initialized successfully.\nPlease manually rename the audio and album cover to "base".\nThen convert them into .ogg/.jpg and paste them into folder.</InitDirectorySuccess>
+  <InitDirectorySuccess>Directory has been initialized successfully.\nPlease manually rename the album cover to "cover".\nThen convert it into .jpg and paste it into folder.</InitDirectorySuccess>
   <SaveChartSuccess>Chart has been saved successfully.</SaveChartSuccess>
   <InitNonEmptyDirectoryAttempt>The </InitNonEmptyDirectoryAttempt>
   <LoadEmptyChartAttempt>You are loading an empty chart.\nDo you want to initialize it?</LoadEmptyChartAttempt>
