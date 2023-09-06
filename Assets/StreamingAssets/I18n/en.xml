@@ -12,7 +12,8 @@
   <LoadEmptyDirectoryAttempt>You are loading an empty directory.\nDo you want to initialize it?</LoadEmptyDirectoryAttempt>
   <ResetPrefsAttempt>Are you want to reset all preferences?</ResetPrefsAttempt>
   <UnsavedChart>There has unsaved change in chart.\nDo you want to save it?</UnsavedChart>
-  <DeleteAllNotesAlert>Are you REALLY want to delete all notes?\nThis action is irreversible!</DeleteAllNotesAlert>
+  <DeleteEvents>Do you want to delete these notes?</DeleteEvents>
+  <DeleteAllNotesAlert>Do you REALLY want to delete all notes?\nThis action is irreversible!</DeleteAllNotesAlert>
   <UnknownNoteType>Unknown note type. Please check the input.</UnknownNoteType>
   <ProjectNotFound>Didn't find any projects under the directory.</ProjectNotFound>
   <BaseBpmNonexistent>Chart Load Failed: Base BPM setting does not exist.\nPlease check the file integrity.</BaseBpmNonexistent>

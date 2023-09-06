@@ -2650,7 +2650,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &241920613
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5900,10 +5900,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   MaxTick: 0
+  CurrentGroup: {fileID: 0}
+  SelectGroups: []
   Prefabs:
   - {fileID: 4476351073278103210, guid: cfa2293086a33f84381891d79cc0964c, type: 3}
   - {fileID: 5432501909883072482, guid: f8fca52e6944d6d40a4ce0522522df65, type: 3}
-  eventGroups: []
+  EventGroups: []
 --- !u!225 &488753382
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -6925,7 +6927,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 500114485}
   m_HandleRect: {fileID: 500114484}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:

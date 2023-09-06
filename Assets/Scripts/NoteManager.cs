@@ -313,43 +313,39 @@ namespace Larvend.Gameplay
                 return null;
             }
 
-            GameObject newNote = null;
+            Note newNote = null;
 
             if (type == Type.Tap)
             {
-                newNote = Instantiate(Instance.prefabs[0], Instance.transform.GetChild(0));
-                newNote.GetComponent<Note>().InitNote(type, EditorManager.GetAudioPCMTime(), new Vector3(0.5f, 0.5f, EditorManager.GetAudioPCMTime() / 10000f));
+                newNote = Instantiate(Instance.prefabs[0], Instance.transform.GetChild(0)).GetComponent<Note>();
+                newNote.InitNote(type, EditorManager.GetAudioPCMTime(), new Vector3(0.5f, 0.5f, EditorManager.GetAudioPCMTime() / 10000f));
 
-                var newPos = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
-                newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
-                newNote.GetComponent<Note>().RefreshState();
+                newNote.RefreshState();
 
-                Instance.TapNotes.Add(newNote.GetComponent<Note>());
+                newNote.Relate();
+
+                Instance.TapNotes.Add(newNote);
             }
             else if (type == Type.Hold)
             {
-                newNote = Instantiate(Instance.prefabs[1], Instance.transform.GetChild(1));
-                newNote.GetComponent<Note>().InitNote(type, EditorManager.GetAudioPCMTime(), new Vector3(0.5f, 0.5f, EditorManager.GetAudioPCMTime() / 10000f), EditorManager.GetAudioPCMTime());
+                newNote = Instantiate(Instance.prefabs[1], Instance.transform.GetChild(1)).GetComponent<Note>();
+                newNote.InitNote(type, EditorManager.GetAudioPCMTime(), new Vector3(0.5f, 0.5f, EditorManager.GetAudioPCMTime() / 10000f), EditorManager.GetAudioPCMTime());
 
-                var newPos = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
-                newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
-                newNote.GetComponent<Note>().RefreshState();
+                newNote.RefreshState();
 
-                Instance.HoldNotes.Add(newNote.GetComponent<Note>());
+                Instance.HoldNotes.Add(newNote);
             }
             else if (type == Type.Flick)
             {
-                newNote = Instantiate(Instance.prefabs[2], Instance.transform.GetChild(2));
-                newNote.GetComponent<Note>().InitNote(type, EditorManager.GetAudioPCMTime(), new Vector3(0.5f, 0.5f, EditorManager.GetAudioPCMTime() / 10000f));
+                newNote = Instantiate(Instance.prefabs[2], Instance.transform.GetChild(2)).GetComponent<Note>();
+                newNote.InitNote(type, EditorManager.GetAudioPCMTime(), new Vector3(0.5f, 0.5f, EditorManager.GetAudioPCMTime() / 10000f));
 
-                var newPos = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
-                newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
-                newNote.GetComponent<Note>().RefreshState();
+                newNote.RefreshState();
 
-                Instance.FlickNotes.Add(newNote.GetComponent<Note>());
+                Instance.FlickNotes.Add(newNote);
             }
             Global.IsSaved = false;
-            return newNote.GetComponent<Note>();
+            return newNote;
         }
 
         public static Note CreateNote(Type type, int targetTime)
@@ -359,43 +355,37 @@ namespace Larvend.Gameplay
                 return null;
             }
 
-            GameObject newNote = null;
+            Note newNote = null;
 
             if (type == Type.Tap)
             {
-                newNote = Instantiate(Instance.prefabs[0], Instance.transform.GetChild(0));
-                newNote.GetComponent<Note>().InitNote(type, targetTime, new Vector3(0.5f, 0.5f, targetTime / 10000f));
+                newNote = Instantiate(Instance.prefabs[0], Instance.transform.GetChild(0)).GetComponent<Note>();
+                newNote.InitNote(type, targetTime, new Vector3(0.5f, 0.5f, targetTime / 10000f));
 
-                var newPos = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
-                newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
-                newNote.GetComponent<Note>().RefreshState();
+                newNote.RefreshState();
 
-                Instance.TapNotes.Add(newNote.GetComponent<Note>());
+                Instance.TapNotes.Add(newNote);
             }
             else if (type == Type.Hold)
             {
-                newNote = Instantiate(Instance.prefabs[1], Instance.transform.GetChild(1));
-                newNote.GetComponent<Note>().InitNote(type, targetTime, new Vector3(0.5f, 0.5f, targetTime / 10000f), targetTime);
+                newNote = Instantiate(Instance.prefabs[1], Instance.transform.GetChild(1)).GetComponent<Note>();
+                newNote.InitNote(type, targetTime, new Vector3(0.5f, 0.5f, targetTime / 10000f), targetTime);
 
-                var newPos = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
-                newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
-                newNote.GetComponent<Note>().RefreshState();
+                newNote.RefreshState();
 
-                Instance.HoldNotes.Add(newNote.GetComponent<Note>());
+                Instance.HoldNotes.Add(newNote);
             }
             else if (type == Type.Flick)
             {
-                newNote = Instantiate(Instance.prefabs[2], Instance.transform.GetChild(2));
-                newNote.GetComponent<Note>().InitNote(type, targetTime, new Vector3(0.5f, 0.5f, targetTime / 10000f));
+                newNote = Instantiate(Instance.prefabs[2], Instance.transform.GetChild(2)).GetComponent<Note>();
+                newNote.InitNote(type, targetTime, new Vector3(0.5f, 0.5f, targetTime / 10000f));
 
-                var newPos = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
-                newNote.transform.position = new Vector3(newPos.x, newPos.y, 1f);
-                newNote.GetComponent<Note>().RefreshState();
+                newNote.RefreshState();
 
-                Instance.FlickNotes.Add(newNote.GetComponent<Note>());
+                Instance.FlickNotes.Add(newNote);
             }
             Global.IsSaved = false;
-            return newNote.GetComponent<Note>();
+            return newNote;
         }
 
         /// <summary>
@@ -410,7 +400,6 @@ namespace Larvend.Gameplay
                 var newNote = Instantiate(Instance.prefabs[0], Instance.transform.GetChild(0)).GetComponent<Note>();
                 newNote.InitNote(line.type, line.time, line.position);
 
-                var newPos = Camera.main.ViewportToWorldPoint(line.position);
                 newNote.RefreshState();
 
                 Instance.TapNotes.Add(newNote);
@@ -420,7 +409,6 @@ namespace Larvend.Gameplay
                 var newNote = Instantiate(Instance.prefabs[1], Instance.transform.GetChild(1)).GetComponent<Note>();
                 newNote.InitNote(line.type, line.time, line.position, line.endTime);
 
-                var newPos = Camera.main.ViewportToWorldPoint(line.position);
                 newNote.RefreshState();
 
                 Instance.HoldNotes.Add(newNote);
@@ -430,7 +418,6 @@ namespace Larvend.Gameplay
                 var newNote = Instantiate(Instance.prefabs[2], Instance.transform.GetChild(2)).GetComponent<Note>();
                 newNote.InitNote(line.type, line.time, line.position);
 
-                var newPos = Camera.main.ViewportToWorldPoint(line.position);
                 newNote.RefreshState();
 
                 Instance.FlickNotes.Add(newNote);

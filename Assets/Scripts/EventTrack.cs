@@ -4,7 +4,6 @@ using TMPro;
 using Larvend.Gameplay;
 using System;
 using System.Collections.Generic;
-using UnityEngine.UIElements;
 
 namespace Larvend
 {
@@ -13,11 +12,11 @@ namespace Larvend
         public static EventTrack Instance { get; set; }
 
         public int MaxTick;
-        public int copyStart = -1;
-        public int copyEnd = -1;
-        public List<EventGroup> copyGroups;
+        public EventGroup CurrentGroup;
+        public List<EventGroup> SelectGroups;
+        public int SelectOptions;  // 0 for None, 1 for Copy and 2 for Cut.
         public GameObject[] Prefabs;
-        public List<EventGroup> eventGroups;
+        public List<EventGroup> EventGroups;
         private Transform content;
         public static bool IsHoldEditing;
         public static EventButton startButton;
@@ -26,90 +25,184 @@ namespace Larvend
         private void Start()
         {
             Instance = this;
-            eventGroups = new List<EventGroup>();
-            copyGroups = new List<EventGroup>();
+            EventGroups = new List<EventGroup>();
+            SelectGroups = new List<EventGroup>();
             content = transform.Find("Scroll View/Viewport/Content");
 
             IsHoldEditing = false;
+
+            SelectOptions = 0;
         }
 
         private void Update()
         {
-            if (Input.GetKeyUp(KeyCode.C) && !Global.IsPlaying && copyStart == -1)
+            if (Global.IsPlaying && SelectGroups.Count > 0)
             {
-                copyStart = (EditorManager.Instance.beatTick[0] - 1) * 960 + EditorManager.Instance.beatTick[1];
-            }
-            else if (Input.GetKeyUp(KeyCode.C) && !Global.IsPlaying && copyStart != -1)
-            {
-                copyEnd = (EditorManager.Instance.beatTick[0] - 1) * 960 + EditorManager.Instance.beatTick[1];
-                CopyNotes(copyStart, copyEnd);
-                copyStart = -1;
-                copyEnd = -1;
+                DeselectGroup();
             }
 
-            if (Input.GetKeyUp(KeyCode.V) && !Global.IsPlaying && copyGroups.Count > 0)
+            if (Input.GetKeyUp(KeyCode.D) && !Global.IsPlaying)
             {
-                int count = 0;
-                foreach (var group in eventGroups)
+                SelectGroup(CurrentGroup);
+            }
+            if (Input.GetKeyUp(KeyCode.Escape) && !Global.IsPlaying)
+            {
+                DeselectGroup();
+            }
+
+            if (Input.GetKeyUp(KeyCode.C) && SelectGroups.Count > 0 && !Global.IsPlaying)
+            {
+                SelectOptions = 1;
+            }
+            if (Input.GetKeyUp(KeyCode.X) && SelectGroups.Count > 0 && !Global.IsPlaying)
+            {
+                SelectOptions = 2;
+            }
+            if (Input.GetKeyUp(KeyCode.V) && !Global.IsPlaying && SelectGroups.Count > 0)
+            {
+                if (SelectOptions == 1)
                 {
-                    if (count >= copyGroups.Count)
+                    var tmp = CurrentGroup;
+                    for (int i = 0; i < SelectGroups.Count; i++)
                     {
-                        break;
+                        CurrentGroup.Copy(SelectGroups[i]);
+                        NextGroup();
                     }
-
-                    if (group.Tick - (EditorManager.Instance.beatTick[0] - 1) * 960 - EditorManager.Instance.beatTick[1] is > -5)
+                    SetCurrentGroup(tmp);
+                }
+                else if (SelectOptions == 2)
+                {
+                    var tmp = CurrentGroup;
+                    for (int i = 0; i < SelectGroups.Count; i++)
                     {
-                        group.Copy(copyGroups[count]);
-                        count++;
+                        CurrentGroup.Cut(SelectGroups[i]);
+                        NextGroup();
                     }
+                    SetCurrentGroup(tmp);
+                    SelectOptions = 0;
+                    DeselectGroup();
                 }
             }
-            if (Input.GetKeyUp(KeyCode.B) && !Global.IsPlaying && copyGroups.Count > 0)
-            {
-                int count = 0;
-                foreach (var group in eventGroups)
-                {
-                    if (count >= copyGroups.Count)
-                    {
-                        break;
-                    }
 
-                    if (group.Tick - (EditorManager.Instance.beatTick[0] - 1) * 960 - EditorManager.Instance.beatTick[1] is > -5)
+            if (Input.GetKeyUp(KeyCode.Delete) && !Global.IsPlaying && SelectGroups.Count > 0)
+            {
+                MsgBoxManager.ShowMessage(MsgType.Warning, "Warning", Localization.GetString("DeleteEvents"), () => {
+                    foreach (var group in SelectGroups)
                     {
-                        group.InverseCopy(copyGroups[count]);
-                        count++;
+                        group.ClearAll();
                     }
+                });
+            }
+
+            if (Input.GetKeyUp(KeyCode.N) && !Global.IsPlaying && SelectGroups.Count > 0)
+            {
+                foreach (var group in EventGroups)
+                {
+                    group.HorizontalMirror();
                 }
             }
-            if (Input.GetKeyUp(KeyCode.X) && !Global.IsPlaying && copyGroups.Count > 0)
+            if (Input.GetKeyUp(KeyCode.M) && !Global.IsPlaying && SelectGroups.Count > 0)
             {
-                int count = 0;
-                foreach (var group in eventGroups)
+                foreach (var group in EventGroups)
                 {
-                    if (count >= copyGroups.Count)
-                    {
-                        break;
-                    }
-
-                    if (group.Tick - (EditorManager.Instance.beatTick[0] - 1) * 960 - EditorManager.Instance.beatTick[1] is > -5)
-                    {
-                        group.Cut(copyGroups[count]);
-                        count++;
-                    }
+                    group.VerticalMirror();
                 }
             }
-        } 
+        }
 
-        private void CopyNotes(int start, int end)
+        public void NextGroup()
         {
-            copyGroups.Clear();
-            foreach (var group in eventGroups)
+            if (CurrentGroup != null && CurrentGroup.Id < EventGroups.Count - 1)
             {
-                if (group.Tick >= start - 2 && group.Tick <= end + 2)
+                SetCurrentGroup( EventGroups[CurrentGroup.Id + 1] ?? CurrentGroup );
+            }
+        }
+
+        public void PrevGroup()
+        {
+            if (CurrentGroup != null && CurrentGroup.Id > 0)
+            {
+                SetCurrentGroup( EventGroups[CurrentGroup.Id - 1] ?? CurrentGroup );
+            }
+        }
+
+        public void LocateGroupByTick(int tick)
+        {
+            foreach (var group in EventGroups)
+            {
+                if (Math.Abs(tick - group.Tick) <= 2)
                 {
-                    copyGroups.Add(group);
+                    SetCurrentGroup(group);
+                    return;
+                }
+
+                if (group.Tick - tick > 2)
+                {
+                    SetCurrentGroup(group.PrevGroup());
+                    return;
                 }
             }
+        }
+
+        public EventGroup FindGroupByTick(int tick)
+        {
+            foreach (var group in EventGroups)
+            {
+                if (Math.Abs(group.Tick - tick) < 2)
+                {
+                    return group;
+                }
+
+                if (group.Tick > tick + 120)
+                {
+                    return null;
+                }
+            }
+            
+            return null;
+        }
+
+        private void SelectGroup(EventGroup target)
+        {
+            if (SelectGroups.Count > 1)
+            {
+                DeselectGroup();
+                SelectGroups.Add(target);
+                target.IsSelected.SetActive(true);
+            }
+            else if (SelectGroups.Count == 1)
+            {
+                if (SelectGroups[0].Id > target.Id)
+                {
+                    for (int i = target.Id; i <= SelectGroups[0].Id - 1; i++)
+                    {
+                        SelectGroups.Add(EventGroups[i]);
+                        EventGroups[i].IsSelected.SetActive(true);
+                    }
+                }
+                else if (SelectGroups[0].Id < target.Id)
+                {
+                    for (int i = SelectGroups[0].Id + 1; i <= target.Id; i++)
+                    {
+                        SelectGroups.Add(EventGroups[i]);
+                        EventGroups[i].IsSelected.SetActive(true);
+                    }
+                }
+            }
+            else
+            {
+                SelectGroups.Add(target);
+                target.IsSelected.SetActive(true);
+            }
+        }
+        
+        private void DeselectGroup()
+        {
+            foreach (var group in SelectGroups)
+            {
+                group.IsSelected.SetActive(false);
+            }
+            SelectGroups.Clear();
         }
 
         public static void RefreshPanel()
@@ -118,6 +211,7 @@ namespace Larvend
             int step = Int32.Parse(UIController.Instance.stepInputField.text);
 
             Instance.DeleteAll();
+            Instance.DeselectGroup();
 
             while (ticks < maxTicks)
             {
@@ -130,8 +224,19 @@ namespace Larvend
             }
 
             Instance.MaxTick = ticks;
+            Instance.SetCurrentGroup(Instance.EventGroups[0]);
 
             NoteManager.ReRelateAllNotes();
+        }
+
+        public void SetCurrentGroup(EventGroup target)
+        {
+            if (CurrentGroup)
+            {
+                CurrentGroup.image.color = Color.white;
+            }
+            CurrentGroup = target;
+            CurrentGroup.image.color = Color.red;
         }
 
         private void DeleteAll()
@@ -140,7 +245,7 @@ namespace Larvend
             {
                 Destroy(content.GetChild(i).gameObject);
             }
-            eventGroups.Clear();
+            EventGroups.Clear();
         }
 
         private void GenerateBar(int ticks)
@@ -153,9 +258,9 @@ namespace Larvend
         {
             GameObject group = Instantiate(Prefabs[1], content);
             var newEventGroup = group.GetComponent<EventGroup>();
-            newEventGroup.InitGroup(eventGroups.Count, ticks, FromTickToPcm(ticks));
+            newEventGroup.InitGroup(EventGroups.Count, ticks, FromTickToPcm(ticks));
 
-            eventGroups.Add(newEventGroup);
+            EventGroups.Add(newEventGroup);
         }
         
         public static void GenerateHold()
@@ -166,7 +271,7 @@ namespace Larvend
             note.UpdateEndTime(endButton.group.Pcm + EditorManager.Instance.offset);
             for (int i = startButton.group.Id + 1; i <= endButton.group.Id; i++)
             {
-                var btn = Instance.eventGroups[i].transform.Find($"{startButton.Id}").GetComponent<EventButton>();
+                var btn = Instance.EventGroups[i].transform.Find($"{startButton.Id}").GetComponent<EventButton>();
                 note.Relate(btn, BtnType.Holding);
             }
         }
@@ -175,7 +280,7 @@ namespace Larvend
         {
             for (int i = start.group.Id + 1; i <= end.group.Id; i++)
             {
-                var btn = Instance.eventGroups[i].transform.Find($"{start.Id}").GetComponent<EventButton>();
+                var btn = Instance.EventGroups[i].transform.Find($"{start.Id}").GetComponent<EventButton>();
                 note.Relate(btn, BtnType.Holding);
             }
         }

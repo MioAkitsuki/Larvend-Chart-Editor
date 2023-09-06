@@ -173,6 +173,16 @@ namespace Larvend
             }
         }
 
+        public void DeleteSelf()
+        {
+            type = BtnType.None;
+            if (note != null)
+            {
+                note.DeleteSelf();
+                note = null;
+            }
+        }
+
         public void InitButton()
         {
             type = BtnType.None;

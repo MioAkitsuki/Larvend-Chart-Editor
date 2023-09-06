@@ -274,17 +274,6 @@ namespace Larvend.Gameplay
             Global.IsEventTrackOn = false;
 
             eventTrack.normalizedPosition = new Vector2(0, 1);
-            // eventTrack.onValueChanged.AddListener((value) => {
-            //     int[] currentBeatTick = Instance.GetBeatTick(EditorManager.GetAudioPCMTime() - EditorManager.Instance.offset);
-            //     if (value.y < 1 - ((currentBeatTick[0] - 1) * 960 + currentBeatTick[1]) / (float) EventTrack.Instance.MaxTick)
-            //     {
-            //         StepForward(Mathf.RoundToInt(960f / Int32.Parse(stepInputField.text)));
-            //     }
-            //     else
-            //     {
-            //         StepBackward(Mathf.RoundToInt(960f / Int32.Parse(stepInputField.text)));
-            //     }
-            // });
 
             showGridButton.gameObject.GetComponent<Image>().color = Color.white;
             enableAbsorptionButton.gameObject.GetComponent<Image>().color = Color.white;
@@ -309,7 +298,7 @@ namespace Larvend.Gameplay
 
             stepInputField.onSelect.AddListener(value => {previousStep = value;});
             stepInputField.onEndEdit.AddListener(value => {
-                if (Int32.TryParse(value, out int result) && !Global.IsPlaying)
+                if (Int32.TryParse(value, out int result) && !Global.IsPlaying && result is >0 and <=160)
                 {
                     RefreshStep(result);
                 }
@@ -411,6 +400,15 @@ namespace Larvend.Gameplay
             if ((Input.GetKeyUp(KeyCode.LeftArrow) || Input.GetAxis("Mouse ScrollWheel") < 0) && Global.IsAudioLoaded && !Global.IsPlaying && !Global.IsDialoging && !Global.IsEditing)
             {
                 StepBackward(Mathf.RoundToInt(960f / Int32.Parse(stepInputField.text)));
+            }
+
+            if (Input.GetKeyUp(KeyCode.DownArrow) && Global.IsAudioLoaded && !Global.IsPlaying && !Global.IsDialoging && !Global.IsEditing)
+            {
+                StepForward();
+            }
+            if (Input.GetKeyUp(KeyCode.UpArrow) && Global.IsAudioLoaded && !Global.IsPlaying && !Global.IsDialoging && !Global.IsEditing)
+            {
+                StepBackward();
             }
 
             if (Input.GetKeyUp(KeyCode.S) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing)
@@ -538,7 +536,20 @@ namespace Larvend.Gameplay
 
             int[] currentBeatTick = Instance.GetBeatTick(EditorManager.GetAudioPCMTime() - EditorManager.Instance.offset);
             Instance.beatInfo.SetText($"{currentBeatTick[0]}: {currentBeatTick[1].ToString().PadLeft(3, '0')}");
-            Instance.eventTrack.normalizedPosition = new Vector2(0, 1 - ((currentBeatTick[0] - 1) * 960 + currentBeatTick[1]) / (float) EventTrack.Instance.MaxTick);
+            int currentTick = (currentBeatTick[0] - 1) * 960 + currentBeatTick[1];
+            Instance.eventTrack.normalizedPosition = new Vector2(0, 1 - currentTick / (float) EventTrack.Instance.MaxTick);
+
+            if (Global.IsPlaying)
+            {
+                if (currentTick - EventTrack.Instance.CurrentGroup.Tick > 960 / Int32.Parse(Instance.stepInputField.text))
+                {
+                    EventTrack.Instance.NextGroup();
+                }
+            }
+            else
+            {
+                EventTrack.Instance.LocateGroupByTick(currentTick);
+            }
 
             if (!Instance.notePanel.gameObject.activeSelf || Instance.selectedNote == null) return;
 
@@ -1115,10 +1126,14 @@ namespace Larvend.Gameplay
         {
             if (!Global.IsSaved)
             {
-                MsgBoxManager.ShowMessage(MsgType.Warning, "Warning", Localization.GetString("UnsavedChart"),
-                    delegate()
-                    {
+                MsgBoxManager.ShowMessage(MsgType.Warning, "Warning", Localization.GetString("UnsavedChart"), delegate() {
                         EditorManager.SaveProject();
+                        EditorManager.SwitchDifficulty(diff);
+                        difficultySelector.options[diff].text = Enum.GetName(typeof(Difficulties), diff);
+                        difficultySelector.gameObject.transform.Find("Label").GetComponent<TMP_Text>().text = Enum.GetName(typeof(Difficulties), diff);
+                    }, delegate()
+                    {
+                        Global.IsSaved = true;
                         EditorManager.SwitchDifficulty(diff);
                         difficultySelector.options[diff].text = Enum.GetName(typeof(Difficulties), diff);
                         difficultySelector.gameObject.transform.Find("Label").GetComponent<TMP_Text>().text = Enum.GetName(typeof(Difficulties), diff);

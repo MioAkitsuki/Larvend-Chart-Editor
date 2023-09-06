@@ -85,22 +85,22 @@ namespace Larvend
         private IEnumerator OnMouseUp()
         {
             bool flag = false;
-            if (this.position.x < 0.1f)
+            if (this.position.x < 0.05f)
             {
                 this.position.x = 0.1f;
                 flag = true;
             }
-            else if (this.position.x > 0.9f)
+            else if (this.position.x > 0.95f)
             {
                 this.position.x = 0.9f;
                 flag = true;
             }
-            if (this.position.y < 0.2f)
+            if (this.position.y < 0.15f)
             {
                 this.position.y = 0.2f;
                 flag = true;
             }
-            else if (this.position.y > 0.8f)
+            else if (this.position.y > 0.85f)
             {
                 this.position.y = 0.8f;
                 flag = true;
@@ -184,7 +184,7 @@ namespace Larvend
         {
             if (type is Type.Tap or Type.Flick)
             {
-                foreach (var group in EventTrack.Instance.eventGroups)
+                foreach (var group in EventTrack.Instance.EventGroups)
                 {
                     if (Math.Abs(group.Pcm + EditorManager.Instance.offset - this.time) <= 10)
                     {
@@ -206,7 +206,7 @@ namespace Larvend
                     }
                     else if (group.Pcm + EditorManager.Instance.offset - this.time > 10)
                     {
-                        var btn = EventTrack.Instance.eventGroups[group.Id - 1].FindFirstEmptyButton() ?? throw new Exception("Too many event in a time");
+                        var btn = EventTrack.Instance.EventGroups[group.Id - 1].FindFirstEmptyButton() ?? throw new Exception("Too many event in a time");
                         eventButtons.Add(btn);
                         switch (type)
                         {
@@ -228,7 +228,7 @@ namespace Larvend
 
             if (time == endTime)
             {
-                foreach (var group in EventTrack.Instance.eventGroups)
+                foreach (var group in EventTrack.Instance.EventGroups)
                 {
                     if (Math.Abs(group.Pcm + EditorManager.Instance.offset - this.time) <= 10)
                     {
@@ -242,7 +242,7 @@ namespace Larvend
                     }
                     else if (group.Pcm + EditorManager.Instance.offset - this.time > 10)
                     {
-                        var note = EventTrack.Instance.eventGroups[group.Id - 1].FindFirstEmptyButton() ?? throw new Exception("Too many event in a time");
+                        var note = EventTrack.Instance.EventGroups[group.Id - 1].FindFirstEmptyButton() ?? throw new Exception("Too many event in a time");
                         eventButtons.Add(note);
                         note.type = BtnType.HoldInIt;
                         note.note = this;
@@ -256,7 +256,7 @@ namespace Larvend
 
             EventButton start = null;
             
-            foreach (var group in EventTrack.Instance.eventGroups)
+            foreach (var group in EventTrack.Instance.EventGroups)
             {
                 if (Math.Abs(group.Pcm + EditorManager.Instance.offset - this.time) <= 10 && start == null)
                 {
@@ -270,7 +270,7 @@ namespace Larvend
                 }
                 else if (group.Pcm + EditorManager.Instance.offset - this.time > 10 && start == null)
                 {
-                    start = EventTrack.Instance.eventGroups[group.Id - 1].FindFirstEmptyButton() ?? throw new Exception("Too many event in a time");
+                    start = EventTrack.Instance.EventGroups[group.Id - 1].FindFirstEmptyButton() ?? throw new Exception("Too many event in a time");
                     eventButtons.Add(start);
                     start.type = BtnType.HoldInIt;
                     start.note = this;
@@ -287,7 +287,7 @@ namespace Larvend
                 }
                 else if (group.Pcm + EditorManager.Instance.offset - this.endTime > 10 && start != null)
                 {
-                    var end = EventTrack.Instance.eventGroups[group.Id - 1].FindButtonById(start.Id) ?? throw new Exception("Too many event in a time");
+                    var end = EventTrack.Instance.EventGroups[group.Id - 1].FindButtonById(start.Id) ?? throw new Exception("Too many event in a time");
                     EventTrack.PaintHold(this, start, end);
                     break;
                 }
@@ -326,10 +326,18 @@ namespace Larvend
             return this;
         }
 
-        public Note InverseCopy(Note note)
+        public Note HorizontalMirror()
         {
-            this.position = new Vector2(1 - note.position.x, 1 - note.position.y);
-            this.scale = note.scale;
+            this.position = new Vector2(1 - position.x, position.y);
+
+            RefreshState();
+
+            return this;
+        }
+
+        public Note VerticalMirror()
+        {
+            this.position = new Vector2(position.x, 1 - position.y);
 
             RefreshState();
 

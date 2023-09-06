@@ -11,6 +11,7 @@
   <LoadEmptyDirectoryAttempt>所选文件夹为空，是否要初始化该文件夹？</LoadEmptyDirectoryAttempt>
   <ResetPrefsAttempt>您确定要重置所有偏好设置吗？</ResetPrefsAttempt>
   <UnsavedChart>谱面有更改未保存，您希望保存吗？</UnsavedChart>
+  <DeleteEvents>您真的要删除这些音符吗？</DeleteEvents>
   <DeleteAllNotesAlert>您真的要清空所有音符吗？该操作不可撤销</DeleteAllNotesAlert>
   <UnknownNoteType>未知的音符类型，请检查谱面输入</UnknownNoteType>
   <ProjectNotFound>未在所选文件夹下找到已有工程</ProjectNotFound>

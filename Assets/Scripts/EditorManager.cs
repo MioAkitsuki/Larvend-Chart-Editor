@@ -49,6 +49,7 @@ namespace Larvend.Gameplay
         {
             if (Input.GetKeyDown(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing && !Global.IsPlaying)
             {
+                Global.IsPlaying = true;
                 song.timeSamples = timePcmPointer + offset;
                 Instance.lastPcmPointer = timePcmPointer;
             }
@@ -58,6 +59,7 @@ namespace Larvend.Gameplay
             }
             if (Input.GetKeyUp(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing && Global.IsPlaying)
             {
+                Global.IsPlaying = false;
                 timePcmPointer = Instance.lastPcmPointer;
                 song.timeSamples = timePcmPointer + offset;
                 UIController.RefreshUI();
