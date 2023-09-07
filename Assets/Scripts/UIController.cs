@@ -420,13 +420,13 @@ namespace Larvend.Gameplay
             {
                 Collider2D col = Physics2D.OverlapPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition), LayerMask.GetMask("Note"));
 
-                if (col != null)
+                if (col != null && col.enabled)
                 {
                     Note note = col.gameObject.GetComponent<Note>();
                     selectedNote = note;
                 }
 
-                if (selectedNote != null && col != null)
+                if (selectedNote != null && col != null && col.enabled)
                 {
                     typeSelector.value = (int)selectedNote.type;
                     timeInput.text = $"{selectedNote.time}";
@@ -550,7 +550,8 @@ namespace Larvend.Gameplay
             {
                 EventTrack.Instance.LocateGroupByTick(currentTick);
             }
-
+            UpdateBpmUI();
+            
             if (!Instance.notePanel.gameObject.activeSelf || Instance.selectedNote == null) return;
 
             Instance.timeInput.text = $"{Instance.selectedNote.time}";
@@ -1219,7 +1220,14 @@ namespace Larvend.Gameplay
 
         public static void UpdateBpmUI()
         {
-            Instance.currentBPMStatus.SetText(EditorManager.GetBPM().ToString());
+            foreach (var item in NoteManager.Instance.PcmDict)
+            {
+                if (item.Key.IsIn(EditorManager.Instance.beatTick[0] + EditorManager.Instance.beatTick[1] / 960f))
+                {
+                    Instance.currentBPMStatus.SetText( $"{44100 * 60f / item.Value:N2}" );
+                }
+            }
+            // Instance.currentBPMStatus.SetText(EditorManager.GetBPM().ToString());
         }
 
         public static void InitAlbumCover(Sprite sprite)

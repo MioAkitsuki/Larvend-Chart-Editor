@@ -29,6 +29,7 @@ namespace Larvend
         public List<EventButton> eventButtons;
 
         private Animator _animator;
+        private Collider2D _collider;
         public bool isDisplaying;
 
         private void Awake()
@@ -36,6 +37,9 @@ namespace Larvend
             _animator = this.GetComponent<Animator>();
             _animator.enabled = true;
             _animator.speed = 0;
+
+            _collider = GetComponent<Collider2D>();
+            _collider.enabled = false;
 
             eventButtons = new List<EventButton>();
 
@@ -388,6 +392,12 @@ namespace Larvend
                 return;
             }
 
+            _collider.enabled = false;
+            if (proportion is >-0.5f and <0.3f)
+            {
+                _collider.enabled = true;
+            }
+
             isDisplaying = true;
             this.gameObject.SetActive(true);
             _animator.enabled = true;
@@ -422,6 +432,12 @@ namespace Larvend
                 isDisplaying = false;
                 this.gameObject.SetActive(false);
                 return;
+            }
+
+            _collider.enabled = false;
+            if (proportion is >-0.5f and <0.3f)
+            {
+                _collider.enabled = true;
             }
 
             isDisplaying = true;
@@ -460,6 +476,12 @@ namespace Larvend
                 isDisplaying = false;
                 this.gameObject.SetActive(false);
                 return;
+            }
+
+            _collider.enabled = false;
+            if (proportion > -0.5f && sustainProportion < 0.9f)
+            {
+                _collider.enabled = true;
             }
 
             isDisplaying = true;

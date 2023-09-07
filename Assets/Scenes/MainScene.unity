@@ -5902,6 +5902,7 @@ MonoBehaviour:
   MaxTick: 0
   CurrentGroup: {fileID: 0}
   SelectGroups: []
+  SelectOptions: 0
   Prefabs:
   - {fileID: 4476351073278103210, guid: cfa2293086a33f84381891d79cc0964c, type: 3}
   - {fileID: 5432501909883072482, guid: f8fca52e6944d6d40a4ce0522522df65, type: 3}
@@ -6927,7 +6928,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 500114485}
   m_HandleRect: {fileID: 500114484}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -17774,7 +17775,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: 0, y: 903}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1457388452
@@ -20677,7 +20678,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 693148c5027ea2146ba4f4d9f6a4eae5, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.92156863}
+  m_Color: {r: 0.8867924, g: 0.8867924, b: 0.8867924, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

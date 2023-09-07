@@ -49,7 +49,6 @@ namespace Larvend.Gameplay
         {
             if (Input.GetKeyDown(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing && !Global.IsPlaying)
             {
-                Global.IsPlaying = true;
                 song.timeSamples = timePcmPointer + offset;
                 Instance.lastPcmPointer = timePcmPointer;
             }
@@ -363,8 +362,6 @@ namespace Larvend.Gameplay
         {
             Instance.BPM = targetBpm;
             Instance.BeatPCM = (int)(44100 * (60f / targetBpm));
-
-            UIController.UpdateBpmUI();
         }
 
         /// <summary>
@@ -381,8 +378,6 @@ namespace Larvend.Gameplay
             {
                 BPM = targetBPM;
                 BeatPCM = (int)(44100 * (60f / targetBPM));
-
-                UIController.UpdateBpmUI();
             }
             else
             {
@@ -398,14 +393,12 @@ namespace Larvend.Gameplay
                 BPM = Mathf.Lerp(initialBPM, targetBPM, (float)time / deltaTime);
                 BeatPCM = (int)(44100 * (60f / BPM));
 
-                UIController.UpdateBpmUI();
                 yield return new WaitForFixedUpdate();
             }
 
             BPM = targetBPM;
             BeatPCM = (int)(44100 * (60f / targetBPM));
 
-            UIController.UpdateBpmUI();
             yield break;
         }
     }

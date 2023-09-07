@@ -44,7 +44,6 @@ namespace Larvend
 
         public EventGroup PrevGroup()
         {
-            Debug.Log($"{Id}, {EventTrack.Instance.EventGroups[Id - 1]}");
             if (Id > 0)
             {
                 return EventTrack.Instance.EventGroups[Id - 1] ?? this;

@@ -65,6 +65,8 @@ namespace Larvend.Gameplay
         private void Awake()
         {
             Instance = this;
+            UnplayedNotes = new();
+            UnplayedSpeedAdjusts = new();
             TapNotes = new();
             HoldNotes = new();
             FlickNotes = new();
@@ -265,16 +267,16 @@ namespace Larvend.Gameplay
                         continue;
                     }
 
-                    if (Instance.SpeedAdjust[i].time == Instance.SpeedAdjust[i].endTime)
+                    if (Instance.SpeedAdjust[i].time == Instance.SpeedAdjust[i].endTime)  // Shear
                     {
                         upper = Mathf.RoundToInt((Instance.SpeedAdjust[i].time - Instance.SpeedAdjust[i - 1].endTime) / (44100 * 60f / Instance.SpeedAdjust[i - 1].targetBpm)) + lower;
                         Instance.PcmDict.Add(new BeatRange(lower, upper + 1), (int)(44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm)));
                         Debug.Log($"{i}. ({lower}, {upper}, {(int) (44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm))})");
                         lower = upper + 1;
                     }
-                    else
+                    else  // Linear Update
                     {
-                        upper = lower + 1;
+                        upper = lower + Instance.SpeedAdjust[i].sustainSection;
                         Instance.PcmDict.Add(new BeatRange(lower, upper + 1, true), Instance.SpeedAdjust[i].endTime - Instance.SpeedAdjust[i].time);
                         Debug.Log($"{i}. ({lower}, {upper}, {Instance.SpeedAdjust[i].endTime - Instance.SpeedAdjust[i].time})");
                         lower = upper + 1;
@@ -290,11 +292,11 @@ namespace Larvend.Gameplay
                 }
                 else
                 {
-                    Instance.PcmDict.Add(new BeatRange(lower, lower + 1, true), Instance.SpeedAdjust[i - 1].endTime - Instance.SpeedAdjust[i - 1].time);
+                    Instance.PcmDict.Add(new BeatRange(lower, lower + Instance.SpeedAdjust[i - 1].sustainSection, true), Instance.SpeedAdjust[i - 1].endTime - Instance.SpeedAdjust[i - 1].time);
                     Debug.Log($"{i}. ({lower}, {lower+1}, {Instance.SpeedAdjust[i - 1].endTime - Instance.SpeedAdjust[i - 1].time})");
 
-                    upper = (EditorManager.GetAudioPCMLength() - Instance.SpeedAdjust[i - 1].endTime) / (44100 * 60f / Instance.SpeedAdjust[i - 1].targetBpm) + lower + 1;
-                    Instance.PcmDict.Add(new BeatRange(lower + 1, upper + 1), (int)(44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm)));
+                    upper = (EditorManager.GetAudioPCMLength() - Instance.SpeedAdjust[i - 1].endTime) / (44100 * 60f / Instance.SpeedAdjust[i - 1].targetBpm) + lower + Instance.SpeedAdjust[i - 1].sustainSection;
+                    Instance.PcmDict.Add(new BeatRange(lower + Instance.SpeedAdjust[i - 1].sustainSection, upper + 1), (int)(44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm)));
                     Debug.Log($"{i+1}. ({lower+1}, {upper}, {(int) (44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm))})");
                 }
 
