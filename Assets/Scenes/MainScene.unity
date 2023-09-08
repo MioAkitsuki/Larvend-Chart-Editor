@@ -2039,6 +2039,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   vel: []
+  materials:
+  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: f30524329aaab8c47b23f7612d459e50, type: 2}
   stepInputField: {fileID: 0}
   isSpeedInputChanged: 0
   playAndPause:
@@ -6683,7 +6686,7 @@ Camera:
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 87
+    m_Bits: 215
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -6928,7 +6931,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 500114485}
   m_HandleRect: {fileID: 500114484}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -9575,8 +9578,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 0
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: dc36b3fdc14f47ebb36fd484a67e268a, type: 2}
-  m_sharedMaterial: {fileID: 2140032, guid: dc36b3fdc14f47ebb36fd484a67e268a, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: b2c66fa495cb6e24d8f1d6bc8389ddf4, type: 2}
+  m_sharedMaterial: {fileID: -3559264281997184467, guid: b2c66fa495cb6e24d8f1d6bc8389ddf4, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -17775,7 +17778,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 903}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1457388452

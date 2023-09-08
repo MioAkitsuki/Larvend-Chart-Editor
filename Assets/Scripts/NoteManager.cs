@@ -112,7 +112,7 @@ namespace Larvend.Gameplay
                     }
                 }
             }
-            if (Input.GetKeyUp(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing && Global.IsPlaying)
+            if (Input.GetKeyUp(KeyCode.Space) && Global.IsAudioLoaded && !Global.IsDialoging && !Global.IsEditing)
             {
                 EditorManager.Stop();
                 RefreshAllNotes();

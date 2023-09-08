@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 1772447627696121043}
   - component: {fileID: 5989314193037735341}
   - component: {fileID: 9012687346570450303}
-  m_Layer: 6
+  m_Layer: 7
   m_Name: Hold_New
   m_TagString: Notes
   m_Icon: {fileID: 0}
@@ -26,9 +26,9 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 827632966281326471}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.7, y: 0.7, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5086638300944235582}
@@ -70,7 +70,7 @@ CircleCollider2D:
   m_UsedByComposite: 0
   m_Offset: {x: 0, y: 0}
   serializedVersion: 2
-  m_Radius: 0.8
+  m_Radius: 0.85
 --- !u!114 &9012687346570450303
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -101,7 +101,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5086638300944235582}
   - component: {fileID: 2491750831063243123}
-  m_Layer: 6
+  m_Layer: 7
   m_Name: Sprite
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -117,7 +117,7 @@ Transform:
   m_GameObject: {fileID: 8328609538100336572}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.4, y: 0.4, z: 1}
+  m_LocalScale: {x: 0.25, y: 0.25, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 9196996800478801873}

@@ -15,6 +15,7 @@ namespace Larvend.Gameplay
     {
         public static UIController Instance { get; private set; }
         public float[] vel;
+        public Material[] materials;
 
         private GameObject gridPanel;
 
@@ -351,8 +352,11 @@ namespace Larvend.Gameplay
             scaleInput.onSelect.AddListener((value) => Global.IsEditing = true);
             closeNotePanel.onClick.AddListener(() =>
             {
+                selectedNote.GetComponentInChildren<SpriteRenderer>().material = materials[0];
+                selectedNote = null;
                 notePanel.gameObject.SetActive(false);
                 Global.IsDialoging = false;
+                Global.IsEditing = false;
             });
 
             // UI under Play Controller
@@ -423,11 +427,16 @@ namespace Larvend.Gameplay
                 if (col != null && col.enabled)
                 {
                     Note note = col.gameObject.GetComponent<Note>();
+                    if (selectedNote)
+                    {
+                        selectedNote.GetComponentInChildren<SpriteRenderer>().material = materials[0];
+                    }
                     selectedNote = note;
                 }
 
                 if (selectedNote != null && col != null && col.enabled)
                 {
+                    selectedNote.GetComponentInChildren<SpriteRenderer>().material = materials[1];
                     typeSelector.value = (int)selectedNote.type;
                     timeInput.text = $"{selectedNote.time}";
                     posXInput.text = $"{selectedNote.position.x:N2}";
@@ -516,6 +525,7 @@ namespace Larvend.Gameplay
                 {
                     if (notePanel.gameObject.activeSelf)
                     {
+                        selectedNote.GetComponentInChildren<SpriteRenderer>().material = materials[0];
                         notePanel.gameObject.SetActive(false);
                         selectedNote = null;
                         Global.IsDialoging = false;

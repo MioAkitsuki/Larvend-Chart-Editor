@@ -65,20 +65,18 @@ namespace Larvend
                     var tmp = CurrentGroup;
                     for (int i = 0; i < SelectGroups.Count; i++)
                     {
-                        CurrentGroup.Copy(SelectGroups[i]);
-                        NextGroup();
+                        tmp.Copy(SelectGroups[i]);
+                        tmp = tmp.NextGroup();
                     }
-                    SetCurrentGroup(tmp);
                 }
                 else if (SelectOptions == 2)
                 {
                     var tmp = CurrentGroup;
                     for (int i = 0; i < SelectGroups.Count; i++)
                     {
-                        CurrentGroup.Cut(SelectGroups[i]);
-                        NextGroup();
+                        tmp.Cut(SelectGroups[i]);
+                        tmp = tmp.NextGroup();
                     }
-                    SetCurrentGroup(tmp);
                     SelectOptions = 0;
                     DeselectGroup();
                 }
@@ -96,14 +94,14 @@ namespace Larvend
 
             if (Input.GetKeyUp(KeyCode.N) && !Global.IsPlaying && SelectGroups.Count > 0)
             {
-                foreach (var group in EventGroups)
+                foreach (var group in SelectGroups)
                 {
                     group.HorizontalMirror();
                 }
             }
             if (Input.GetKeyUp(KeyCode.M) && !Global.IsPlaying && SelectGroups.Count > 0)
             {
-                foreach (var group in EventGroups)
+                foreach (var group in SelectGroups)
                 {
                     group.VerticalMirror();
                 }
@@ -280,7 +278,13 @@ namespace Larvend
         {
             for (int i = start.group.Id + 1; i <= end.group.Id; i++)
             {
-                var btn = Instance.EventGroups[i].transform.Find($"{start.Id}").GetComponent<EventButton>();
+                var btn = Instance.EventGroups[i].FindButtonById(start.Id);
+                if (btn.type != BtnType.None)
+                {
+                    btn.note.CancelRelation();
+                    btn.note.Relate(btn.group.FindFirstEmptyButton(), btn.type);
+                    btn.CancelRelation();
+                }
                 note.Relate(btn, BtnType.Holding);
             }
         }

@@ -173,6 +173,21 @@ namespace Larvend
             }
         }
 
+        public EventButton Next()
+        {
+            if (Id < 6)
+            {
+                return group.buttons[Id + 1];
+            }
+            return null;
+        }
+
+        public void CancelRelation()
+        {
+            type = BtnType.None;
+            note = null;
+        }
+
         public void DeleteSelf()
         {
             type = BtnType.None;

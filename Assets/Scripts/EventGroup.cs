@@ -59,12 +59,12 @@ namespace Larvend
                 {
                     var note = NoteManager.CreateNote(button.note.type, Pcm + EditorManager.Instance.offset).Copy(button.note);
                     var targetButton = FindFirstEmptyButton();
+                    note.Relate(targetButton, button.type);
                     if (button.type == BtnType.Hold)
                     {
                         note.UpdateEndTime(Pcm + EditorManager.Instance.offset + button.note.endTime - button.note.time);
-                        EventTrack.PaintHold(note, targetButton, EventTrack.Instance.EventGroups[Id + button.note.eventButtons.Count].FindButtonById(targetButton.Id));
+                        EventTrack.PaintHold(note, targetButton, EventTrack.Instance.EventGroups[Id + button.note.eventButtons.Count - 1].FindButtonById(targetButton.Id));
                     }
-                    note.Relate(targetButton, button.type);
                     button.note.DeleteSelf();
                 }
             }
@@ -78,12 +78,12 @@ namespace Larvend
                 {
                     var note = NoteManager.CreateNote(button.note.type, Pcm + EditorManager.Instance.offset).Copy(button.note);
                     var targetButton = FindFirstEmptyButton();
+                    note.Relate(targetButton, button.type);
                     if (button.type == BtnType.Hold)
                     {
                         note.UpdateEndTime(Pcm + EditorManager.Instance.offset + button.note.endTime - button.note.time);
-                        EventTrack.PaintHold(note, targetButton, EventTrack.Instance.EventGroups[Id + button.note.eventButtons.Count].FindButtonById(targetButton.Id));
+                        EventTrack.PaintHold(note, targetButton, EventTrack.Instance.EventGroups[Id + button.note.eventButtons.Count - 1].FindButtonById(targetButton.Id));
                     }
-                    note.Relate(targetButton, button.type);
                 }
             }
         }
@@ -116,6 +116,18 @@ namespace Larvend
             {
                 button.DeleteSelf();
             }
+        }
+
+        public bool IsEmpty()
+        {
+            foreach (var button in buttons)
+            {
+                if (button.type != BtnType.None)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         public EventButton FindFirstEmptyButton()

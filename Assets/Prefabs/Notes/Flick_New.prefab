@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7487496266758849995}
   - component: {fileID: 3128256784273249899}
-  m_Layer: 6
+  m_Layer: 7
   m_Name: Sprite
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -26,7 +26,7 @@ Transform:
   m_GameObject: {fileID: 1792429923367547719}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.4, y: 0.4, z: 1}
+  m_LocalScale: {x: 0.3, y: 0.3, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2038134163721758135}
@@ -96,7 +96,7 @@ GameObject:
   - component: {fileID: 6810895745790282338}
   - component: {fileID: 6810895745790282339}
   - component: {fileID: 1372526918489971438}
-  m_Layer: 6
+  m_Layer: 7
   m_Name: Flick_New
   m_TagString: Notes
   m_Icon: {fileID: 0}
@@ -112,7 +112,7 @@ Transform:
   m_GameObject: {fileID: 4360741114837972110}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.8, y: 0.8, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7487496266758849995}
@@ -144,10 +144,10 @@ PolygonCollider2D:
   m_AutoTiling: 0
   m_Points:
     m_Paths:
-    - - {x: 0.8, y: 0}
-      - {x: 0, y: 0.8}
-      - {x: -0.8, y: 0}
-      - {x: 0, y: -0.8}
+    - - {x: 0.8, y: -0.05}
+      - {x: -0.025, y: 0.8}
+      - {x: -0.85, y: -0.05}
+      - {x: -0.025, y: -0.85}
 --- !u!95 &6810895745790282339
 Animator:
   serializedVersion: 5

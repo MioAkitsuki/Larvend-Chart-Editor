@@ -6,6 +6,7 @@ using Larvend.Gameplay;
 using UnityEngine;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
+using System.Data.SqlTypes;
 
 namespace Larvend
 {
@@ -158,6 +159,13 @@ namespace Larvend
 
             while (_animator.enabled)
             {
+                if (type == Type.Hold && time == endTime && EditorManager.GetAudioPCMTime() > endTime)
+                {
+                    _animator.Play("Hold_Appear", 0, 0f);
+                    _animator.speed = 0;
+                    _animator.enabled = false;
+                    gameObject.SetActive(false);
+                }
                 if ((_animator.GetCurrentAnimatorStateInfo(0).IsTag("Appear") && this.type == Type.Hold && _animator.GetCurrentAnimatorStateInfo(0).normalizedTime > 0.95) ||
                     _animator.GetCurrentAnimatorStateInfo(0).IsTag("Disappear") && this.type == Type.Hold && _animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 0.05)
                 {
@@ -463,7 +471,36 @@ namespace Larvend
 
             int deltaTime = EditorManager.GetAudioPCMTime() - time;
             int deltaSustainTime = endTime - time;
+            
             float proportion = deltaTime / 44100f / (60f / EditorManager.GetBPM());
+
+            if (deltaSustainTime == 0)
+            {
+                if (proportion < -1 || proportion > 0)
+                {
+                    if (!isDisplaying)
+                    {
+                        return;
+                    }
+                    _collider.enabled = false;
+                    _animator.Play("Hold_Appear", 0, 0f);
+                    isDisplaying = false;
+                    this.gameObject.SetActive(false);
+                    return;
+                }
+                else if (proportion > -0.5f)
+                {
+                    _collider.enabled = true;
+                }
+
+                isDisplaying = true;
+                this.gameObject.SetActive(true);
+                _animator.enabled = true;
+                _animator.speed = 0;
+                _animator.Play("Hold_Appear", 0, 1 + proportion);
+                return;
+            }
+
             float sustainProportion = (float) deltaTime / deltaSustainTime;
             
             if (proportion < -1 || sustainProportion > 1)
