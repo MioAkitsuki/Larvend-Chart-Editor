@@ -380,23 +380,6 @@ namespace Larvend.Gameplay
 
         private void Update()
         {
-            if (Global.IsPlaying)
-            {
-                RefreshUI();
-            }
-            else
-            {
-                if (Instance.playSwitchButton.gameObject.GetComponent<Image>().sprite == playAndPause[1])
-                {
-                    Instance.playSwitchButton.gameObject.GetComponent<Image>().sprite = playAndPause[0];
-                    Global.IsPlaying = false;
-                    
-                    ResetPointer();
-                    NoteManager.RefreshAllNotes();
-                    Global.IsPrepared = false;
-                }
-            }
-
             if ((Input.GetKeyUp(KeyCode.RightArrow) || Input.GetAxis("Mouse ScrollWheel") > 0) && Global.IsAudioLoaded && !Global.IsPlaying && !Global.IsDialoging && !Global.IsEditing)
             {
                 StepForward(Mathf.RoundToInt(960f / Int32.Parse(stepInputField.text)));
@@ -502,16 +485,31 @@ namespace Larvend.Gameplay
                     scaleInput.onEndEdit.RemoveAllListeners();
                     scaleInput.onEndEdit.AddListener(value =>
                     {
-                        selectedNote.UpdateScale(value);
+                        if (Single.Parse(value) > 1f)
+                        {
+                            value = "1";
+                            scaleInput.SetTextWithoutNotify("1.00");
+                        }
+                        else if (Single.Parse(value) < 0.5f)
+                        {
+                            value = "0.5";
+                            scaleInput.SetTextWithoutNotify("0.50");
+                        }
+
+                        if (Single.Parse(value) != selectedNote.scale)
+                        {
+                            selectedNote.UpdateScale(value);
+                        }
                         Global.IsEditing = false;
                     });
 
                     deleteNote.onClick.RemoveAllListeners();
-                    deleteNote.onClick.AddListener((() => {
+                    deleteNote.onClick.AddListener(() => {
+                        OperationTracker.Record(new Operation(OperationType.Delete, new Line(selectedNote), null));
                         selectedNote.DeleteSelf();
                         notePanel.gameObject.SetActive(false);
                         Global.IsDialoging = false;
-                    }));
+                    });
 
                     notePanel.position = panelPos;
                     notePanel.gameObject.SetActive(true);
@@ -535,6 +533,25 @@ namespace Larvend.Gameplay
             }
         }
 
+        private void LateUpdate() {
+            if (Global.IsPlaying)
+            {
+                RefreshUI();
+            }
+            else
+            {
+                if (Instance.playSwitchButton.gameObject.GetComponent<Image>().sprite == playAndPause[1])
+                {
+                    Instance.playSwitchButton.gameObject.GetComponent<Image>().sprite = playAndPause[0];
+                    Global.IsPlaying = false;
+                    
+                    ResetPointer();
+                    NoteManager.RefreshAllNotes();
+                    Global.IsPrepared = false;
+                }
+            }
+        }
+
         public static void RefreshUI()
         {
             Instance.audioTime.SetText(EditorManager.GetAudioPCMTime().ToString());
@@ -547,26 +564,10 @@ namespace Larvend.Gameplay
             int[] currentBeatTick = Instance.GetBeatTick(EditorManager.GetAudioPCMTime() - EditorManager.Instance.offset);
             Instance.beatInfo.SetText($"{currentBeatTick[0]}: {currentBeatTick[1].ToString().PadLeft(3, '0')}");
             int currentTick = (currentBeatTick[0] - 1) * 960 + currentBeatTick[1];
-            Instance.eventTrack.normalizedPosition = new Vector2(0, 1 - currentTick / (float) EventTrack.Instance.MaxTick);
+            // Instance.eventTrack.normalizedPosition = new Vector2(0, 1 - currentTick / (float) EventTrack.Instance.MaxTick);
 
-            if (Global.IsPlaying)
-            {
-                if (currentTick - EventTrack.Instance.CurrentGroup.Tick > 960 / Int32.Parse(Instance.stepInputField.text))
-                {
-                    EventTrack.Instance.NextGroup();
-                }
-            }
-            else
-            {
-                EventTrack.Instance.LocateGroupByTick(currentTick);
-            }
-            UpdateBpmUI();
-            
-            if (!Instance.notePanel.gameObject.activeSelf || Instance.selectedNote == null) return;
-
-            Instance.timeInput.text = $"{Instance.selectedNote.time}";
-            Instance.posXInput.text = $"{Instance.selectedNote.position.x}";
-            Instance.posYInput.text = $"{Instance.selectedNote.position.y}";
+            EventTrackController.LocateGroupByTick(currentTick);
+            // UpdateBpmUI();
         }
 
         // Manually set pointer
@@ -670,7 +671,7 @@ namespace Larvend.Gameplay
             string res = $"1 Step = {step:N3} Beat(s)";
             Instance.currentStepStatus.SetText(res);
 
-            EventTrack.RefreshPanel();
+            EventTrackController.RefreshPanel();
         }
 
         private void RefreshStep(bool value)
@@ -678,6 +679,8 @@ namespace Larvend.Gameplay
             float step = 4f / Int32.Parse(stepInputField.text);
             string res = $"1 Step = {step:N3} Beat(s)";
             Instance.currentStepStatus.SetText(res);
+
+            // EventTrack.RefreshPanel();
         }
 
         private void RefreshSpeed(int value)
@@ -763,8 +766,8 @@ namespace Larvend.Gameplay
             {
                 if (pcmTime - item.Key.range * item.Value <= 0)
                 {
-                    result[0] = Mathf.RoundToInt(item.Key.start + pcmTime / item.Value);
-                    result[1] = (pcmTime % item.Value) * 960 / item.Value;
+                    result[0] = Mathf.RoundToInt(item.Key.start + pcmTime / Mathf.RoundToInt(item.Value));
+                    result[1] = Mathf.RoundToInt(pcmTime % Mathf.RoundToInt(item.Value) * 960 / item.Value);
                     break;
                 }
                 else
@@ -922,9 +925,9 @@ namespace Larvend.Gameplay
 
         IEnumerator openEventTrackEnumerator()
         {
-            while (!Mathf.Approximately(eventTrackPanel.localPosition.x, 710f))
+            while (!Mathf.Approximately(eventTrackPanel.localPosition.x, 610f))
             {
-                float x = Mathf.SmoothDamp(eventTrackPanel.localPosition.x, 710f, ref vel[2], 0.1f, 10000f);
+                float x = Mathf.SmoothDamp(eventTrackPanel.localPosition.x, 610f, ref vel[2], 0.1f, 10000f);
                 Vector3 updatePos = new Vector3(x, eventTrackPanel.localPosition.y, 0);
                 eventTrackPanel.localPosition = updatePos;
 

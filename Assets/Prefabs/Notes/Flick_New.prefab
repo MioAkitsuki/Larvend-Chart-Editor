@@ -186,5 +186,6 @@ MonoBehaviour:
   endTime: 0
   targetBpm: 0
   scale: 0
+  _source: {fileID: 0}
   eventButtons: []
   isDisplaying: 0

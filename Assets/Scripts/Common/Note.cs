@@ -1,12 +1,11 @@
-﻿using System.Numerics;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using Larvend.Gameplay;
 using UnityEngine;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
-using System.Data.SqlTypes;
+using QFramework;
 
 namespace Larvend
 {
@@ -27,7 +26,9 @@ namespace Larvend
         public float targetBpm;
         public float scale;
 
-        public List<EventButton> eventButtons;
+        public bool IsPlayed;
+
+        public List<EventButtonData> eventButtons;
 
         private Animator _animator;
         private Collider2D _collider;
@@ -42,7 +43,9 @@ namespace Larvend
             _collider = GetComponent<Collider2D>();
             _collider.enabled = false;
 
-            eventButtons = new List<EventButton>();
+            IsPlayed = false;
+
+            eventButtons = new List<EventButtonData>();
 
             isDisplaying = false;
             this.gameObject.SetActive(false);
@@ -57,6 +60,8 @@ namespace Larvend
             m_TargetScreenVec = Camera.main.WorldToScreenPoint(transform.position);
             m_Offset = transform.position - Camera.main.ScreenToWorldPoint(new Vector3
                 (Input.mousePosition.x, Input.mousePosition.y, 1f));
+
+            var oldLine = new Line(this);
 
             while (Input.GetMouseButton(0))
             {
@@ -85,6 +90,8 @@ namespace Larvend
                     yield return new WaitForFixedUpdate();
                 }
             }
+
+            OperationTracker.Record(new Operation(OperationType.Modify, oldLine, new Line(this)));
         }
 
         private IEnumerator OnMouseUp()
@@ -92,28 +99,30 @@ namespace Larvend
             bool flag = false;
             if (this.position.x < 0.05f)
             {
-                this.position.x = 0.1f;
+                this.position.x = 0.05f;
                 flag = true;
             }
             else if (this.position.x > 0.95f)
             {
-                this.position.x = 0.9f;
+                this.position.x = 0.95f;
                 flag = true;
             }
             if (this.position.y < 0.15f)
             {
-                this.position.y = 0.2f;
+                this.position.y = 0.15f;
                 flag = true;
             }
             else if (this.position.y > 0.85f)
             {
-                this.position.y = 0.8f;
+                this.position.y = 0.85f;
                 flag = true;
             }
 
             if (flag)
             {
                 transform.position = Camera.main.ViewportToWorldPoint(new Vector3(position.x, position.y, time / 10000f));
+                OperationTracker.EditTarget(new Line(this));
+
                 yield return new WaitForFixedUpdate();
             }
         }
@@ -152,9 +161,19 @@ namespace Larvend
             scale = _scale;
         }
 
+        private void Update()
+        {
+            if (EditorManager.GetAudioPCMTime() >= time && !IsPlayed && Global.IsPlaying)
+            {
+                AudioKit.PlaySound("Resources://Tap");
+                IsPlayed = true;
+            }
+        }
+
         public IEnumerator StartPlay()
         {
             _animator.enabled = true;
+            IsPlayed = false;
             _animator.speed = EditorManager.GetBPM() / 60f * EditorManager.song.pitch;
 
             while (_animator.enabled)
@@ -183,127 +202,73 @@ namespace Larvend
             }
         }
 
-        public void Relate(EventButton btn, BtnType type)
+        public void Relate(EventButtonData btnData, BtnType type)
         {
-            eventButtons.Add(btn);
-            btn.type = type;
-            btn.note = this;
-
-            btn.Refresh();
+            eventButtons.Add(btnData);
+            btnData.type = type;
+            btnData.note = this;
         }
 
         public void Relate()
         {
+            int targetId = EventTrackController.FromTickToId(EventTrackController.FromPcmToTick(time));
+
             if (type is Type.Tap or Type.Flick)
             {
-                foreach (var group in EventTrack.Instance.EventGroups)
+                var targetButton = EventTrackController.GetModel().EventGroups[targetId].FindFirstEmptyButton();
+                eventButtons.Add(targetButton);
+
+                switch (type)
                 {
-                    if (Math.Abs(group.Pcm + EditorManager.Instance.offset - this.time) <= 10)
-                    {
-                        var btn = group.FindFirstEmptyButton() ?? throw new Exception("Too many event in a time");
-                        eventButtons.Add(btn);
-                        switch (type)
-                        {
-                            case Type.Tap:
-                                btn.type = BtnType.Tap;
-                                break;
-                            case Type.Flick:
-                                btn.type = BtnType.Flick;
-                                break;
-                        }
-                        btn.note = this;
-
-                        btn.Refresh();
+                    case Type.Tap when Mathf.Abs(targetButton.group.Pcm - time) < 10:
+                        targetButton.type = BtnType.Tap;
                         break;
-                    }
-                    else if (group.Pcm + EditorManager.Instance.offset - this.time > 10)
-                    {
-                        var btn = EventTrack.Instance.EventGroups[group.Id - 1].FindFirstEmptyButton() ?? throw new Exception("Too many event in a time");
-                        eventButtons.Add(btn);
-                        switch (type)
-                        {
-                            case Type.Tap:
-                                btn.type = BtnType.TapInIt;
-                                break;
-                            case Type.Flick:
-                                btn.type = BtnType.FlickInIt;
-                                break;
-                        }
-                        btn.note = this;
-
-                        btn.Refresh();
+                    case Type.Tap:
+                        targetButton.type = BtnType.TapInIt;
                         break;
-                    }
+                    case Type.Flick when Mathf.Abs(targetButton.group.Pcm - time) < 10:
+                        targetButton.type = BtnType.Flick;
+                        break;
+                    case Type.Flick:
+                        targetButton.type = BtnType.FlickInIt;
+                        break;
                 }
+                targetButton.note = this;
                 return;
             }
 
             if (time == endTime)
             {
-                foreach (var group in EventTrack.Instance.EventGroups)
+                var targetButton = EventTrackController.GetModel().EventGroups[targetId].FindFirstEmptyButton();
+                eventButtons.Add(targetButton);
+
+                if (Mathf.Abs(targetButton.group.Pcm - time) < 10)
                 {
-                    if (Math.Abs(group.Pcm + EditorManager.Instance.offset - this.time) <= 10)
-                    {
-                        var note = group.FindFirstEmptyButton() ?? throw new Exception("Too many event in a time");
-                        eventButtons.Add(note);
-                        note.type = BtnType.Hold;
-                        note.note = this;
-
-                        note.Refresh();
-                        break;
-                    }
-                    else if (group.Pcm + EditorManager.Instance.offset - this.time > 10)
-                    {
-                        var note = EventTrack.Instance.EventGroups[group.Id - 1].FindFirstEmptyButton() ?? throw new Exception("Too many event in a time");
-                        eventButtons.Add(note);
-                        note.type = BtnType.HoldInIt;
-                        note.note = this;
-
-                        note.Refresh();
-                        break;
-                    }
+                    targetButton.type = BtnType.Hold;
                 }
+                else
+                {
+                    targetButton.type = BtnType.HoldInIt;
+                }
+                targetButton.note = this;
                 return;
             }
 
-            EventButton start = null;
-            
-            foreach (var group in EventTrack.Instance.EventGroups)
+            EventButtonData start = EventTrackController.GetModel().EventGroups[targetId].FindFirstEmptyButton();
+            int endId = EventTrackController.FromTickToId(EventTrackController.FromPcmToTick(endTime));
+            EventButtonData end = EventTrackController.GetModel().EventGroups[endId].FindFirstEmptyButton();
+
+            if (Mathf.Abs(start.group.Pcm - time) < 10)
             {
-                if (Math.Abs(group.Pcm + EditorManager.Instance.offset - this.time) <= 10 && start == null)
-                {
-                    start = group.FindFirstEmptyButton() ?? throw new Exception("Too many event in a time");
-                    eventButtons.Add(start);
-                    start.type = BtnType.Hold;
-                    start.note = this;
-
-                    start.Refresh();
-                    continue;
-                }
-                else if (group.Pcm + EditorManager.Instance.offset - this.time > 10 && start == null)
-                {
-                    start = EventTrack.Instance.EventGroups[group.Id - 1].FindFirstEmptyButton() ?? throw new Exception("Too many event in a time");
-                    eventButtons.Add(start);
-                    start.type = BtnType.HoldInIt;
-                    start.note = this;
-
-                    start.Refresh();
-                    continue;
-                }
-
-                if (Math.Abs(group.Pcm + EditorManager.Instance.offset - this.endTime) <= 10 && start != null)
-                {
-                    var end = group.FindButtonById(start.Id) ?? throw new Exception("Too many event in a time");
-                    EventTrack.PaintHold(this, start, end);
-                    break;
-                }
-                else if (group.Pcm + EditorManager.Instance.offset - this.endTime > 10 && start != null)
-                {
-                    var end = EventTrack.Instance.EventGroups[group.Id - 1].FindButtonById(start.Id) ?? throw new Exception("Too many event in a time");
-                    EventTrack.PaintHold(this, start, end);
-                    break;
-                }
+                start.type = BtnType.Hold;
             }
+            else
+            {
+                start.type = BtnType.HoldInIt;
+            }
+            start.note = this;
+
+            EventTrackController.PaintHold(this, start, end);
         }
 
         public void CancelRelation()
@@ -311,9 +276,11 @@ namespace Larvend
             foreach (var btn in eventButtons)
             {
                 btn.type = BtnType.None;
-                btn.Refresh();
+                btn.note = null;
             }
             eventButtons.Clear();
+
+            TypeEventSystem.Global.Send(new GroupRefreshEvent());
         }
 
         public Note Inherit(Note oldNote)
@@ -332,6 +299,16 @@ namespace Larvend
         {
             this.position = note.position;
             this.scale = note.scale;
+
+            RefreshState();
+
+            return this;
+        }
+
+        public Note Copy(Line line)
+        {
+            position = line.position;
+            scale = line.scale;
 
             RefreshState();
 
@@ -570,6 +547,8 @@ namespace Larvend
             try
             {
                 int newTime = value;
+                // var oldLine = new Line(this);
+
                 if (newTime >= time)
                 {
                     endTime = newTime;
@@ -578,7 +557,9 @@ namespace Larvend
                 {
                     endTime = time;
                 }
-                UIController.RefreshUI();
+
+                // OperationTracker.Record(new Operation(OperationType.Modify, oldLine, new Line(this)));
+                // UIController.RefreshUI();
 
                 RefreshState();
             }
@@ -620,13 +601,15 @@ namespace Larvend
             try
             {
                 float newValue = Single.Parse(value);
-                if (newValue < 0.1f)
+                var oldLine = new Line(this);
+
+                if (newValue < 0.05f)
                 {
-                    this.position.x = 0.1f;
+                    this.position.x = 0.05f;
                 }
-                else if (newValue > 0.9f)
+                else if (newValue > 0.95f)
                 {
-                    this.position.x = 0.9f;
+                    this.position.x = 0.95f;
                 }
                 else
                 {
@@ -636,7 +619,9 @@ namespace Larvend
                 var newPos = Camera.main.ViewportToWorldPoint(this.position);
                 this.transform.position = new Vector3(newPos.x, newPos.y, time / 10000f);
 
-                UIController.RefreshUI();
+                OperationTracker.Record(new Operation(OperationType.Modify, oldLine, new Line(this)));
+
+                // UIController.RefreshUI();
             }
             catch (Exception e)
             {
@@ -649,13 +634,15 @@ namespace Larvend
             try
             {
                 float newValue = Single.Parse(value);
-                if (newValue < 0.2f)
+                var oldLine = new Line(this);
+
+                if (newValue < 0.15f)
                 {
-                    this.position.y = 0.2f;
+                    this.position.y = 0.15f;
                 }
-                else if (newValue > 0.8f)
+                else if (newValue > 0.85f)
                 {
-                    this.position.y = 0.8f;
+                    this.position.y = 0.85f;
                 }
                 else
                 {
@@ -665,7 +652,9 @@ namespace Larvend
                 var newPos = Camera.main.ViewportToWorldPoint(this.position);
                 this.transform.position = new Vector3(newPos.x, newPos.y, time / 10000f);
 
-                UIController.RefreshUI();
+                OperationTracker.Record(new Operation(OperationType.Modify, oldLine, new Line(this)));
+
+                // UIController.RefreshUI();
             }
             catch (Exception e)
             {
@@ -678,13 +667,16 @@ namespace Larvend
             try
             {
                 float newValue = Single.Parse(value);
+                var oldLine = new Line(this);
                 if (newValue is >=0.5f and <=1f)
                 {
                     this.scale = newValue;
-                    this.transform.localScale = new Vector3(this.scale, this.scale, 1f);
+                    // this.transform.localScale = new Vector3(this.scale, this.scale, 1f);
+                    OperationTracker.Record(new Operation(OperationType.Modify, oldLine, new Line(this)));
                 }
 
-                UIController.RefreshUI();
+                // UIController.RefreshUI();
+                RefreshState();
             }
             catch (Exception e)
             {
@@ -692,15 +684,24 @@ namespace Larvend
             }
         }
 
-        public void UpdateInfo(params string[] param)
+        public void UpdateInfo(Note note)
         {
-            type = (Type) Int32.Parse(param[0]);
-            time = (int) Int32.Parse(param[1]);
-            position = new Vector2(Single.Parse(param[2]), Single.Parse(param[3]));
-            if (param.Length > 4)
-            {
-                endTime = (int) Int32.Parse(param[4]);
-            }
+            time = note.time;
+            endTime = note.endTime;
+            position = note.position;
+            scale = note.scale;
+            
+            RefreshState();
+        }
+
+        public void UpdateInfo(Line line)
+        {
+            time = line.time;
+            endTime = line.endTime;
+            position = line.position;
+            scale = line.scale;
+            
+            RefreshState();
         }
 
         public void DeleteSelf()
@@ -718,6 +719,7 @@ namespace Larvend
                     break;
             }
             CancelRelation();
+
             Destroy(this.gameObject);
         }
     }

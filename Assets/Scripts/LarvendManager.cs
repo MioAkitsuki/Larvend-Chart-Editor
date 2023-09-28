@@ -27,6 +27,15 @@ namespace Larvend
             scale = 1f;
         }
 
+        internal Line(Note note)
+        {
+            type = note.type;
+            time = note.time;
+            position = note.position;
+            endTime = note.endTime;
+            scale = note.scale;
+        }
+
         internal Line(Type type, int time, Vector2 pos)
         {
             this.type = type;
@@ -727,7 +736,7 @@ namespace Larvend
         {
             try
             {
-                string audioPath = Schwarzer.Windows.Dialog.OpenFileDialog("Select Audio", "full.ogg", "/", "ogg");
+                string audioPath = Schwarzer.Windows.Dialog.OpenFileDialog("Select Audio");
                 if (File.Exists(audioPath))
                 {
                     string fileName, destFile;

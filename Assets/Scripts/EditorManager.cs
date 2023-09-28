@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using QFramework;
 
 namespace Larvend.Gameplay
 {
@@ -40,6 +41,8 @@ namespace Larvend.Gameplay
             BeatPCM = 22050;
             Global.IsPlaying = false;
 
+            AudioKit.Settings.SoundVolume.Value = 0.5f;
+
             Application.wantsToQuit += WantsToQuit;
             Application.targetFrameRate = 60;
             InitPlayerPrefs();
@@ -61,6 +64,7 @@ namespace Larvend.Gameplay
                 Global.IsPlaying = false;
                 timePcmPointer = Instance.lastPcmPointer;
                 song.timeSamples = timePcmPointer + offset;
+                
                 UIController.RefreshUI();
             }
         }
@@ -214,6 +218,7 @@ namespace Larvend.Gameplay
         {
             NoteManager.ClearAllNotes();
             NoteManager.RefreshAllNotes();
+            OperationTracker.ClearAll();
 
             foreach (var diffInfo in info.difficulties)
             {

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using QFramework;
 
 namespace Larvend.Gameplay
 {
@@ -58,7 +59,7 @@ namespace Larvend.Gameplay
         public List<Note> FlickNotes { get; private set; }
         public Line BaseSpeed;
         public List<Line> SpeedAdjust = new();
-        public Dictionary<BeatRange, int> PcmDict = new Dictionary<BeatRange, int>();
+        public Dictionary<BeatRange, float> PcmDict = new Dictionary<BeatRange, float>();
         public List<Note> UnplayedNotes { get; private set; }
         public List<Line> UnplayedSpeedAdjusts;
 
@@ -116,6 +117,8 @@ namespace Larvend.Gameplay
             {
                 EditorManager.Stop();
                 RefreshAllNotes();
+
+                // EventTrack.EnableAll();
                 Global.IsPrepared = false;
             }
         }
@@ -175,6 +178,8 @@ namespace Larvend.Gameplay
                 }
                 else return 0;
             });
+
+            // EventTrack.DisableAll();
 
             Global.IsPrepared = true;
         }
@@ -245,9 +250,9 @@ namespace Larvend.Gameplay
                 // The happiest thing - No Speed Change!
                 // (44100 * (60f / Instance.BaseSpeed.targetBpm)) - The Pcm Samples Per Beat
                 float threshold = (EditorManager.GetAudioPCMLength() - EditorManager.Instance.offset) / (44100 * (60f / Instance.BaseSpeed.targetBpm)) + 1;
-                Instance.PcmDict.Add(new BeatRange(1, threshold), (int) (44100 * (60f / Instance.BaseSpeed.targetBpm)));
+                Instance.PcmDict.Add(new BeatRange(1, threshold), 44100 * (60f / Instance.BaseSpeed.targetBpm));
 
-                Debug.Log($"0. ({1}, {threshold}, {(int) (44100 * (60f / Instance.BaseSpeed.targetBpm))})");
+                Debug.Log($"0. ({1}, {threshold}, {44100 * (60f / Instance.BaseSpeed.targetBpm)})");
                 EditorManager.SetMaxTicks(Mathf.RoundToInt(960 * threshold));
             }
             else
@@ -301,10 +306,10 @@ namespace Larvend.Gameplay
                 }
 
                 EditorManager.SetMaxTicks(Mathf.RoundToInt(960 * upper));
-                EventTrack.RefreshPanel();
             }
 
             UIController.RefreshSpeedPanel(Instance.SpeedAdjust);
+            EventTrackController.RefreshPanel();
             EditorManager.ResetAudio();
         }
 
@@ -323,8 +328,9 @@ namespace Larvend.Gameplay
                 newNote.InitNote(type, EditorManager.GetAudioPCMTime(), new Vector3(0.5f, 0.5f, EditorManager.GetAudioPCMTime() / 10000f));
 
                 newNote.RefreshState();
-
                 newNote.Relate();
+                
+                OperationTracker.Record(new Operation(OperationType.Create, null, new Line(newNote)));
 
                 Instance.TapNotes.Add(newNote);
             }
@@ -334,6 +340,7 @@ namespace Larvend.Gameplay
                 newNote.InitNote(type, EditorManager.GetAudioPCMTime(), new Vector3(0.5f, 0.5f, EditorManager.GetAudioPCMTime() / 10000f), EditorManager.GetAudioPCMTime());
 
                 newNote.RefreshState();
+                newNote.Relate();
 
                 Instance.HoldNotes.Add(newNote);
             }
@@ -343,14 +350,60 @@ namespace Larvend.Gameplay
                 newNote.InitNote(type, EditorManager.GetAudioPCMTime(), new Vector3(0.5f, 0.5f, EditorManager.GetAudioPCMTime() / 10000f));
 
                 newNote.RefreshState();
+                newNote.Relate();
 
                 Instance.FlickNotes.Add(newNote);
             }
+
+            TypeEventSystem.Global.Send(new GroupRefreshEvent());
             Global.IsSaved = false;
             return newNote;
         }
 
         public static Note CreateNote(Type type, int targetTime)
+        {
+            if (!Global.IsFileSelected)
+            {
+                return null;
+            }
+
+            Note newNote = null;
+
+            if (type == Type.Tap)
+            {
+                newNote = Instantiate(Instance.prefabs[0], Instance.transform.GetChild(0)).GetComponent<Note>();
+                newNote.InitNote(type, targetTime, new Vector3(0.5f, 0.5f, targetTime / 10000f));
+
+                newNote.RefreshState();
+                newNote.Relate();
+
+                Instance.TapNotes.Add(newNote);
+            }
+            else if (type == Type.Hold)
+            {
+                newNote = Instantiate(Instance.prefabs[1], Instance.transform.GetChild(1)).GetComponent<Note>();
+                newNote.InitNote(type, targetTime, new Vector3(0.5f, 0.5f, targetTime / 10000f), targetTime);
+
+                newNote.RefreshState();
+
+                Instance.HoldNotes.Add(newNote);
+            }
+            else if (type == Type.Flick)
+            {
+                newNote = Instantiate(Instance.prefabs[2], Instance.transform.GetChild(2)).GetComponent<Note>();
+                newNote.InitNote(type, targetTime, new Vector3(0.5f, 0.5f, targetTime / 10000f));
+
+                newNote.RefreshState();
+
+                Instance.FlickNotes.Add(newNote);
+            }
+
+            TypeEventSystem.Global.Send(new GroupRefreshEvent());
+            Global.IsSaved = false;
+            return newNote;
+        }
+
+        public static Note CreateNoteWithoutRelate(Type type, int targetTime)
         {
             if (!Global.IsFileSelected)
             {
@@ -455,6 +508,34 @@ namespace Larvend.Gameplay
                 note.CancelRelation();
                 note.Relate();
             }
+        }
+
+        public Note Find(Note note)
+        {
+            switch (note.type)
+            {
+                case Type.Tap:
+                    return TapNotes.Find(n => n == note);
+                case Type.Hold:
+                    return HoldNotes.Find(n => n == note);
+                case Type.Flick:
+                    return FlickNotes.Find(n => n == note);
+            }
+            return null;
+        }
+
+        public Note Find(Line line)
+        {
+            switch (line.type)
+            {
+                case Type.Tap:
+                    return TapNotes.Find(n => n.time == line.time && n.position == line.position && n.scale == line.scale);
+                case Type.Hold:
+                    return HoldNotes.Find(n => n.time == line.time && n.position == line.position && n.endTime == line.endTime && n.scale == line.scale);
+                case Type.Flick:
+                    return FlickNotes.Find(n => n.time == line.time && n.position == line.position && n.scale == line.scale);
+            }
+            return null;
         }
 
         public static List<Line> GetAllNotes()

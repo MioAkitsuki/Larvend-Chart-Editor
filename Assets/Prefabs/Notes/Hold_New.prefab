@@ -89,6 +89,7 @@ MonoBehaviour:
   endTime: 0
   targetBpm: 0
   scale: 0
+  _source: {fileID: 0}
   eventButtons: []
   isDisplaying: 0
 --- !u!1 &8328609538100336572
@@ -164,7 +165,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 2
-  m_Sprite: {fileID: 21300000, guid: 87deb795659811943938481484260455, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 6ffe2d772d3a69544af897d5ee148f99, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
