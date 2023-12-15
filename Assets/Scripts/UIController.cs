@@ -561,7 +561,7 @@ namespace Larvend.Gameplay
                 Instance.progressBar.SetValueWithoutNotify(EditorManager.GetTimePointer() / EditorManager.GetAudioLength());
             }
 
-            int[] currentBeatTick = Instance.GetBeatTick(EditorManager.GetAudioPCMTime() - EditorManager.Instance.offset);
+            int[] currentBeatTick = GetBeatTick(EditorManager.GetAudioPCMTime() - EditorManager.Instance.offset);
             Instance.beatInfo.SetText($"{currentBeatTick[0]}: {currentBeatTick[1].ToString().PadLeft(3, '0')}");
             int currentTick = (currentBeatTick[0] - 1) * 960 + currentBeatTick[1];
             // Instance.eventTrack.normalizedPosition = new Vector2(0, 1 - currentTick / (float) EventTrack.Instance.MaxTick);
@@ -579,7 +579,7 @@ namespace Larvend.Gameplay
                 Instance.currentPos.SetText(FormatTime(Instance.progressBar.value * EditorManager.GetAudioLength()));
                 NoteManager.RefreshAllNotes();
 
-                int[] currentBeatTick = Instance.GetBeatTick(EditorManager.GetAudioPCMTime() - EditorManager.Instance.offset);
+                int[] currentBeatTick = GetBeatTick(EditorManager.GetAudioPCMTime() - EditorManager.Instance.offset);
                 EditorManager.Instance.beatTick = currentBeatTick;
             }
         }
@@ -731,7 +731,7 @@ namespace Larvend.Gameplay
                 NoteManager.RefreshAllNotes();
                 Global.IsPrepared = false;
 
-                int[] currentBeatTick = Instance.GetBeatTick(EditorManager.GetAudioPCMTime() - EditorManager.Instance.offset);
+                int[] currentBeatTick = GetBeatTick(EditorManager.GetAudioPCMTime() - EditorManager.Instance.offset);
                 EditorManager.Instance.beatTick = currentBeatTick;
             }
         }
@@ -759,7 +759,7 @@ namespace Larvend.Gameplay
             Instance.progressBar.SetValueWithoutNotify(EditorManager.GetTimePointer() / EditorManager.GetAudioLength());
         }
 
-        private int[] GetBeatTick(int pcmTime)
+        private static int[] GetBeatTick(int pcmTime)
         {
             int[] result = new int[] { 1, 0 };
             foreach (var item in NoteManager.Instance.PcmDict)
@@ -774,6 +774,11 @@ namespace Larvend.Gameplay
                 {
                     pcmTime -= Mathf.RoundToInt(item.Key.range * item.Value);
                 }
+            }
+
+            if (result[1] == 960) {
+                result[0] += 1;
+                result[1] = 0;
             }
 
             return result;

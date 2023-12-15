@@ -10,9 +10,9 @@ Unauthorized use of assets in this repo is strictly prohibited.
 
 ## Environment
 
-- Unity 2021.3.17f1
+- Unity 2022.3.10f1
 
-- Visual Studio 2022
+- Visual Studio Code
 
 ## Contact
 
