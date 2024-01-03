@@ -9,6 +9,7 @@ namespace Larvend
     public class EventGroup : MonoBehaviour , IController
     {
         private EventTrackModel mModel;
+        [SerializeField]
         public EventGroupData Data;
         private List<EventButton> mButtons;
 

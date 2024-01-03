@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Larvend.Gameplay;
@@ -15,6 +16,7 @@ namespace Larvend
         Flick,
         FlickInIt
     }
+    [Serializable]
     public class EventGroupData
     {
         public int Id;
@@ -46,7 +48,7 @@ namespace Larvend
         {
             Id = id;
             Tick = tick;
-            Pcm = pcm;
+            Pcm = pcm + EditorManager.Instance.offset;
 
             buttons = new List<EventButtonData>();
 

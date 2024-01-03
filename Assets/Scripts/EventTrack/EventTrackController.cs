@@ -189,7 +189,8 @@ namespace Larvend
             }
 
             int targetId = FromTickToId(target);
-            if (targetId < mSelf.mModel.DisplayedEventGroups[0].Data.Id || targetId > mSelf.mModel.DisplayedEventGroups[mSelf.mModel.DisplayedEventGroups.Count - 1].Data.Id)
+            if (targetId < mSelf.mModel.DisplayedEventGroups[0].Data.Id
+                || targetId > mSelf.mModel.DisplayedEventGroups[mSelf.mModel.DisplayedEventGroups.Count - 1].Data.Id)
             {
                 mSelf.mInfiniteScrollView.GenerateGroups(targetId);
             }
@@ -230,6 +231,8 @@ namespace Larvend
         public static int FromPcmToTick(int pcm)
         {
             int targetTick = 0;
+            pcm -= EditorManager.Instance.offset;
+
             foreach (var item in NoteManager.Instance.PcmDict)
             {
                 if (item.Key.range * item.Value < pcm)
