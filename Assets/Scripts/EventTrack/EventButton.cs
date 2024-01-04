@@ -95,13 +95,13 @@ namespace Larvend
                 case BtnType.None:
                     if (mData.note == null)
                     {
-                        mData.note = NoteManager.CreateNoteWithoutRelate(Type.Tap, mData.group.Pcm + EditorManager.Instance.offset);
+                        mData.note = NoteManager.CreateNoteWithoutRelate(Type.Tap, mData.group.Pcm);
                         mData.note.Relate(mData, BtnType.Tap);
                     }
                     else
                     {
                         // note.CancelRelation();
-                        mData.note = NoteManager.CreateNoteWithoutRelate(Type.Tap, mData.group.Pcm + EditorManager.Instance.offset)
+                        mData.note = NoteManager.CreateNoteWithoutRelate(Type.Tap, mData.group.Pcm)
                             .Inherit(mData.note);
                         mData.note.Relate(mData, BtnType.Tap);
                     }
@@ -109,13 +109,13 @@ namespace Larvend
                 case BtnType.Tap:
                     if (mData.note == null)
                     {
-                        mData.note = NoteManager.CreateNoteWithoutRelate(Type.Hold, mData.group.Pcm + EditorManager.Instance.offset);
+                        mData.note = NoteManager.CreateNoteWithoutRelate(Type.Hold, mData.group.Pcm);
                         mData.note.Relate(mData, BtnType.Hold);
                     }
                     else
                     {
                         // note.CancelRelation();
-                        mData.note = NoteManager.CreateNoteWithoutRelate(Type.Hold, mData.group.Pcm + EditorManager.Instance.offset)
+                        mData.note = NoteManager.CreateNoteWithoutRelate(Type.Hold, mData.group.Pcm)
                             .Inherit(mData.note);
                         mData.note.Relate(mData, BtnType.Hold);
                     }
@@ -131,13 +131,13 @@ namespace Larvend
                 case BtnType.Hold:
                     if (mData.note == null)
                     {
-                        mData.note = NoteManager.CreateNoteWithoutRelate(Type.Flick, mData.group.Pcm + EditorManager.Instance.offset);
+                        mData.note = NoteManager.CreateNoteWithoutRelate(Type.Flick, mData.group.Pcm);
                         mData.note.Relate(mData, BtnType.Flick);
                     }
                     else
                     {
                         // note.CancelRelation();
-                        mData.note = NoteManager.CreateNoteWithoutRelate(Type.Flick, mData.group.Pcm + EditorManager.Instance.offset)
+                        mData.note = NoteManager.CreateNoteWithoutRelate(Type.Flick, mData.group.Pcm)
                             .Inherit(mData.note);
                         mData.note.Relate(mData, BtnType.Flick);
                     }
