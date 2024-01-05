@@ -85,7 +85,7 @@ namespace Larvend.Gameplay
                 {
                     for (var i = 0; i < UnplayedNotes.Count; i++)
                     {
-                        if (Math.Abs(UnplayedNotes[i].time - EditorManager.GetAudioPCMTime()) > EditorManager.Instance.BeatPCM)
+                        if (UnplayedNotes[i].time - EditorManager.GetAudioPCMTime() > EditorManager.Instance.BeatPCM)
                         {
                             break;
                         }
@@ -138,21 +138,21 @@ namespace Larvend.Gameplay
 
             foreach (var note in TapNotes)
             {
-                if (note.time > EditorManager.GetAudioPCMTime() - EditorManager.Instance.BeatPCM)
+                if (note.time >= EditorManager.GetAudioPCMTime() - EditorManager.Instance.BeatPCM)
                 {
                     UnplayedNotes.Add(note);
                 }
             }
             foreach (var note in HoldNotes)
             {
-                if (note.endTime > EditorManager.GetAudioPCMTime() - EditorManager.Instance.BeatPCM)
+                if (note.endTime >= EditorManager.GetAudioPCMTime() - EditorManager.Instance.BeatPCM)
                 {
                     UnplayedNotes.Add(note);
                 }
             }
             foreach (var note in FlickNotes)
             {
-                if (note.time > EditorManager.GetAudioPCMTime() - EditorManager.Instance.BeatPCM)
+                if (note.time >= EditorManager.GetAudioPCMTime() - EditorManager.Instance.BeatPCM)
                 {
                     UnplayedNotes.Add(note);
                 }
@@ -162,7 +162,7 @@ namespace Larvend.Gameplay
             {
                 foreach (var line in SpeedAdjust)
                 {
-                    if (line.time > EditorManager.GetAudioPCMTime())
+                    if (line.time >= EditorManager.GetAudioPCMTime())
                     {
                         UnplayedSpeedAdjusts.Add(line);
                         break;

@@ -62,6 +62,7 @@ namespace Larvend
                 (Input.mousePosition.x, Input.mousePosition.y, 1f));
 
             var oldLine = new Line(this);
+            this.GetComponentInChildren<SpriteRenderer>().material = UIController.Instance.materials[1];
 
             while (Input.GetMouseButton(0))
             {
@@ -96,6 +97,8 @@ namespace Larvend
 
         private IEnumerator OnMouseUp()
         {
+            this.GetComponentInChildren<SpriteRenderer>().material = UIController.Instance.materials[0];
+
             bool flag = false;
             if (this.position.x < 0.05f)
             {
@@ -163,7 +166,7 @@ namespace Larvend
 
         private void Update()
         {
-            if (EditorManager.GetAudioPCMTime() >= time && !IsPlayed && Global.IsPlaying)
+            if (Mathf.Abs(EditorManager.GetAudioPCMTime() - time) < 1000 && !IsPlayed && Global.IsPlaying)
             {
                 AudioKit.PlaySound("Resources://Tap");
                 IsPlayed = true;
@@ -175,6 +178,16 @@ namespace Larvend
             _animator.enabled = true;
             IsPlayed = false;
             _animator.speed = EditorManager.GetBPM() / 60f * EditorManager.song.pitch;
+
+            if (EditorManager.GetAudioPCMTime() >= time && type is Type.Tap or Type.Flick)
+            {
+                _animator.Play($"{Enum.GetName(typeof(Type), this.type)}_Disappear", 0, (EditorManager.GetAudioPCMTime() - time) / 44100f);
+            }
+            else if (EditorManager.GetAudioPCMTime() >= time && type is Type.Hold)
+            {
+                _animator.Play($"{Enum.GetName(typeof(Type), this.type)}_Disappear", 0, (float) (EditorManager.GetAudioPCMTime() - time) / (endTime - time));
+                _animator.speed = EditorManager.GetBPM() / 60f / ((float) (endTime - time) / EditorManager.Instance.BeatPCM) * EditorManager.song.pitch;
+            }
 
             while (_animator.enabled)
             {
