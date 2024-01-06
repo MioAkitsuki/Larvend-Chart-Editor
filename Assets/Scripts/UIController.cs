@@ -441,11 +441,11 @@ namespace Larvend.Gameplay
 
                     if (panelPos.y < -1.5)
                     {
-                        panelPos += new Vector2(0, 2.8f);
+                        panelPos += new Vector2(0, 3f);
                     }
                     if (panelPos.x > 6)
                     {
-                        panelPos -= new Vector2(2.8f, 0);
+                        panelPos -= new Vector2(3f, 0);
                     }
 
                     if (!PlayerPrefs.HasKey("IsModifyNoteTimeAllowed"))
@@ -533,7 +533,8 @@ namespace Larvend.Gameplay
             }
         }
 
-        private void LateUpdate() {
+        private void LateUpdate()
+        {
             if (Global.IsPlaying)
             {
                 RefreshUI();

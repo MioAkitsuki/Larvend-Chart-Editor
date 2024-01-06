@@ -95,7 +95,7 @@ namespace Larvend
             OperationTracker.Record(new Operation(OperationType.Modify, oldLine, new Line(this)));
         }
 
-        private IEnumerator OnMouseUp()
+        private void OnMouseUp()
         {
             this.GetComponentInChildren<SpriteRenderer>().material = UIController.Instance.materials[0];
 
@@ -126,7 +126,7 @@ namespace Larvend
                 transform.position = Camera.main.ViewportToWorldPoint(new Vector3(position.x, position.y, time / 10000f));
                 OperationTracker.EditTarget(new Line(this));
 
-                yield return new WaitForFixedUpdate();
+                // yield return new WaitForFixedUpdate();
             }
         }
 

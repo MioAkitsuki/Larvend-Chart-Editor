@@ -71,6 +71,22 @@ public class InfiniteScrollView : MonoBehaviour , IController
 
         mModel.CurrentEventGroup = mModel.EventGroups[id];
     }
+
+    public void ScrollDown()
+    {
+        var id = mModel.CurrentEventGroup.Id;
+        mModel.DisplayedEventGroups.RemoveAt(0);
+
+        var data = dataList[0];
+        dataList.RemoveAt(0);
+        Destroy(data.gameObject);
+
+        GameObject tempItem = Instantiate(itemPrefab, content);
+        dataList.Add(tempItem.GetComponent<RectTransform>());
+
+        mModel.DisplayedEventGroups.Add(tempItem.GetComponent<EventGroup>());
+        SetShow(tempItem.GetComponent<EventGroup>(), id + 1);
+    }
  
     /// <summary>
     /// 设置Content大小

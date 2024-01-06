@@ -162,7 +162,6 @@ namespace Larvend
             TypeEventSystem.Global.Send(new GroupRefreshEvent());
         }
         
-
         public static void GenerateHold()
         {
             var note = mSelf.mModel.HoldStartButton.note;
@@ -189,11 +188,20 @@ namespace Larvend
             }
 
             int targetId = FromTickToId(target);
-            if (targetId < mSelf.mModel.DisplayedEventGroups[0].Data.Id
-                || targetId > mSelf.mModel.DisplayedEventGroups[mSelf.mModel.DisplayedEventGroups.Count - 1].Data.Id)
+            if (targetId < mSelf.mModel.DisplayedEventGroups[0].Data.Id)
             {
                 mSelf.mInfiniteScrollView.GenerateGroups(targetId);
             }
+
+            if (targetId > mSelf.mModel.DisplayedEventGroups[mSelf.mModel.DisplayedEventGroups.Count - 1].Data.Id && !Global.IsPlaying)
+            {
+                mSelf.mInfiniteScrollView.GenerateGroups(targetId - 27);
+            }
+            else if (targetId > mSelf.mModel.DisplayedEventGroups[mSelf.mModel.DisplayedEventGroups.Count - 1].Data.Id && Global.IsPlaying)
+            {
+                mSelf.mInfiniteScrollView.ScrollDown();
+            }
+            
             mSelf.mModel.CurrentEventGroup = mSelf.mModel.EventGroups[targetId];
 
             TypeEventSystem.Global.Send(new GroupRefreshEvent());
