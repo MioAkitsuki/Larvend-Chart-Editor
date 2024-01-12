@@ -681,7 +681,7 @@ namespace Larvend
             {
                 float newValue = Single.Parse(value);
                 var oldLine = new Line(this);
-                if (newValue is >=0.5f and <=1f)
+                if (newValue >= 0)
                 {
                     this.scale = newValue;
                     // this.transform.localScale = new Vector3(this.scale, this.scale, 1f);

@@ -497,16 +497,16 @@ namespace Larvend.Gameplay
                     scaleInput.onEndEdit.RemoveAllListeners();
                     scaleInput.onEndEdit.AddListener(value =>
                     {
-                        if (Single.Parse(value) > 1f)
-                        {
-                            value = "1";
-                            scaleInput.SetTextWithoutNotify("1.00");
-                        }
-                        else if (Single.Parse(value) < 0.5f)
-                        {
-                            value = "0.5";
-                            scaleInput.SetTextWithoutNotify("0.50");
-                        }
+                        // if (Single.Parse(value) > 1f)
+                        // {
+                        //     value = "1";
+                        //     scaleInput.SetTextWithoutNotify("1.00");
+                        // }
+                        // else if (Single.Parse(value) < 0.5f)
+                        // {
+                        //     value = "0.5";
+                        //     scaleInput.SetTextWithoutNotify("0.50");
+                        // }
 
                         if (Single.Parse(value) != selectedNote.scale)
                         {
