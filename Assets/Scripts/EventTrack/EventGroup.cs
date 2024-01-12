@@ -53,15 +53,6 @@ namespace Larvend
 
         public void RefreshState()
         {
-            if (mModel.CurrentEventGroup == Data)
-            {
-                SetAsCurrent();
-            }
-            else
-            {
-                DeCurrent();
-            }
-
             if (mModel.SelectedGroups.Find(e => e.Id == Data.Id) != null)
             {
                 Select();
@@ -72,6 +63,16 @@ namespace Larvend
             }
 
             mText.text = $"{Data.Tick / 960 + 1} : {(Data.Tick % 960).ToString().PadLeft(3, '0')}";
+            mText.color = Data.Tick % 960 == 0 ? Color.red : Color.black;
+
+            if (mModel.CurrentEventGroup == Data)
+            {
+                SetAsCurrent();
+            }
+            else
+            {
+                DeCurrent();
+            }
 
             foreach (var button in mButtons)
             {
@@ -93,7 +94,7 @@ namespace Larvend
         private void DeCurrent()
         {
             mImage.color = Color.white;
-            mText.color = Color.red;
+            mText.color = Data.Tick % 960 == 0 ? Color.red : Color.black;
         }
 
         private void Select()
