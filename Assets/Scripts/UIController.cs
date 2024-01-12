@@ -5,6 +5,7 @@ using Larvend;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using QFramework;
 
 namespace Larvend.Gameplay
 {
@@ -45,6 +46,8 @@ namespace Larvend.Gameplay
 
         private TMP_Dropdown languageSelector;
         private Dictionary<int, string> languageDictionary;
+        private TMP_Text keyVolumeValue;
+        private Slider keyVolumeSlider;
         private Button resetPlayerPrefs;
 
         // UI under Left Toolbar
@@ -107,7 +110,7 @@ namespace Larvend.Gameplay
         private Slider progressBar;
         private TMP_Text totalLength;
 
-        void Start()
+        void Awake()
         {
             Instance = this;
             vel = new float[5];
@@ -181,20 +184,29 @@ namespace Larvend.Gameplay
             });
 
             // UI under Settings Panel
-            settingsPanel = this.gameObject.transform.Find("SettingsPanel").GetComponent<CanvasGroup>();
-            saveSettings = this.gameObject.transform.Find("SettingsPanel").Find("SaveSettings").GetComponent<Button>();
-            cancelSettings = this.gameObject.transform.Find("SettingsPanel").Find("CancelSettings").GetComponent<Button>();
+            settingsPanel = transform.Find("SettingsPanel").GetComponent<CanvasGroup>();
+            saveSettings = transform.Find("SettingsPanel/SaveSettings").GetComponent<Button>();
+            cancelSettings = transform.Find("SettingsPanel/CancelSettings").GetComponent<Button>();
 
-            titleInputField = this.gameObject.transform.Find("SettingsPanel").Find("TitleInput").GetComponent<TMP_InputField>();
-            composerInputField = this.gameObject.transform.Find("SettingsPanel").Find("ComposerInput").GetComponent<TMP_InputField>();
-            arrangerInputField = this.gameObject.transform.Find("SettingsPanel").Find("ArrangerInput").GetComponent<TMP_InputField>();
-            offsetInputField = this.gameObject.transform.Find("SettingsPanel").Find("OffsetInput").GetComponent<TMP_InputField>();
-            baseBpmInputField = this.gameObject.transform.Find("SettingsPanel").Find("BaseBpmInput").GetComponent<TMP_InputField>();
-            ratingInputField = this.gameObject.transform.Find("SettingsPanel").Find("RatingInput").GetComponent<TMP_InputField>();
+            titleInputField = transform.Find("SettingsPanel/TitleInput").GetComponent<TMP_InputField>();
+            composerInputField = transform.Find("SettingsPanel/ComposerInput").GetComponent<TMP_InputField>();
+            arrangerInputField = transform.Find("SettingsPanel/ArrangerInput").GetComponent<TMP_InputField>();
+            offsetInputField = transform.Find("SettingsPanel/OffsetInput").GetComponent<TMP_InputField>();
+            baseBpmInputField = transform.Find("SettingsPanel/BaseBpmInput").GetComponent<TMP_InputField>();
+            ratingInputField = transform.Find("SettingsPanel/RatingInput").GetComponent<TMP_InputField>();
 
-            languageSelector = this.gameObject.transform.Find("SettingsPanel").Find("LanguageSelector").GetComponent<TMP_Dropdown>();
+            languageSelector = transform.Find("SettingsPanel/LanguageSelector").GetComponent<TMP_Dropdown>();
             languageDictionary = new Dictionary<int, string>() { {0, "zh_cn"}, {1, "en"} };
-            resetPlayerPrefs = this.gameObject.transform.Find("SettingsPanel").Find("ResetPlayerPrefs").GetComponent<Button>();
+            keyVolumeSlider = transform.Find("SettingsPanel/KeyVolumeSlider").GetComponent<Slider>();
+            keyVolumeValue = transform.Find("SettingsPanel/KeyVolumeValue").GetComponent<TMP_Text>();
+            keyVolumeSlider.SetValueWithoutNotify(AudioKit.Settings.SoundVolume);
+            keyVolumeValue.SetText(AudioKit.Settings.SoundVolume.ToString());
+            AudioKit.Settings.SoundVolume.RegisterWithInitValue(v => keyVolumeSlider.value = v);
+            keyVolumeSlider.onValueChanged.AddListener(value => {
+                AudioKit.Settings.SoundVolume.Value = value;
+                keyVolumeValue.SetText(value.ToString("F2"));
+            });
+            resetPlayerPrefs = transform.Find("SettingsPanel/ResetPlayerPrefs").GetComponent<Button>();
 
             saveSettings.onClick.AddListener(SaveSettings);
             cancelSettings.onClick.AddListener(() =>
