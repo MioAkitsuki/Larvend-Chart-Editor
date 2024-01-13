@@ -137,11 +137,12 @@ namespace Larvend
         {
             foreach (var button in buttons)
             {
-                button.note.DeleteSelf();
+                button.note?.DeleteSelf();
             }
         }
     }
 
+    [System.Serializable]
     public class EventButtonData
     {
         public BtnType type;

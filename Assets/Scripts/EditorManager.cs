@@ -46,6 +46,8 @@ namespace Larvend.Gameplay
             Application.wantsToQuit += WantsToQuit;
             Application.targetFrameRate = 60;
             InitPlayerPrefs();
+
+            StartCoroutine(AutoBackup());
         }
 
         private void Update()
@@ -82,6 +84,15 @@ namespace Larvend.Gameplay
                 return false;
             }
             return true;
+        }
+
+        IEnumerator AutoBackup()
+        {
+            while (true)
+            {
+                yield return new WaitForSecondsRealtime(60f);
+                if (Global.IsFileSelected) ChartManager.Backup();
+            }
         }
 
         public static void Play()

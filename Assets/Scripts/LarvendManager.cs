@@ -279,6 +279,50 @@ namespace Larvend
             }
         }
 
+        public static void Backup()
+        {
+            string path = $"{Global.FolderPath}/Backups/{Enum.GetName(typeof(Difficulties), EditorManager.Instance.difficulty)}_{System.DateTime.Now.ToString("yyyyMMddHHmmss")}.bytes";
+            notes = NoteManager.GetAllNotes();
+
+            if (!Directory.Exists($"{Global.FolderPath}/Backups"))
+            {
+                Directory.CreateDirectory($"{Global.FolderPath}/Backups");
+            }
+
+            if (!File.Exists(path))
+            {
+                File.Create(path).Dispose();
+            }
+
+            try
+            {
+                StreamWriter chartWriter = new StreamWriter(path);
+
+                if (isNotesWriting)
+                    throw new Exception("There was an unfinished writing process.");
+
+                chartWriter.WriteLine($"version={Global.ChartVersion}");
+                chartWriter.WriteLine($"offset={EditorManager.Instance.offset}\n");
+
+                chartWriter.WriteLine("[NOTES]");
+                chartWriter.WriteLine($"speed(0,{NoteManager.Instance.BaseSpeed.targetBpm},0,1)");
+
+                if (notes.Count > 0)
+                {
+                    WriteNotes(chartWriter);
+                }
+
+                chartWriter.WriteLine("[END]");
+                chartWriter.Close();
+            }
+            catch (Exception e)
+            {
+                // MsgBoxManager.ShowMessage(MsgType.Error, "Backup Failed", e.Message);
+                Debug.LogError(e);
+            }
+        }
+
+
         private static void WriteNotes(StreamWriter chartWriter)
         {
             List<Line> toWriteNotes = notes;

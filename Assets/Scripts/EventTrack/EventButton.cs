@@ -9,7 +9,9 @@ namespace Larvend
     public class EventButton : MonoBehaviour , IController , IPointerClickHandler
     {
         private EventTrackModel mModel;
+        [SerializeField]
         private EventButtonData mData;
+        [SerializeField]
         private EventGroup mGroup;
 
         private Button mButton;
@@ -78,7 +80,7 @@ namespace Larvend
 
         private void OnLeftClick()
         {
-            if (Global.IsHoldEditing && mModel.HoldStartButton != mData)
+            if (Global.IsHoldEditing && mModel.HoldStartButton != mData && mData.type == BtnType.None)
             {
                 Global.IsHoldEditing = false;
                 Debug.Log($"{mData.group.Id}, {mModel.HoldStartButton.group.Id}");

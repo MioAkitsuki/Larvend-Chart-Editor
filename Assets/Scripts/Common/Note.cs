@@ -226,11 +226,11 @@ namespace Larvend
         {
             int targetId = EventTrackController.FromTickToId(EventTrackController.FromPcmToTick(time));
 
+            var targetButton = EventTrackController.GetModel().EventGroups[targetId].FindFirstEmptyButton();
+            eventButtons.Add(targetButton);
+
             if (type is Type.Tap or Type.Flick)
             {
-                var targetButton = EventTrackController.GetModel().EventGroups[targetId].FindFirstEmptyButton();
-                eventButtons.Add(targetButton);
-
                 switch (type)
                 {
                     case Type.Tap when Mathf.Abs(targetButton.group.Pcm - time) < 10:
@@ -252,9 +252,6 @@ namespace Larvend
 
             if (time == endTime)
             {
-                var targetButton = EventTrackController.GetModel().EventGroups[targetId].FindFirstEmptyButton();
-                eventButtons.Add(targetButton);
-
                 if (Mathf.Abs(targetButton.group.Pcm - time) < 10)
                 {
                     targetButton.type = BtnType.Hold;
