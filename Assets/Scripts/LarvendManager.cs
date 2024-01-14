@@ -557,8 +557,15 @@ namespace Larvend
             int itap = 0;
             string newjson = "";
 
+            int countOfQuotation = 0;
+
             for (int i = 0; i < sourceJson.Length - 1; i++)
             {
+                if (sourceJson[i] == '\"')
+                {
+                    countOfQuotation++;
+                }
+            
                 if (sourceJson[i] == ':' && sourceJson[i + 1] != '{' && sourceJson[i + 1] != '[')
                 {
                     newjson += sourceJson[i] + " ";
@@ -571,7 +578,7 @@ namespace Larvend
                         newjson += "\t";
                     }
                 }
-                else if (sourceJson[i] == '{' || sourceJson[i] == '[')
+                else if ((sourceJson[i] == '{' || sourceJson[i] == '[') && countOfQuotation % 2 == 0)
                 {
                     itap++;
                     newjson += sourceJson[i] + "\n";
@@ -580,7 +587,7 @@ namespace Larvend
                         newjson += "\t";
                     }
                 }
-                else if ((sourceJson[i] == '}' || sourceJson[i] == ']'))
+                else if ((sourceJson[i] == '}' || sourceJson[i] == ']') && countOfQuotation % 2 == 0)
                 {
                     itap--;
                     newjson += "\n";
