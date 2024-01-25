@@ -80,10 +80,10 @@ namespace Larvend
 
         private void OnLeftClick()
         {
-            if (Global.IsHoldEditing && mModel.HoldStartButton != mData && mData.type == BtnType.None)
+            if (Global.IsHoldEditing && mModel.HoldStartButton != mData && mData.type is BtnType.None or BtnType.Holding)
             {
                 Global.IsHoldEditing = false;
-                Debug.Log($"{mData.group.Id}, {mModel.HoldStartButton.group.Id}");
+                // Debug.Log($"{mData.group.Id}, {mModel.HoldStartButton.group.Id}");
                 if (mData.Id == mModel.HoldStartButton.Id)
                 {
                     mModel.HoldEndButton = mData;
