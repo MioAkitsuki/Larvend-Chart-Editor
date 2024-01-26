@@ -453,7 +453,7 @@ namespace Larvend.Gameplay
             if (line.type == Type.Tap)
             {
                 var newNote = Instantiate(Instance.prefabs[0], Instance.transform.GetChild(0)).GetComponent<Note>();
-                newNote.InitNote(line.type, line.time, line.position);
+                newNote.InitNote(line.type, line.time, line.position, line.scale);
 
                 newNote.RefreshState();
 
@@ -462,7 +462,7 @@ namespace Larvend.Gameplay
             else if (line.type == Type.Hold)
             {
                 var newNote = Instantiate(Instance.prefabs[1], Instance.transform.GetChild(1)).GetComponent<Note>();
-                newNote.InitNote(line.type, line.time, line.position, line.endTime);
+                newNote.InitNote(line.type, line.time, line.position, line.endTime, line.scale);
 
                 newNote.RefreshState();
 
@@ -471,7 +471,7 @@ namespace Larvend.Gameplay
             else if (line.type == Type.Flick)
             {
                 var newNote = Instantiate(Instance.prefabs[2], Instance.transform.GetChild(2)).GetComponent<Note>();
-                newNote.InitNote(line.type, line.time, line.position);
+                newNote.InitNote(line.type, line.time, line.position, line.scale);
 
                 newNote.RefreshState();
 

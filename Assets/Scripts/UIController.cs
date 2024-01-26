@@ -48,6 +48,7 @@ namespace Larvend.Gameplay
         private Dictionary<int, string> languageDictionary;
         private TMP_Text keyVolumeValue;
         private Slider keyVolumeSlider;
+        private Button exportCsv;
         private Button resetPlayerPrefs;
 
         // UI under Left Toolbar
@@ -205,6 +206,14 @@ namespace Larvend.Gameplay
             keyVolumeSlider.onValueChanged.AddListener(value => {
                 AudioKit.Settings.SoundVolume.Value = value;
                 keyVolumeValue.SetText(value.ToString("F2"));
+            });
+            exportCsv = transform.Find("SettingsPanel/ExportCsv").GetComponent<Button>();
+            exportCsv.onClick.AddListener(() =>
+            {
+                if (Global.IsFileSelected)
+                {
+                    ChartManager.ExportCsv();
+                }
             });
             resetPlayerPrefs = transform.Find("SettingsPanel/ResetPlayerPrefs").GetComponent<Button>();
 

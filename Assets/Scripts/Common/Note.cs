@@ -168,7 +168,11 @@ namespace Larvend
         {
             if (Mathf.Abs(EditorManager.GetAudioPCMTime() - time) < 1000 && !IsPlayed && Global.IsPlaying)
             {
-                AudioKit.PlaySound("Resources://Tap");
+                if (type == Type.Hold && time == endTime)
+                {
+                    AudioKit.PlaySound("Resources://Touch");
+                }
+                else AudioKit.PlaySound("Resources://Tap");
                 IsPlayed = true;
             }
         }

@@ -77,13 +77,13 @@ namespace Larvend
             {
                 if (button.type != BtnType.None && button.type != BtnType.Holding)
                 {
-                    var note = NoteManager.CreateNoteWithoutRelate(button.note.type, Pcm + EditorManager.Instance.offset).Copy(button.note);
+                    var note = NoteManager.CreateNoteWithoutRelate(button.note.type, Pcm).Copy(button.note);
                     var targetButton = FindFirstEmptyButton();
                     note.Relate(targetButton, button.type);
 
                     if (button.type == BtnType.Hold)
                     {
-                        note.UpdateEndTime(Pcm + EditorManager.Instance.offset + button.note.endTime - button.note.time);
+                        note.UpdateEndTime(Pcm + button.note.endTime - button.note.time);
                         EventTrackController.PaintHold(note, targetButton, EventTrackController.GetModel().EventGroups[Id + button.note.eventButtons.Count - 1].buttons[targetButton.Id]);
                     }
 
@@ -98,13 +98,13 @@ namespace Larvend
             {
                 if (button.type != BtnType.None && button.type != BtnType.Holding)
                 {
-                    var note = NoteManager.CreateNoteWithoutRelate(button.note.type, Pcm + EditorManager.Instance.offset).Copy(button.note);
+                    var note = NoteManager.CreateNoteWithoutRelate(button.note.type, Pcm).Copy(button.note);
                     var targetButton = FindFirstEmptyButton();
                     note.Relate(targetButton, button.type);
 
                     if (button.type == BtnType.Hold)
                     {
-                        note.UpdateEndTime(Pcm + EditorManager.Instance.offset + button.note.endTime - button.note.time);
+                        note.UpdateEndTime(Pcm + button.note.endTime - button.note.time);
                         EventTrackController.PaintHold(note, targetButton, EventTrackController.GetModel().EventGroups[Id + button.note.eventButtons.Count - 1].buttons[targetButton.Id]);
                     }
                 }

@@ -322,6 +322,46 @@ namespace Larvend
             }
         }
 
+        public static void ExportCsv()
+        {
+            string path = $"{Global.FolderPath}/Exports/{Enum.GetName(typeof(Difficulties), EditorManager.Instance.difficulty)}_{System.DateTime.Now.ToString("yyyyMMddHHmmss")}.csv";
+            notes = NoteManager.GetAllNotes();
+
+            if (!Directory.Exists($"{Global.FolderPath}/Exports"))
+            {
+                Directory.CreateDirectory($"{Global.FolderPath}/Exports");
+            }
+
+            if (!File.Exists(path))
+            {
+                File.Create(path).Dispose();
+            }
+
+            try
+            {
+                StreamWriter chartWriter = new StreamWriter(path);
+
+                if (isNotesWriting)
+                    throw new Exception("There was an unfinished writing process.");
+
+                chartWriter.WriteLine($"speed,0,{NoteManager.Instance.BaseSpeed.targetBpm},0,1");
+
+                if (notes.Count > 0)
+                {
+                    WriteNotesInCsv(chartWriter);
+                }
+
+                chartWriter.WriteLine("[END]");
+                chartWriter.Close();
+
+                MsgBoxManager.ShowMessage(MsgType.Info, "Export Success", $"Check {path} to get your exported file.");
+            }
+            catch (Exception e)
+            {
+                MsgBoxManager.ShowMessage(MsgType.Error, "Export Failed", e.Message);
+                Debug.LogError(e);
+            }
+        }
 
         private static void WriteNotes(StreamWriter chartWriter)
         {
@@ -342,6 +382,32 @@ namespace Larvend
                         continue;
                     case Type.SpeedAdjust:
                         chartWriter.WriteLine($"speed({note.time},{note.targetBpm:N2},{note.endTime},{note.sustainSection})");
+                        continue;
+                }
+            }
+            
+            isNotesWriting = false;
+        }
+
+        private static void WriteNotesInCsv(StreamWriter chartWriter)
+        {
+            List<Line> toWriteNotes = notes;
+
+            foreach (var note in toWriteNotes)
+            {
+                switch (note.type)
+                {
+                    case Type.Tap:
+                        chartWriter.WriteLine($"tap,{note.time},{note.position.x:N2},{note.position.y:N2},,{note.scale:N2}");
+                        continue;
+                    case Type.Hold:
+                        chartWriter.WriteLine($"hold,{note.time},{note.position.x:N2},{note.position.y:N2},{note.endTime},{note.scale:N2}");
+                        continue;
+                    case Type.Flick:
+                        chartWriter.WriteLine($"flick,{note.time},{note.position.x:N2},{note.position.y:N2},,{note.scale:N2}");
+                        continue;
+                    case Type.SpeedAdjust:
+                        chartWriter.WriteLine($"speed,{note.time},{note.targetBpm:N2},{note.endTime},{note.sustainSection}");
                         continue;
                 }
             }
