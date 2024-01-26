@@ -233,6 +233,8 @@ namespace Larvend
             var targetButton = EventTrackController.GetModel().EventGroups[targetId].FindFirstEmptyButton();
             eventButtons.Add(targetButton);
 
+            if (targetButton == null) return;
+
             if (type is Type.Tap or Type.Flick)
             {
                 switch (type)
@@ -287,8 +289,11 @@ namespace Larvend
 
         public void CancelRelation()
         {
+            if (eventButtons.Count == 0) return;
+
             foreach (var btn in eventButtons)
             {
+                if (btn == null) continue;
                 btn.type = BtnType.None;
                 btn.note = null;
             }
