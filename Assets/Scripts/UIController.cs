@@ -798,6 +798,9 @@ namespace Larvend.Gameplay
                 }
             }
 
+            if (result[1] % 10 == 9) result[1]++;
+            else if (result[1] % 10 == 1) result[1]--;
+
             if (result[1] == 960) {
                 result[0] += 1;
                 result[1] = 0;
