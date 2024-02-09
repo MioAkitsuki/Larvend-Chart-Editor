@@ -12,7 +12,7 @@ namespace Larvend.Gameplay
     public delegate void Callback();
 
     public delegate void Callback<T>(T obj);
-    public class UIController : MonoBehaviour
+    public class UIController : MonoBehaviour, IController
     {
         public static UIController Instance { get; private set; }
         public float[] vel;
@@ -589,7 +589,7 @@ namespace Larvend.Gameplay
             // Instance.eventTrack.normalizedPosition = new Vector2(0, 1 - currentTick / (float) EventTrack.Instance.MaxTick);
 
             EventTrackController.LocateGroupByTick(currentTick);
-            // UpdateBpmUI();
+            UpdateBpmUI();
         }
 
         // Manually set pointer
@@ -693,6 +693,7 @@ namespace Larvend.Gameplay
             string res = $"1 Step = {step:N3} Beat(s)";
             Instance.currentStepStatus.SetText(res);
 
+            EditorManager.ResetAudio();
             EventTrackController.RefreshPanel();
         }
 
@@ -758,6 +759,29 @@ namespace Larvend.Gameplay
             }
         }
 
+        private void SetTime(int targetTick)
+        {
+            int targetPcm = 0;
+            foreach (var item in NoteManager.Instance.PcmDict)
+            {
+                if (item.Key.IsIn(targetTick / 960f + 1))
+                {
+                    targetPcm += Mathf.RoundToInt((targetTick / 960f + 1 - item.Key.start) * item.Value);
+                    break;
+                }
+                else
+                {
+                    targetPcm += Mathf.RoundToInt(item.Key.range * item.Value);
+                }
+            }
+
+            EditorManager.Instance.beatTick = new int[] {targetTick / 960 + 1, targetTick % 960};
+            EditorManager.SetTime(targetPcm);
+
+            NoteManager.RefreshAllNotes();
+            Instance.progressBar.SetValueWithoutNotify(EditorManager.GetTimePointer() / EditorManager.GetAudioLength());
+        }
+
         private void SetTime(int[] targetBeatTick)
         {
             int targetPcm = 0;
@@ -788,8 +812,10 @@ namespace Larvend.Gameplay
             {
                 if (pcmTime - item.Key.range * item.Value <= 0)
                 {
-                    result[0] = Mathf.RoundToInt(item.Key.start + pcmTime / Mathf.RoundToInt(item.Value));
-                    result[1] = Mathf.RoundToInt(pcmTime % Mathf.RoundToInt(item.Value) * 960 / item.Value);
+                    float res = item.Key.start + (float) pcmTime / Mathf.RoundToInt(item.Value);
+
+                    result[0] = Mathf.FloorToInt(res);
+                    result[1] = Mathf.RoundToInt(res * 1000 % 1000 * 0.96f);
                     break;
                 }
                 else
@@ -797,9 +823,6 @@ namespace Larvend.Gameplay
                     pcmTime -= Mathf.RoundToInt(item.Key.range * item.Value);
                 }
             }
-
-            if (result[1] % 10 == 9) result[1]++;
-            else if (result[1] % 10 == 1) result[1]--;
 
             if (result[1] == 960) {
                 result[0] += 1;
@@ -852,31 +875,25 @@ namespace Larvend.Gameplay
             }
 
             // int deltaTick = Mathf.RoundToInt( 4  * 960 / Int32.Parse(stepInputField.text));
-            int targetTick = 960 + (EditorManager.GetBeatTick()[0] - 1) * 960 + EditorManager.GetBeatTick()[1];
+            int targetTick = 960 + this.GetModel<EventTrackModel>().CurrentEventGroup.Tick;
             if (targetTick > EditorManager.GetMaxTicks())
             {
                 return;
             }
 
             int[] targetBeatTick = new int[] { targetTick / 960 + 1, targetTick % 960 };
-            SetTime(targetBeatTick);
+            SetTime(targetTick);
         }
 
         private void StepForward(int ticks)
         {
-            if (!Global.IsAudioLoaded || Global.IsPlaying || Global.IsDialoging)
-            {
-                return;
-            }
+            if (!Global.IsAudioLoaded || Global.IsPlaying || Global.IsDialoging) return;
 
-            int targetTick = ticks + (EditorManager.GetBeatTick()[0] - 1) * 960 + EditorManager.GetBeatTick()[1];
-            if (targetTick > EditorManager.GetMaxTicks())
-            {
-                return;
-            }
+            int targetTick = ticks + this.GetModel<EventTrackModel>().CurrentEventGroup.Tick;
+            if (targetTick > EditorManager.GetMaxTicks()) return;
 
             int[] targetBeatTick = new int[] { targetTick / 960 + 1, targetTick % 960 };
-            SetTime(targetBeatTick);
+            SetTime(targetTick);
         }
 
         private void AdjustPointer()
@@ -1265,7 +1282,7 @@ namespace Larvend.Gameplay
         {
             foreach (var item in NoteManager.Instance.PcmDict)
             {
-                if (item.Key.IsIn(EditorManager.Instance.beatTick[0] + EditorManager.Instance.beatTick[1] / 960f))
+                if (item.Key.IsIn(Instance.GetModel<EventTrackModel>().CurrentEventGroup.Tick / 960f))
                 {
                     Instance.currentBPMStatus.SetText( $"{44100 * 60f / item.Value:N2}" );
                 }
@@ -1312,6 +1329,15 @@ namespace Larvend.Gameplay
             }
 
             PlayerPrefs.SetString("Language", languageDictionary[languageSelector.value]);
+        }
+
+        public IArchitecture GetArchitecture()
+        {
+            return EventTrack.Interface;
+        }
+
+        private void OnDestroy()
+        {
         }
     }
 }

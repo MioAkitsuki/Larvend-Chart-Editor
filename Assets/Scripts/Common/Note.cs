@@ -549,6 +549,8 @@ namespace Larvend
                     UIController.RefreshUI();
 
                     RefreshState();
+                    CancelRelation();
+                    Relate();
                 }
                 catch(Exception e)
                 {

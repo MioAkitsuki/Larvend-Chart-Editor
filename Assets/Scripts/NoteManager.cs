@@ -10,14 +10,13 @@ namespace Larvend.Gameplay
     {
         public float start;
         public float end;
-        public float range;
+        public float range => end - start;
         public bool IsLinearlyChanging = false;
 
         public BeatRange(float _start, float _end)
         {
             start = _start;
             end = _end;
-            range = _end - _start;
             IsLinearlyChanging = false;
         }
 
@@ -25,7 +24,6 @@ namespace Larvend.Gameplay
         {
             start = _start;
             end = _end;
-            range = _end - _start;
             IsLinearlyChanging = flag;
         }
 
@@ -265,26 +263,26 @@ namespace Larvend.Gameplay
                     if (i == 0)
                     {
                         // Writing Base Bpm Item
-                        upper = Mathf.RoundToInt((Instance.SpeedAdjust[i].time - EditorManager.Instance.offset) / (44100 * (60f / Instance.BaseSpeed.targetBpm))) + 1;
-                        Instance.PcmDict.Add(new BeatRange(1, upper + 1), (int) (44100 * (60f / Instance.BaseSpeed.targetBpm)));
-                        lower = upper + 1;
+                        upper = (Instance.SpeedAdjust[i].time - EditorManager.Instance.offset) / (44100 * (60f / Instance.BaseSpeed.targetBpm)) + 1;
+                        Instance.PcmDict.Add(new BeatRange(1, upper), (int) (44100 * (60f / Instance.BaseSpeed.targetBpm)));
+                        lower = upper;
                         Debug.Log($"0. ({1}, {upper}, {(int) (44100 * (60f / Instance.BaseSpeed.targetBpm))})");
                         continue;
                     }
 
-                    if (Instance.SpeedAdjust[i].time == Instance.SpeedAdjust[i].endTime)  // Shear
+                    if (Instance.SpeedAdjust[i].time == Instance.SpeedAdjust[i].endTime)  // Jump
                     {
-                        upper = Mathf.RoundToInt((Instance.SpeedAdjust[i].time - Instance.SpeedAdjust[i - 1].endTime) / (44100 * 60f / Instance.SpeedAdjust[i - 1].targetBpm)) + lower;
-                        Instance.PcmDict.Add(new BeatRange(lower, upper + 1), (int)(44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm)));
+                        upper = (Instance.SpeedAdjust[i].time - Instance.SpeedAdjust[i - 1].endTime) / (44100 * 60f / Instance.SpeedAdjust[i - 1].targetBpm) + lower;
+                        Instance.PcmDict.Add(new BeatRange(lower, upper), (int)(44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm)));
                         Debug.Log($"{i}. ({lower}, {upper}, {(int) (44100 * (60f / Instance.SpeedAdjust[i - 1].targetBpm))})");
-                        lower = upper + 1;
+                        lower = upper;
                     }
                     else  // Linear Update
                     {
                         upper = lower + Instance.SpeedAdjust[i].sustainSection;
-                        Instance.PcmDict.Add(new BeatRange(lower, upper + 1, true), Instance.SpeedAdjust[i].endTime - Instance.SpeedAdjust[i].time);
+                        Instance.PcmDict.Add(new BeatRange(lower, upper, true), Instance.SpeedAdjust[i].endTime - Instance.SpeedAdjust[i].time);
                         Debug.Log($"{i}. ({lower}, {upper}, {Instance.SpeedAdjust[i].endTime - Instance.SpeedAdjust[i].time})");
-                        lower = upper + 1;
+                        lower = upper;
                     }
                     
                 }
