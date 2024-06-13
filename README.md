@@ -14,6 +14,10 @@ Unauthorized use of assets in this repo is strictly prohibited.
 
 - Visual Studio Code
 
+## Plugins
+
+- File Browser PRO
+
 ## Contact
 
 - E-mail: <a href="mailto:k@ahympia.com"> k@ahympia.com </a>
@@ -22,4 +26,4 @@ Unauthorized use of assets in this repo is strictly prohibited.
 
 ---
 
-Special thanks to Schwarzer.
+Special thanks to cnSchwarzer.

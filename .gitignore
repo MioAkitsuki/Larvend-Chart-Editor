@@ -93,10 +93,14 @@ crashlytics-build.properties
 /[Aa]ssets/[Qq]FrameworkData.meta
 /[Aa]ssets/[Ff]onts/
 /[Aa]ssets/[Ff]onts.meta
+/[Aa]ssets/[Pp]lugins/
+/[Aa]ssets/[Pp]lugins.meta
 /[Aa]ssets/[Rr]esources/
 /[Aa]ssets/[Rr]esources.meta
 /[Aa]ssets/.qframework/
 /[Aa]ssets/.qframework.meta
+/[Aa]ssets/[Ee]ditor Default Resources/
+/[Aa]ssets/[Ee]ditor Default Resources.meta
 
 # AssetBundles
 /[Aa]ssetBundles/

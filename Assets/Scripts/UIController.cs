@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using QFramework;
+using Crosstales.FB;
 
 namespace Larvend.Gameplay
 {
@@ -1246,7 +1247,7 @@ namespace Larvend.Gameplay
 
         private string SelectFolder()
         {
-            string path = Schwarzer.Windows.Dialog.OpenFolderDialog("Select Folder", "/");
+            string path = FileBrowser.Instance.OpenSingleFolder(title: "Select Folder");
             return path;
         }
 

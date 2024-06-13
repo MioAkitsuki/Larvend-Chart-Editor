@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using QFramework;
+using Crosstales.FB;
 
 namespace Larvend.Gameplay
 {
@@ -125,7 +126,7 @@ namespace Larvend.Gameplay
             {
                 if (Global.IsSaved)
                 {
-                    string path = Schwarzer.Windows.Dialog.OpenFolderDialog("Select Folder", "/");
+                    string path = FileBrowser.Instance.OpenSingleFolder("Select Folder", "/");
                     if (path != null)
                     {
                         Global.FolderPath = path;

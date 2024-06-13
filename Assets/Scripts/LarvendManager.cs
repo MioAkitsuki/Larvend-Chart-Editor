@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Crosstales.FB;
 using Larvend.Gameplay;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -853,7 +854,7 @@ namespace Larvend
         {
             try
             {
-                string audioPath = Schwarzer.Windows.Dialog.OpenFileDialog("Select Audio");
+                string audioPath = FileBrowser.Instance.OpenSingleFile(title: "Select Audio", "", "", extensions: new[] {"ogg"});
                 if (File.Exists(audioPath))
                 {
                     string fileName, destFile;
