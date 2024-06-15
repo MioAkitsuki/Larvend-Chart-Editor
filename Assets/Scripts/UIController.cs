@@ -8,6 +8,10 @@ using TMPro;
 using QFramework;
 using Crosstales.FB;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 namespace Larvend.Gameplay
 {
     public delegate void Callback();
@@ -16,7 +20,7 @@ namespace Larvend.Gameplay
     public class UIController : MonoBehaviour, IController
     {
         public static UIController Instance { get; private set; }
-        public float[] vel;
+        internal float[] vel;
         public Material[] materials;
 
         private GameObject gridPanel;
@@ -973,9 +977,9 @@ namespace Larvend.Gameplay
 
         IEnumerator openEventTrackEnumerator()
         {
-            while (!Mathf.Approximately(eventTrackPanel.localPosition.x, 610f))
+            while (!Mathf.Approximately(eventTrackPanel.localPosition.x, 960f))
             {
-                float x = Mathf.SmoothDamp(eventTrackPanel.localPosition.x, 610f, ref vel[2], 0.1f, 10000f);
+                float x = Mathf.SmoothDamp(eventTrackPanel.localPosition.x, 960f, ref vel[2], 0.1f, 10000f);
                 Vector3 updatePos = new Vector3(x, eventTrackPanel.localPosition.y, 0);
                 eventTrackPanel.localPosition = updatePos;
 
@@ -988,9 +992,9 @@ namespace Larvend.Gameplay
 
         IEnumerator closeEventTrackEnumerator()
         {
-            while (!Mathf.Approximately(eventTrackPanel.localPosition.x, 1210f))
+            while (!Mathf.Approximately(eventTrackPanel.localPosition.x, 1560f))
             {
-                float x = Mathf.SmoothDamp(eventTrackPanel.localPosition.x, 1210f, ref vel[2], 0.1f, 10000f);
+                float x = Mathf.SmoothDamp(eventTrackPanel.localPosition.x, 1560f, ref vel[2], 0.1f, 10000f);
                 Vector3 updatePos = new Vector3(x, eventTrackPanel.localPosition.y, 0);
                 eventTrackPanel.localPosition = updatePos;
 
@@ -1019,26 +1023,28 @@ namespace Larvend.Gameplay
 
         IEnumerator openStepPanelEnumerator()
         {
-            // Vector2 endPos = new Vector2(-705f, 6.35f);
+            while (!Mathf.Approximately(stepPanel.localPosition.x, -880f))
+            {
+                float x = Mathf.SmoothDamp(stepPanel.localPosition.x, -880f, ref vel[1], 0.1f, 1000f);
+                Vector3 updatePos = new Vector3(x, stepPanel.localPosition.y, 0);
+                stepPanel.localPosition = updatePos;
 
-            float x = Mathf.SmoothDamp(stepPanel.localPosition.x, -705f, ref vel[1], 0.1f, 1000f);
-            Vector3 updatePos = new Vector3(x, stepPanel.localPosition.y, 0);
-            stepPanel.localPosition = updatePos;
-
-            yield return new WaitForFixedUpdate();
-            StartCoroutine("openStepPanelEnumerator");
+                yield return new WaitForFixedUpdate();
+            }
+            stepPanel.localPosition = new Vector3(-880f, stepPanel.localPosition.y, 0);
         }
 
         IEnumerator closeStepPanelEnumerator()
         {
-            // Vector2 endPos = new Vector2(-705f, 6.35f);
+            while (!Mathf.Approximately(stepPanel.localPosition.x, -1300f))
+            {
+                float x = Mathf.SmoothDamp(stepPanel.localPosition.x, -1300f, ref vel[1], 0.1f, 1000f);
+                Vector3 updatePos = new Vector3(x, stepPanel.localPosition.y, 0);
+                stepPanel.localPosition = updatePos;
 
-            float x = Mathf.SmoothDamp(stepPanel.localPosition.x, -1105f, ref vel[1], 0.1f, 1000f);
-            Vector3 updatePos = new Vector3(x, stepPanel.localPosition.y, 0);
-            stepPanel.localPosition = updatePos;
-
-            yield return new WaitForFixedUpdate();
-            StartCoroutine("closeStepPanelEnumerator");
+                yield return new WaitForFixedUpdate();
+            }
+            stepPanel.localPosition = new Vector3(-1300f, stepPanel.localPosition.y, 0);
         }
 
         private void ToggleSettingsPanel()
@@ -1153,10 +1159,10 @@ namespace Larvend.Gameplay
 
         IEnumerator dropSongPanelEnumerator()
         {
-            // Vector2 endPos = new Vector2(750f, 449.5f);
+            Debug.Log(songPanel.localPosition.y);
 
-            float y = Mathf.SmoothDamp(songPanel.localPosition.y, 449.5f, ref vel[0], 0.1f, 1000f);
-            Vector3 updatePos = new Vector3(songPanel.localPosition.x, y, 0);
+            float y = Mathf.SmoothDamp(songPanel.localPosition.y, 675f, ref vel[0], 0.1f, 1000f);
+            Vector2 updatePos = new Vector2(songPanel.localPosition.x, y);
             songPanel.localPosition = updatePos;
             
             yield return new WaitForFixedUpdate();
@@ -1176,7 +1182,7 @@ namespace Larvend.Gameplay
         {
             // Vector2 endPos = new Vector2(750f, 649.5f);
 
-            float y = Mathf.SmoothDamp(songPanel.localPosition.y, 649.5f, ref vel[0], 0.1f, 1000f);
+            float y = Mathf.SmoothDamp(songPanel.localPosition.y, 860f, ref vel[0], 0.1f, 1000f);
             Vector3 updatePos = new Vector3(songPanel.localPosition.x, y, 0);
             songPanel.localPosition = updatePos;
 
@@ -1247,7 +1253,13 @@ namespace Larvend.Gameplay
 
         private string SelectFolder()
         {
+# if UNITY_EDITOR
+            string path = EditorUtility.OpenFolderPanel("Select Folder", "", "");
+# elif UNITY_STANDALONE_WIN
+            string path = Schwarzer.Windows.Dialog.OpenFolderDialog("Select Folder", "");
+#else
             string path = FileBrowser.Instance.OpenSingleFolder(title: "Select Folder");
+#endif
             return path;
         }
 

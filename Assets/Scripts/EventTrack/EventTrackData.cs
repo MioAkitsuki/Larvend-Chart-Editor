@@ -16,7 +16,7 @@ namespace Larvend
         Flick,
         FlickInIt
     }
-    [Serializable]
+    
     public class EventGroupData
     {
         public int Id;
@@ -142,7 +142,6 @@ namespace Larvend
         }
     }
 
-    [System.Serializable]
     public class EventButtonData
     {
         public BtnType type;
